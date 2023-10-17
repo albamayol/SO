@@ -19,10 +19,9 @@ char * verifyClientName(char * clienteNameAux) {
     size_t j = 1, i;
 
     for (i = 0; i < strlen(clienteNameAux); i++) {
-        if (clienteNameAux[i] == '&') {
-            i++;
-        } else {
+        if (clienteNameAux[i] != '&') {
             clienteName[j - 1] = clienteNameAux[i];
+            printf("%c\n", clienteName[j - 1]);
             j++;
             clienteName = (char *) realloc (clienteName, j * sizeof(char));
         }        
