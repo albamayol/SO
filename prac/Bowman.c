@@ -1,6 +1,5 @@
 #include "Global.h"
 
-
 char * to_upper(char * str) {
 	int length = strlen(str) + 1 ;
     char * result = (char *) malloc(length * sizeof(char));

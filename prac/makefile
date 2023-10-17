@@ -1,0 +1,23 @@
+all: Bowman.exe Poole.exe
+
+Bowman.exe: Bowman.o Global.o
+	gcc Bowman.o Global.o -o Bowman.exe -pthread -Wall -Wextra -g
+
+Poole.exe: Poole.o Global.o
+	gcc Poole.o Global.o -o Poole.exe -pthread -Wall -Wextra -g
+
+Global.o: Global.c Global.h
+	gcc -c Global.c -Wall -Wextra
+
+Bowman.o: Bowman.c Global.h
+	gcc -c Bowman.c -pthread -Wall -Wextra
+
+Poole.o: Poole.c Global.h
+	gcc -c Poole.c -pthread -Wall -Wextra
+
+.PHONY: clean
+clean:
+	rm *.o
+	rm Bowman.exe
+	rm Poole.exe
+	
