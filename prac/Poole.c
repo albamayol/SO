@@ -21,18 +21,11 @@ int main(int argc, char ** argv) {
             exit(EXIT_FAILURE);
         } else {
             serverName = read_until(fd, '\n');
-            printString(serverName);
             pathServerFile = read_until(fd, '\n');
-            printString(pathServerFile);
             ipDiscovery = read_until(fd, '\n');
-            printString(ipDiscovery);
             puertoDiscovery = read_until(fd, '\n');
-            printString(puertoDiscovery);
             ipServer = read_until(fd, '\n');
-            printString(ipServer);
             puertoServer = read_until(fd, '\n');
-            printString(puertoServer);
-
 
             free(serverName);
             serverName = NULL;

@@ -35,13 +35,9 @@ int main(int argc, char ** argv) {
             exit(EXIT_FAILURE);
         } else {
             clienteName = read_until(fd, '\n');
-            printString(clienteName);
             pathClienteFile = read_until(fd, '\n');
-            printString(pathClienteFile);
             ip = read_until(fd, '\n');
-            printString(ip);
             puerto = read_until(fd, '\n');
-            printString(puerto);
             
             asprintf(&msg, "%s user initialized\n", clienteName);
             printF(msg);
@@ -55,9 +51,9 @@ int main(int argc, char ** argv) {
                 input[strlen(input) - 1] = '\0';
 
                 upperInput = to_upper(input);
-                asprintf(&msg, "user input: %s\n", upperInput);
+                /*asprintf(&msg, "user input: %s\n", upperInput);
                 printF(msg);
-                free(msg);
+                free(msg);*/
                 
 
                 if (strcmp(upperInput, "$ LOGOUT") == 0) {
