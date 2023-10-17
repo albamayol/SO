@@ -1,50 +1,5 @@
-#define _GNU_SOURCE
+#include "Global.h"
 
-#include <unistd.h>
-#include <fcntl.h>
-#include <string.h>
-#include <strings.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <ctype.h>
-#include <signal.h>
-#include <stdint.h>
-#include <sys/wait.h> 
-
-#define printF(x) write(1, x, strlen(x))
-
-
-char* read_until(int fd, char delimiter) {
-    char *msg = NULL;
-    char current;
-    int i = 0;
-
-    while(read(fd, &current, 1) > 0){
-        if (i == 0) {
-            msg = (char *) malloc(1);
-        }
-
-        if (current != delimiter) {
-            msg[i] = current;
-            msg = (char *) realloc(msg, ++i + 1);
-        } 
-        else {
-            msg[i] = '\0';
-            break;
-        }
-        printf("CHAR: %c\n", current);
-    }  
-
-    return msg;
-}
-
-void printString(char *cadena) {
-    char *msg;
-    asprintf(&msg, "%s\n", cadena);
-    write(1, msg, strlen(msg));
-    free(msg);
-}
 
 int main(int argc, char ** argv) {
     //char *msg = NULL;
