@@ -6,11 +6,29 @@ char * to_upper(char * str) {
     // inits a '\0'
 	memset(result,0, length);
 
-   	for (int i = 0; i < length; i++){
+    for (int i = 0; i < length; i++){
         result[i] = toupper(str[i]);
     }
 
     return result;
+}
+
+char * verifyClientName(char * clienteNameAux) {
+    char *clienteName = (char *) malloc (sizeof(char));
+
+    size_t j = 1, i;
+
+    for (i = 0; i < strlen(clienteNameAux); i++) {
+        if (clienteNameAux[i] == '&') {
+            i++;
+        } else {
+            clienteName[j - 1] = clienteNameAux[i];
+            j++;
+            clienteName = (char *) realloc (clienteName, j * sizeof(char));
+        }        
+    } 
+    clienteName[j - 1] = '\0';
+    return clienteName;
 }
 
 //TODO FUNCION QUE QUITE '&' SI EL NOMBRE DEL CLIENTE
@@ -20,6 +38,7 @@ int main(int argc, char ** argv) {
     char *input = NULL;
     char *upperInput = NULL;
     
+    char *clienteNameAux = NULL;
     char *clienteName = NULL;
 	char *pathClienteFile = NULL;
     char *ip = NULL;
@@ -34,7 +53,12 @@ int main(int argc, char ** argv) {
             printF("ERROR. Could not open user's file\n");
             exit(EXIT_FAILURE);
         } else {
-            clienteName = read_until(fd, '\n');
+            clienteNameAux = read_until(fd, '\n');
+
+            clienteName = verifyClientName(clienteNameAux);
+            free(clienteNameAux);
+            
+
             pathClienteFile = read_until(fd, '\n');
             ip = read_until(fd, '\n');
             puerto = read_until(fd, '\n');
