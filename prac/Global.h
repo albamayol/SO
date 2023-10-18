@@ -7,6 +7,12 @@
 #include <fcntl.h>
 #include <string.h>
 #include <strings.h>
+/*
+Autores:
+    Alba Mayol Lozano -->alba.mayol
+    Kevin Eljarrat Ohayon --> kevin.eljarrat
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>

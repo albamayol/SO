@@ -1,7 +1,18 @@
+/*
+Autores:
+    Alba Mayol Lozano -->alba.mayol
+    Kevin Eljarrat Ohayon --> kevin.eljarrat
+*/
+
 #include "Global.h"
 
 dataPoole dPoole;
 
+/*
+@Finalitat: Inicializar las variables a NULL.
+@Paràmetres: ---
+@Retorn: ---
+*/
 void inicializarDataPoole() {
     dPoole.serverName = NULL;
 	dPoole.pathServerFile = NULL;
@@ -11,6 +22,11 @@ void inicializarDataPoole() {
     dPoole.puertoServer = NULL;
 }
 
+/*
+@Finalitat: Manejar la recepción de la signal (SIGINT) y liberar los recursos utilizados hasta el momento.
+@Paràmetres: ---
+@Retorn: ---
+*/
 void sig_func() {
     if (dPoole.serverName != NULL) {
         free(dPoole.serverName);
@@ -39,6 +55,11 @@ void sig_func() {
     exit(EXIT_FAILURE);
 }
 
+/*
+@Finalitat: Implementar el main del programa.
+@Paràmetres: ---
+@Retorn: int: Devuelve 0 en caso de que el programa haya finalizado exitosamente.
+*/
 int main(int argc, char ** argv) {
     
     inicializarDataPoole();

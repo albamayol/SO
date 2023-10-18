@@ -1,7 +1,18 @@
+/*
+Autores:
+    Alba Mayol Lozano -->alba.mayol
+    Kevin Eljarrat Ohayon --> kevin.eljarrat
+*/
+
 #include "Global.h"
 
 dataBowman dBowman;
 
+/*
+@Finalitat: Inicializar las variables a NULL.
+@Paràmetres: ---
+@Retorn: ---
+*/
 void inicializarDataBowman() {
     dBowman.msg = NULL;
     dBowman.input = NULL;
@@ -13,6 +24,11 @@ void inicializarDataBowman() {
     dBowman.puerto = NULL;
 }
 
+/*
+@Finalitat: Manejar la recepción de la signal (SIGINT) y liberar los recursos utilizados hasta el momento.
+@Paràmetres: ---
+@Retorn: ---
+*/
 void sig_func() {
     if(dBowman.upperInput != NULL) {
         free(dBowman.upperInput);
@@ -49,6 +65,11 @@ void sig_func() {
     exit(EXIT_FAILURE);
 }
 
+/*
+@Finalitat: Convertir una string a todo mayusculas.
+@Paràmetres: char*: str, comando a modificar.
+@Retorn: char* con el comando introducido por el usuario pasado a mayusculas.
+*/
 char * to_upper(char * str) {
 	int length = strlen(str) + 1 ;
     char * result = (char *) malloc(length * sizeof(char));
@@ -62,6 +83,11 @@ char * to_upper(char * str) {
     return result;
 }
 
+/*
+@Finalitat: Limpiar los posibles & que pueda contener la string.
+@Paràmetres: char*: clienteNameAux, string con el nombre del cliente leido del configBowman.txt.
+@Retorn: char* con el nombre del usuario limpio de &.
+*/
 char * verifyClientName(char * clienteNameAux) {
     char *clienteName = (char *) malloc (sizeof(char));
 
@@ -78,6 +104,11 @@ char * verifyClientName(char * clienteNameAux) {
     return clienteName;
 }
 
+/*
+@Finalitat: Implementar el main del programa.
+@Paràmetres: ---
+@Retorn: int: Devuelve 0 en caso de que el programa haya finalizado exitosamente.
+*/
 int main(int argc, char ** argv) {
     inicializarDataBowman();
 

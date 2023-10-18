@@ -1,3 +1,9 @@
+/*
+Autores:
+    Alba Mayol Lozano -->alba.mayol
+    Kevin Eljarrat Ohayon --> kevin.eljarrat
+*/
+
 #include "Global.h"
 
 char* read_until(int fd, char delimiter) {
