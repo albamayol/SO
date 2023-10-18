@@ -18,7 +18,6 @@ char* read_until(int fd, char delimiter) {
             msg[i] = '\0';
             break;
         }
-        //printf("CHAR: %c\n", current);
     }  
 
     return msg;

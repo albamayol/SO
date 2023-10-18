@@ -17,7 +17,17 @@
 
 #define printF(x) write(1, x, strlen(x))
 
-char* read_until(int fd, char delimiter);
+typedef struct {
+    char *msg;
+    char *input;
+    char *upperInput;
+    char *clienteNameAux;
+    char *clienteName;
+    char *pathClienteFile;
+    char *ip;
+    char *puerto;
+} dataBowman;
 
+char* read_until(int fd, char delimiter);
 
 #endif

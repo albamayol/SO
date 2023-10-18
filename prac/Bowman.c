@@ -1,49 +1,51 @@
 #include "Global.h"
 
+dataBowman dBowman;
 
-char *msg = NULL;
-char *input = NULL;
-char *upperInput = NULL;
-
-char *clienteNameAux = NULL;
-char *clienteName = NULL;
-char *pathClienteFile = NULL;
-char *ip = NULL;
-char *puerto = NULL;
+void inicializarDataBowman() {
+    dBowman.msg = NULL;
+    dBowman.input = NULL;
+    dBowman.upperInput = NULL;
+    dBowman.clienteNameAux = NULL;
+    dBowman.clienteName = NULL;
+    dBowman.pathClienteFile = NULL;
+    dBowman.ip = NULL;
+    dBowman.puerto = NULL;
+}
 
 void sig_func() {
     write(1, "Dentro funcion signal\n", strlen("Dentro funcion signal\n"));
-    if(upperInput != NULL) {
-        free(upperInput);
-        upperInput = NULL;
+    if(dBowman.upperInput != NULL) {
+        free(dBowman.upperInput);
+        dBowman.upperInput = NULL;
     }
-    if(msg != NULL) {
-        free(msg);
-        msg = NULL;
+    if(dBowman.msg != NULL) {
+        free(dBowman.msg);
+        dBowman.msg = NULL;
     }
-    if(input != NULL) {
-        free(input);
-        input = NULL;
+    if(dBowman.input != NULL) {
+        free(dBowman.input);
+        dBowman.input = NULL;
     }
-    if(clienteName != NULL) {
-        free(clienteName);
-        clienteName = NULL;
+    if(dBowman.clienteName != NULL) {
+        free(dBowman.clienteName);
+        dBowman.clienteName = NULL;
     }
-    if(clienteNameAux != NULL) {
-        free(clienteNameAux);
-        clienteNameAux = NULL;
+    if(dBowman.clienteNameAux != NULL) {
+        free(dBowman.clienteNameAux);
+        dBowman.clienteNameAux = NULL;
     }
-    if(pathClienteFile != NULL) {
-        free(pathClienteFile);
-        pathClienteFile = NULL;
+    if(dBowman.pathClienteFile != NULL) {
+        free(dBowman.pathClienteFile);
+        dBowman.pathClienteFile = NULL;
     }
-    if(ip != NULL) {
-        free(ip);
-        ip = NULL;
+    if(dBowman.ip != NULL) {
+        free(dBowman.ip);
+        dBowman.ip = NULL;
     }
-    if(puerto != NULL) {
-        free(puerto);
-        puerto = NULL;
+    if(dBowman.puerto != NULL) {
+        free(dBowman.puerto);
+        dBowman.puerto = NULL;
     }
     exit(EXIT_FAILURE);
 }
@@ -69,7 +71,6 @@ char * verifyClientName(char * clienteNameAux) {
     for (i = 0; i < strlen(clienteNameAux); i++) {
         if (clienteNameAux[i] != '&') {
             clienteName[j - 1] = clienteNameAux[i];
-            printf("%c\n", clienteName[j - 1]);
             j++;
             clienteName = (char *) realloc (clienteName, j * sizeof(char));
         }        
@@ -78,9 +79,8 @@ char * verifyClientName(char * clienteNameAux) {
     return clienteName;
 }
 
-//TODO FUNCION QUE QUITE '&' SI EL NOMBRE DEL CLIENTE
-
 int main(int argc, char ** argv) {
+    inicializarDataBowman();
 
     signal(SIGINT, sig_func);
 
@@ -93,73 +93,73 @@ int main(int argc, char ** argv) {
             printF("ERROR. Could not open user's file\n");
             exit(EXIT_FAILURE);
         } else {
-            clienteNameAux = read_until(fd, '\n');
+            dBowman.clienteNameAux = read_until(fd, '\n');
 
-            clienteName = verifyClientName(clienteNameAux);
-            free(clienteNameAux);
-            clienteNameAux = NULL;
+            dBowman.clienteName = verifyClientName(dBowman.clienteNameAux);
+            free(dBowman.clienteNameAux);
+            dBowman.clienteNameAux = NULL;
             
 
-            pathClienteFile = read_until(fd, '\n');
-            ip = read_until(fd, '\n');
-            puerto = read_until(fd, '\n');
+            dBowman.pathClienteFile = read_until(fd, '\n');
+            dBowman.ip = read_until(fd, '\n');
+            dBowman.puerto = read_until(fd, '\n');
             
-            asprintf(&msg, "%s user initialized\n", clienteName);
-            printF(msg);
-            free(msg);
-            msg = NULL;
+            asprintf(&dBowman.msg, "%s user initialized\n", dBowman.clienteName);
+            printF(dBowman.msg);
+            free(dBowman.msg);
+            dBowman.msg = NULL;
 
             while (1) {
-                input = (char*) malloc(sizeof(char) * 100);
-                memset(input, 0, 100);
+                dBowman.input = (char*) malloc(sizeof(char) * 100);
+                memset(dBowman.input, 0, 100);
                 
-                read(0, input, 100);
-                input[strlen(input) - 1] = '\0';
+                read(0, dBowman.input, 100);
+                dBowman.input[strlen(dBowman.input) - 1] = '\0';
 
-                upperInput = to_upper(input);
+                dBowman.upperInput = to_upper(dBowman.input);
                 
-                if (strcmp(upperInput, "$ LOGOUT") == 0) {
+                if (strcmp(dBowman.upperInput, "$ LOGOUT") == 0) {
                     printF("Thanks for using HAL 9000, see you soon, music lover!\n");
                     break;
-                } else if (strcmp(upperInput, "$ CONNECT") == 0) {
-                    asprintf(&msg, "%s connected to HAL 9000 system, welcome music lover!\n", clienteName);
-                    printF(msg);
-                    free(msg);
-                    msg = NULL;
-                } else if (strcmp(upperInput, "$ LIST SONGS") == 0) {
+                } else if (strcmp(dBowman.upperInput, "$ CONNECT") == 0) {
+                    asprintf(&dBowman.msg, "%s connected to HAL 9000 system, welcome music lover!\n", dBowman.clienteName);
+                    printF(dBowman.msg);
+                    free(dBowman.msg);
+                    dBowman.msg = NULL;
+                } else if (strcmp(dBowman.upperInput, "$ LIST SONGS") == 0) {
                     printF("There are no songs available for download\n");
-                } else if (strcmp(upperInput, "$ LIST PLAYLISTS") == 0) {
+                } else if (strcmp(dBowman.upperInput, "$ LIST PLAYLISTS") == 0) {
                     printF("There are no lists available for download\n");
-                } else if (strcmp(upperInput, "$ CHECK DOWNLOADS") == 0) {
+                } else if (strcmp(dBowman.upperInput, "$ CHECK DOWNLOADS") == 0) {
                     printF("You have no ongoing or finished downloads\n");
-                } else if (strcmp(upperInput, "$ CLEAR DOWNLOADS") == 0) {
+                } else if (strcmp(dBowman.upperInput, "$ CLEAR DOWNLOADS") == 0) {
                     printF("No downloads to clear available\n");
-                } else if (strstr(upperInput, "DOWNLOAD") != NULL) {  //DOWNLOAD <SONG/PLAYLIST>
+                } else if (strstr(dBowman.upperInput, "DOWNLOAD") != NULL) {  //DOWNLOAD <SONG/PLAYLIST>
                     printF("Download started!\n");
                 } else {
                     printF("Unknown command\n");
                 }
 
-                free(input);
-                input = NULL;
-                free(upperInput);
-                upperInput = NULL;
+                free(dBowman.input);
+                dBowman.input = NULL;
+                free(dBowman.upperInput);
+                dBowman.upperInput = NULL;
             }
 
 
-            free(upperInput);
-            upperInput = NULL;
-            msg = NULL;
-            free(input);
-            input = NULL;
-            free(clienteName);
-            clienteName = NULL;
-            free(pathClienteFile);
-            pathClienteFile = NULL;
-            free(ip);
-            ip = NULL;
-            free(puerto);
-            puerto = NULL;
+            free(dBowman.upperInput);
+            dBowman.upperInput = NULL;
+            dBowman.msg = NULL;
+            free(dBowman.input);
+            dBowman.input = NULL;
+            free(dBowman.clienteName);
+            dBowman.clienteName = NULL;
+            free(dBowman.pathClienteFile);
+            dBowman.pathClienteFile = NULL;
+            free(dBowman.ip);
+            dBowman.ip = NULL;
+            free(dBowman.puerto);
+            dBowman.puerto = NULL;
             
             close(fd);
         }
