@@ -1,5 +1,53 @@
 #include "Global.h"
 
+
+char *msg = NULL;
+char *input = NULL;
+char *upperInput = NULL;
+
+char *clienteNameAux = NULL;
+char *clienteName = NULL;
+char *pathClienteFile = NULL;
+char *ip = NULL;
+char *puerto = NULL;
+
+void sig_func() {
+    write(1, "Dentro funcion signal\n", strlen("Dentro funcion signal\n"));
+    if(upperInput != NULL) {
+        free(upperInput);
+        upperInput = NULL;
+    }
+    if(msg != NULL) {
+        free(msg);
+        msg = NULL;
+    }
+    if(input != NULL) {
+        free(input);
+        input = NULL;
+    }
+    if(clienteName != NULL) {
+        free(clienteName);
+        clienteName = NULL;
+    }
+    if(clienteNameAux != NULL) {
+        free(clienteNameAux);
+        clienteNameAux = NULL;
+    }
+    if(pathClienteFile != NULL) {
+        free(pathClienteFile);
+        pathClienteFile = NULL;
+    }
+    if(ip != NULL) {
+        free(ip);
+        ip = NULL;
+    }
+    if(puerto != NULL) {
+        free(puerto);
+        puerto = NULL;
+    }
+    exit(EXIT_FAILURE);
+}
+
 char * to_upper(char * str) {
 	int length = strlen(str) + 1 ;
     char * result = (char *) malloc(length * sizeof(char));
@@ -33,15 +81,8 @@ char * verifyClientName(char * clienteNameAux) {
 //TODO FUNCION QUE QUITE '&' SI EL NOMBRE DEL CLIENTE
 
 int main(int argc, char ** argv) {
-    char *msg = NULL;
-    char *input = NULL;
-    char *upperInput = NULL;
-    
-    char *clienteNameAux = NULL;
-    char *clienteName = NULL;
-	char *pathClienteFile = NULL;
-    char *ip = NULL;
-    char *puerto = NULL;
+
+    signal(SIGINT, sig_func);
 
     if (argc != 2) {
         printF("ERROR. Number of arguments is not correct\n");
@@ -56,6 +97,7 @@ int main(int argc, char ** argv) {
 
             clienteName = verifyClientName(clienteNameAux);
             free(clienteNameAux);
+            clienteNameAux = NULL;
             
 
             pathClienteFile = read_until(fd, '\n');
@@ -65,6 +107,7 @@ int main(int argc, char ** argv) {
             asprintf(&msg, "%s user initialized\n", clienteName);
             printF(msg);
             free(msg);
+            msg = NULL;
 
             while (1) {
                 input = (char*) malloc(sizeof(char) * 100);
@@ -74,11 +117,7 @@ int main(int argc, char ** argv) {
                 input[strlen(input) - 1] = '\0';
 
                 upperInput = to_upper(input);
-                /*asprintf(&msg, "user input: %s\n", upperInput);
-                printF(msg);
-                free(msg);*/
                 
-
                 if (strcmp(upperInput, "$ LOGOUT") == 0) {
                     printF("Thanks for using HAL 9000, see you soon, music lover!\n");
                     break;
@@ -86,6 +125,7 @@ int main(int argc, char ** argv) {
                     asprintf(&msg, "%s connected to HAL 9000 system, welcome music lover!\n", clienteName);
                     printF(msg);
                     free(msg);
+                    msg = NULL;
                 } else if (strcmp(upperInput, "$ LIST SONGS") == 0) {
                     printF("There are no songs available for download\n");
                 } else if (strcmp(upperInput, "$ LIST PLAYLISTS") == 0) {
@@ -101,7 +141,9 @@ int main(int argc, char ** argv) {
                 }
 
                 free(input);
+                input = NULL;
                 free(upperInput);
+                upperInput = NULL;
             }
 
 
