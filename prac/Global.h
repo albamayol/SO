@@ -28,6 +28,15 @@ typedef struct {
     char *puerto;
 } dataBowman;
 
+typedef struct {
+    char *serverName;
+	char *pathServerFile;
+    char *ipDiscovery; 
+    char *puertoDiscovery;
+    char *ipServer; 
+    char *puertoServer;
+} dataPoole;
+
 char* read_until(int fd, char delimiter);
 
 #endif

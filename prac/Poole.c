@@ -1,15 +1,49 @@
 #include "Global.h"
 
+dataPoole dPoole;
+
+void inicializarDataPoole() {
+    dPoole.serverName = NULL;
+	dPoole.pathServerFile = NULL;
+    dPoole.ipDiscovery = NULL; 
+    dPoole.puertoDiscovery = NULL;
+    dPoole.ipServer = NULL; 
+    dPoole.puertoServer = NULL;
+}
+
+void sig_func() {
+    if (dPoole.serverName != NULL) {
+        free(dPoole.serverName);
+        dPoole.serverName = NULL;
+    }
+    if (dPoole.pathServerFile != NULL) {
+        free(dPoole.pathServerFile);
+        dPoole.pathServerFile = NULL;
+    }
+    if (dPoole.ipDiscovery != NULL) {
+        free(dPoole.ipDiscovery);
+        dPoole.ipDiscovery = NULL;
+    }
+    if (dPoole.puertoDiscovery != NULL) {
+        free(dPoole.puertoDiscovery);
+        dPoole.puertoDiscovery = NULL;
+    }
+    if (dPoole.ipServer != NULL) {
+        free(dPoole.ipServer);
+        dPoole.ipServer = NULL;
+    }
+    if (dPoole.puertoServer != NULL) {
+        free(dPoole.puertoServer);
+        dPoole.puertoServer = NULL;
+    }
+    exit(EXIT_FAILURE);
+}
 
 int main(int argc, char ** argv) {
-    //char *msg = NULL;
     
-    char *serverName = NULL;
-	char *pathServerFile = NULL;
-    char *ipDiscovery = NULL; 
-    char *puertoDiscovery = NULL;
-    char *ipServer = NULL; 
-    char *puertoServer = NULL;
+    inicializarDataPoole();
+    signal(SIGINT, sig_func);
+    
 
     if (argc != 2) {
         printF("ERROR. Number of arguments is not correct\n");
@@ -20,25 +54,25 @@ int main(int argc, char ** argv) {
             printF("ERROR. Could not open user's file\n");
             exit(EXIT_FAILURE);
         } else {
-            serverName = read_until(fd, '\n');
-            pathServerFile = read_until(fd, '\n');
-            ipDiscovery = read_until(fd, '\n');
-            puertoDiscovery = read_until(fd, '\n');
-            ipServer = read_until(fd, '\n');
-            puertoServer = read_until(fd, '\n');
+            dPoole.serverName = read_until(fd, '\n');
+            dPoole.pathServerFile = read_until(fd, '\n');
+            dPoole.ipDiscovery = read_until(fd, '\n');
+            dPoole.puertoDiscovery = read_until(fd, '\n');
+            dPoole.ipServer = read_until(fd, '\n');
+            dPoole.puertoServer = read_until(fd, '\n');
 
-            free(serverName);
-            serverName = NULL;
-            free(pathServerFile);
-            pathServerFile = NULL;
-            free(ipDiscovery);
-            ipDiscovery = NULL;
-            free(puertoDiscovery);
-            puertoDiscovery = NULL;
-            free(ipServer);
-            ipServer = NULL;
-            free(puertoServer);
-            puertoServer = NULL;
+            free(dPoole.serverName);
+            dPoole.serverName = NULL;
+            free(dPoole.pathServerFile);
+            dPoole.pathServerFile = NULL;
+            free(dPoole.ipDiscovery);
+            dPoole.ipDiscovery = NULL;
+            free(dPoole.puertoDiscovery);
+            dPoole.puertoDiscovery = NULL;
+            free(dPoole.ipServer);
+            dPoole.ipServer = NULL;
+            free(dPoole.puertoServer);
+            dPoole.puertoServer = NULL;
 
             close(fd);
         }

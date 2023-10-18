@@ -14,7 +14,6 @@ void inicializarDataBowman() {
 }
 
 void sig_func() {
-    write(1, "Dentro funcion signal\n", strlen("Dentro funcion signal\n"));
     if(dBowman.upperInput != NULL) {
         free(dBowman.upperInput);
         dBowman.upperInput = NULL;
