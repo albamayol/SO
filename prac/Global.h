@@ -1,3 +1,9 @@
+/*
+Autores:
+    Alba Mayol Lozano -->alba.mayol
+    Kevin Eljarrat Ohayon --> kevin.eljarrat
+*/
+
 #ifndef _GLOBAL_H_
 #define _GLOBAL_H_
 
@@ -7,12 +13,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <strings.h>
-/*
-Autores:
-    Alba Mayol Lozano -->alba.mayol
-    Kevin Eljarrat Ohayon --> kevin.eljarrat
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
