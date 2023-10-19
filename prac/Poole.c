@@ -20,6 +20,7 @@ void inicializarDataPoole() {
     dPoole.puertoDiscovery = NULL;
     dPoole.ipServer = NULL; 
     dPoole.puertoServer = NULL;
+    dPoole.msg = NULL;
 }
 
 /*
@@ -52,7 +53,50 @@ void sig_func() {
         free(dPoole.puertoServer);
         dPoole.puertoServer = NULL;
     }
+    if (dPoole.msg != NULL) {
+        free(dPoole.msg);
+        dPoole.msg = NULL;
+    }
     exit(EXIT_FAILURE);
+}
+
+/*
+@Finalitat: Printa la información leída de configPoole
+@Paràmetres: ---
+@Retorn: ---
+*/
+void printInfoFile() {
+    
+    printF("File read correctly:\n");
+    asprintf(&dPoole.msg, "Server - %s\n", dPoole.serverName);
+    printF(dPoole.msg);
+    free(dPoole.msg);
+    
+
+    asprintf(&dPoole.msg, "Server Directory - %s\n", dPoole.pathServerFile);
+    printF(dPoole.msg);
+    free(dPoole.msg);
+    
+
+    asprintf(&dPoole.msg, "IP Discovery - %s\n", dPoole.ipDiscovery);
+    printF(dPoole.msg);
+    free(dPoole.msg);
+    
+
+    asprintf(&dPoole.msg, "Port Discovery - %s\n", dPoole.puertoDiscovery);
+    printF(dPoole.msg);
+    free(dPoole.msg);
+
+    asprintf(&dPoole.msg, "IP Server - %s\n", dPoole.ipServer);
+    printF(dPoole.msg);
+    free(dPoole.msg);
+
+    asprintf(&dPoole.msg, "Port Server - %s\n", dPoole.puertoServer);
+    printF(dPoole.msg);
+    free(dPoole.msg);
+
+    dPoole.msg = NULL;
+
 }
 
 /*
@@ -81,6 +125,8 @@ int main(int argc, char ** argv) {
             dPoole.puertoDiscovery = read_until(fd, '\n');
             dPoole.ipServer = read_until(fd, '\n');
             dPoole.puertoServer = read_until(fd, '\n');
+
+            printInfoFile();
 
             free(dPoole.serverName);
             dPoole.serverName = NULL;

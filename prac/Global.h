@@ -41,6 +41,7 @@ typedef struct {
     char *puertoDiscovery;
     char *ipServer; 
     char *puertoServer;
+    char *msg;
 } dataPoole;
 
 char* read_until(int fd, char delimiter);

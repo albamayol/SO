@@ -105,6 +105,37 @@ char * verifyClientName(char * clienteNameAux) {
 }
 
 /*
+@Finalitat: Printa la información leída de configBowman
+@Paràmetres: ---
+@Retorn: ---
+*/
+void printInfoFile() {
+    
+    printF("File read correctly:\n");
+    asprintf(&dBowman.msg, "User - %s\n", dBowman.clienteName);
+    printF(dBowman.msg);
+    free(dBowman.msg);
+    
+
+    asprintf(&dBowman.msg, "Directory - %s\n", dBowman.pathClienteFile);
+    printF(dBowman.msg);
+    free(dBowman.msg);
+    
+
+    asprintf(&dBowman.msg, "IP - %s\n", dBowman.ip);
+    printF(dBowman.msg);
+    free(dBowman.msg);
+    
+
+    asprintf(&dBowman.msg, "Port - %s\n", dBowman.puerto);
+    printF(dBowman.msg);
+    free(dBowman.msg);
+
+
+    dBowman.msg = NULL;
+}
+
+/*
 @Finalitat: Implementar el main del programa.
 @Paràmetres: ---
 @Retorn: int: Devuelve 0 en caso de que el programa haya finalizado exitosamente.
@@ -140,6 +171,8 @@ int main(int argc, char ** argv) {
             free(dBowman.msg);
             dBowman.msg = NULL;
 
+            printInfoFile();
+
             while (1) {
                 dBowman.input = (char*) malloc(sizeof(char) * 100);
                 memset(dBowman.input, 0, 100);
@@ -148,8 +181,7 @@ int main(int argc, char ** argv) {
                 dBowman.input[strlen(dBowman.input) - 1] = '\0';
 
                 dBowman.upperInput = to_upper(dBowman.input);
-                
-                if (!clientConnected) {
+                 if (!clientConnected) {
                     if (strcmp(dBowman.upperInput, "$ CONNECT") == 0) {
                         asprintf(&dBowman.msg, "%s connected to HAL 9000 system, welcome music lover!\n", dBowman.clienteName);
                         printF(dBowman.msg);
@@ -183,6 +215,7 @@ int main(int argc, char ** argv) {
                 free(dBowman.upperInput);
                 dBowman.upperInput = NULL;
             }
+
 
             free(dBowman.upperInput);
             dBowman.upperInput = NULL;
