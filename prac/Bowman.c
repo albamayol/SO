@@ -110,6 +110,7 @@ char * verifyClientName(char * clienteNameAux) {
 @Retorn: int: Devuelve 0 en caso de que el programa haya finalizado exitosamente.
 */
 int main(int argc, char ** argv) {
+    int clientConnected = 0;
     inicializarDataBowman();
 
     signal(SIGINT, sig_func);
@@ -148,26 +149,33 @@ int main(int argc, char ** argv) {
 
                 dBowman.upperInput = to_upper(dBowman.input);
                 
-                if (strcmp(dBowman.upperInput, "$ LOGOUT") == 0) {
-                    printF("Thanks for using HAL 9000, see you soon, music lover!\n");
-                    break;
-                } else if (strcmp(dBowman.upperInput, "$ CONNECT") == 0) {
-                    asprintf(&dBowman.msg, "%s connected to HAL 9000 system, welcome music lover!\n", dBowman.clienteName);
-                    printF(dBowman.msg);
-                    free(dBowman.msg);
-                    dBowman.msg = NULL;
-                } else if (strcmp(dBowman.upperInput, "$ LIST SONGS") == 0) {
-                    printF("There are no songs available for download\n");
-                } else if (strcmp(dBowman.upperInput, "$ LIST PLAYLISTS") == 0) {
-                    printF("There are no lists available for download\n");
-                } else if (strcmp(dBowman.upperInput, "$ CHECK DOWNLOADS") == 0) {
-                    printF("You have no ongoing or finished downloads\n");
-                } else if (strcmp(dBowman.upperInput, "$ CLEAR DOWNLOADS") == 0) {
-                    printF("No downloads to clear available\n");
-                } else if (strstr(dBowman.upperInput, "DOWNLOAD") != NULL) {  //DOWNLOAD <SONG/PLAYLIST>
-                    printF("Download started!\n");
+                if (clientConnected) {
+                    if (strcmp(dBowman.upperInput, "$ LOGOUT") == 0) {
+                        printF("Thanks for using HAL 9000, see you soon, music lover!\n");
+                        break;
+                    } else if (strcmp(dBowman.upperInput, "$ LIST SONGS") == 0) {
+                        printF("There are no songs available for download\n");
+                    } else if (strcmp(dBowman.upperInput, "$ LIST PLAYLISTS") == 0) {
+                        printF("There are no lists available for download\n");
+                    } else if (strcmp(dBowman.upperInput, "$ CHECK DOWNLOADS") == 0) {
+                        printF("You have no ongoing or finished downloads\n");
+                    } else if (strcmp(dBowman.upperInput, "$ CLEAR DOWNLOADS") == 0) {
+                        printF("No downloads to clear available\n");
+                    } else if (strstr(dBowman.upperInput, "DOWNLOAD") != NULL) {  //DOWNLOAD <SONG/PLAYLIST>
+                        printF("Download started!\n");
+                    } else {
+                        printF("Unknown command\n");
+                    }
                 } else {
-                    printF("Unknown command\n");
+                    if (strcmp(dBowman.upperInput, "$ CONNECT") == 0) {
+                        asprintf(&dBowman.msg, "%s connected to HAL 9000 system, welcome music lover!\n", dBowman.clienteName);
+                        printF(dBowman.msg);
+                        free(dBowman.msg);
+                        dBowman.msg = NULL;
+                        clientConnected = 1;
+                    } else {
+                        printF("You must establish a connection with the server before making any request\n");
+                    }
                 }
 
                 free(dBowman.input);
@@ -175,7 +183,6 @@ int main(int argc, char ** argv) {
                 free(dBowman.upperInput);
                 dBowman.upperInput = NULL;
             }
-
 
             free(dBowman.upperInput);
             dBowman.upperInput = NULL;
