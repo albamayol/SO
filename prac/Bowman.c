@@ -149,7 +149,17 @@ int main(int argc, char ** argv) {
 
                 dBowman.upperInput = to_upper(dBowman.input);
                 
-                if (clientConnected) {
+                if (!clientConnected) {
+                    if (strcmp(dBowman.upperInput, "$ CONNECT") == 0) {
+                        asprintf(&dBowman.msg, "%s connected to HAL 9000 system, welcome music lover!\n", dBowman.clienteName);
+                        printF(dBowman.msg);
+                        free(dBowman.msg);
+                        dBowman.msg = NULL;
+                        clientConnected = 1;
+                    } else {
+                        printF("You must establish a connection with the server before making any request\n");
+                    }
+                } else {
                     if (strcmp(dBowman.upperInput, "$ LOGOUT") == 0) {
                         printF("Thanks for using HAL 9000, see you soon, music lover!\n");
                         break;
@@ -165,16 +175,6 @@ int main(int argc, char ** argv) {
                         printF("Download started!\n");
                     } else {
                         printF("Unknown command\n");
-                    }
-                } else {
-                    if (strcmp(dBowman.upperInput, "$ CONNECT") == 0) {
-                        asprintf(&dBowman.msg, "%s connected to HAL 9000 system, welcome music lover!\n", dBowman.clienteName);
-                        printF(dBowman.msg);
-                        free(dBowman.msg);
-                        dBowman.msg = NULL;
-                        clientConnected = 1;
-                    } else {
-                        printF("You must establish a connection with the server before making any request\n");
                     }
                 }
 
