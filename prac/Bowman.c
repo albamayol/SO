@@ -160,10 +160,18 @@ void checkDownload(char *downloadPtr) {
 @Retorn: ---
 */
 void removeExtraSpaces(char *comanda) {
-    int i, j;
-    for (i = 0, j = 0; comanda[i]; i++) {
-        if (!isspace((unsigned char)comanda[i]) || (i > 0 && !isspace((unsigned char)comanda[i - 1]))) {
-            comanda[j++] = comanda[i];
+    int espacios = 0, j = 0;
+    
+    for (size_t i = 0; i < strlen(comanda); i++) {
+        if (comanda[i] == ' ') {
+            espacios++;
+        } else {
+            espacios = 0;
+        }
+
+        if (espacios <= 1) {
+            comanda[j] = comanda[i];
+            j++;
         }
     }
     comanda[j] = '\0';
