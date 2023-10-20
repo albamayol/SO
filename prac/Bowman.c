@@ -111,7 +111,7 @@ char * verifyClientName(char * clienteNameAux) {
 */
 void printInfoFile() {
     
-    printF("File read correctly:\n");
+    printF("\nFile read correctly:\n");
     asprintf(&dBowman.msg, "User - %s\n", dBowman.clienteName);
     printF(dBowman.msg);
     free(dBowman.msg);
@@ -127,12 +127,46 @@ void printInfoFile() {
     free(dBowman.msg);
     
 
-    asprintf(&dBowman.msg, "Port - %s\n", dBowman.puerto);
+    asprintf(&dBowman.msg, "Port - %s\n\n", dBowman.puerto);
     printF(dBowman.msg);
     free(dBowman.msg);
 
 
     dBowman.msg = NULL;
+}
+
+/*
+@Finalitat: Comprobar las posibles casuisticas con el comando DOWNLOAD
+@Paràmetres: char*: downloadPtr, puntero al primer caracter, es decir a la 'D'
+@Retorn: ---
+*/
+void checkDownload(char *downloadPtr) {
+    char *mp3Ptr = strstr(downloadPtr + 10, ".MP3");
+    if (mp3Ptr != NULL) {
+        char nextChar = mp3Ptr[4];
+        if (nextChar == '\0') {
+            printF("Download started!\n");
+        } else {
+            printF("Please specify a single .mp3 file\n");
+        }
+    } else {
+        printF("Please specify an .mp3 file\n");
+    }
+}
+
+/*
+@Finalitat: Eliminar espacios en blanco adicionales
+@Paràmetres: char*: str, comanda recibida
+@Retorn: ---
+*/
+void removeExtraSpaces(char *comanda) {
+    int i, j;
+    for (i = 0, j = 0; comanda[i]; i++) {
+        if (!isspace((unsigned char)comanda[i]) || (i > 0 && !isspace((unsigned char)comanda[i - 1]))) {
+            comanda[j++] = comanda[i];
+        }
+    }
+    comanda[j] = '\0';
 }
 
 /*
@@ -166,7 +200,7 @@ int main(int argc, char ** argv) {
             dBowman.ip = read_until(fd, '\n');
             dBowman.puerto = read_until(fd, '\n');
             
-            asprintf(&dBowman.msg, "%s user initialized\n", dBowman.clienteName);
+            asprintf(&dBowman.msg, "\n%s user initialized\n", dBowman.clienteName);
             printF(dBowman.msg);
             free(dBowman.msg);
             dBowman.msg = NULL;
@@ -181,7 +215,10 @@ int main(int argc, char ** argv) {
                 dBowman.input[strlen(dBowman.input) - 1] = '\0';
 
                 dBowman.upperInput = to_upper(dBowman.input);
-                 if (!clientConnected) {
+
+                removeExtraSpaces(dBowman.upperInput);
+
+                if (!clientConnected) {
                     if (strcmp(dBowman.upperInput, "$ CONNECT") == 0) {
                         asprintf(&dBowman.msg, "%s connected to HAL 9000 system, welcome music lover!\n", dBowman.clienteName);
                         printF(dBowman.msg);
@@ -203,9 +240,10 @@ int main(int argc, char ** argv) {
                         printF("You have no ongoing or finished downloads\n");
                     } else if (strcmp(dBowman.upperInput, "$ CLEAR DOWNLOADS") == 0) {
                         printF("No downloads to clear available\n");
-                    } else if (strstr(dBowman.upperInput, "DOWNLOAD") != NULL) {  //DOWNLOAD <SONG/PLAYLIST>
-                        printF("Download started!\n");
-                    } else {
+                    } else if (strstr(dBowman.upperInput, "$ DOWNLOAD") != NULL) {
+                        char *downloadPtr = strstr(dBowman.upperInput, "$ DOWNLOAD");
+                        checkDownload(downloadPtr);   
+                    }  else {
                         printF("Unknown command\n");
                     }
                 }
@@ -215,7 +253,6 @@ int main(int argc, char ** argv) {
                 free(dBowman.upperInput);
                 dBowman.upperInput = NULL;
             }
-
 
             free(dBowman.upperInput);
             dBowman.upperInput = NULL;

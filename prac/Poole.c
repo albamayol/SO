@@ -91,7 +91,7 @@ void printInfoFile() {
     printF(dPoole.msg);
     free(dPoole.msg);
 
-    asprintf(&dPoole.msg, "Port Server - %s\n", dPoole.puertoServer);
+    asprintf(&dPoole.msg, "Port Server - %s\n\n", dPoole.puertoServer);
     printF(dPoole.msg);
     free(dPoole.msg);
 
