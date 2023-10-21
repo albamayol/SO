@@ -67,7 +67,7 @@ void sig_func() {
 */
 void printInfoFile() {
     
-    printF("File read correctly:\n");
+    printF("\nFile read correctly:\n");
     asprintf(&dPoole.msg, "Server - %s\n", dPoole.serverName);
     printF(dPoole.msg);
     free(dPoole.msg);
@@ -83,7 +83,7 @@ void printInfoFile() {
     free(dPoole.msg);
     
 
-    asprintf(&dPoole.msg, "Port Discovery - %s\n", dPoole.puertoDiscovery);
+    asprintf(&dPoole.msg, "Port Server - %s\n\n", dPoole.puertoServer);
     printF(dPoole.msg);
     free(dPoole.msg);
 
