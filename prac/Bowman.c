@@ -173,6 +173,48 @@ void printInfoFile() {
 }
 
 /*
+@Finalitat: Comprobar las posibles casuisticas con el comando DOWNLOAD
+@Paràmetres: char*: downloadPtr, puntero al primer caracter, es decir a la 'D'
+@Retorn: ---
+*/
+void checkDownload(char *downloadPtr) {
+    char *mp3Ptr = strstr(downloadPtr + 10, ".MP3");
+    if (mp3Ptr != NULL) {
+        char nextChar = mp3Ptr[4];
+        if (nextChar == '\0') {
+            printF("Download started!\n");
+        } else {
+            printF("Please specify a single .mp3 file\n");
+        }
+    } else {
+        printF("Please specify an .mp3 file\n");
+    }
+}
+
+/*
+@Finalitat: Eliminar espacios en blanco adicionales
+@Paràmetres: char*: str, comanda recibida
+@Retorn: ---
+*/
+void removeExtraSpaces(char *comanda) {
+    int espacios = 0, j = 0;
+    
+    for (size_t i = 0; i < strlen(comanda); i++) {
+        if (comanda[i] == ' ') {
+            espacios++;
+        } else {
+            espacios = 0;
+        }
+
+        if (espacios <= 1) {
+            comanda[j] = comanda[i];
+            j++;
+        }
+    }
+    comanda[j] = '\0';
+}
+
+/*
 @Finalitat: Implementar el main del programa.
 @Paràmetres: ---
 @Retorn: int: Devuelve 0 en caso de que el programa haya finalizado exitosamente.
@@ -202,7 +244,8 @@ int main(int argc, char ** argv) {
             dBowman.ip = read_until(fd, '\n');
             dBowman.puerto = read_until(fd, '\n');
             
-            asprintf(&dBowman.msg, "\n%s user initialized\n", dBowman.clienteName);            printF(dBowman.msg);
+            asprintf(&dBowman.msg, "\n%s user initialized\n", dBowman.clienteName);
+            printF(dBowman.msg);
             free(dBowman.msg);
             dBowman.msg = NULL;
            
@@ -261,7 +304,6 @@ int main(int argc, char ** argv) {
                 free(dBowman.upperInput);
                 dBowman.upperInput = NULL;
             }
-
 
             free(dBowman.upperInput);
             dBowman.upperInput = NULL;
