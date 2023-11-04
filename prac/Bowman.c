@@ -192,29 +192,6 @@ void checkDownload(char *downloadPtr) {
 }
 
 /*
-@Finalitat: Eliminar espacios en blanco adicionales
-@Paràmetres: char*: str, comanda recibida
-@Retorn: ---
-*/
-void removeExtraSpaces(char *comanda) {
-    int espacios = 0, j = 0;
-    
-    for (size_t i = 0; i < strlen(comanda); i++) {
-        if (comanda[i] == ' ') {
-            espacios++;
-        } else {
-            espacios = 0;
-        }
-
-        if (espacios <= 1) {
-            comanda[j] = comanda[i];
-            j++;
-        }
-    }
-    comanda[j] = '\0';
-}
-
-/*
 @Finalitat: Implementar el main del programa.
 @Paràmetres: ---
 @Retorn: int: Devuelve 0 en caso de que el programa haya finalizado exitosamente.
@@ -248,16 +225,15 @@ int main(int argc, char ** argv) {
             printF(dBowman.msg);
             free(dBowman.msg);
             dBowman.msg = NULL;
-           
+
             printInfoFile();
 
             while (1) {
                 printF("$ ");
-                dBowman.input = (char*)malloc(sizeof(char) * 100);
-                memset(dBowman.input, 0, 100);
                 
-                read(0, dBowman.input, 100);
-                dBowman.input[strlen(dBowman.input) - 1] = '\0';
+                dBowman.input = read_until(0, '\n');
+                
+                dBowman.input[strlen(dBowman.input)] = '\0';
 
                 dBowman.upperInput = to_upper(dBowman.input);
 
