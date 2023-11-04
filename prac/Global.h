@@ -44,6 +44,19 @@ typedef struct {
     char *msg;
 } dataPoole;
 
+typedef struct {
+    int fdPoole;
+    int fdBowman;
+    struct sockaddr_in poole_addr;
+    struct sockaddr_in bowman_addr;
+    char *ipPoole;
+	char *portPooleString;
+    char *ipBowman; 
+    char *portBowmanString;
+    int portPoole;
+    int portBowman;
+} dataDiscovery;
+
 char* read_until(int fd, char delimiter);
 
 #endif
