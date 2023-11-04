@@ -106,7 +106,11 @@ char * to_upper(char * str) {
     return result;
 }
 
-
+/*
+@Finalitat: Devuelve el número de espacios que hay en una string, en este caso le pasamos una comanda
+@Paràmetres: char*: str, string a contar.
+@Retorn: int --> número de espacios de la string
+*/
 int checkDownloadCommand(char * input) {
     int length = strlen(input) + 1 ;
     int numSpaces = 0;
