@@ -57,9 +57,7 @@ typedef struct {
     struct sockaddr_in poole_addr;
     struct sockaddr_in bowman_addr;
     char *ipPoole;
-	//char *portPooleString;
     char *ipBowman; 
-    //char *portBowmanString;
     int portPoole;
     int portBowman;
 } dataDiscovery;

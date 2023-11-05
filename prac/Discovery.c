@@ -124,10 +124,8 @@ int main(int argc, char ** argv) {
         } else {
             dDiscovery.ipPoole = read_until(fd, '\n');
             dDiscovery.portPoole = read_until(fd, '\n');
-            //dDiscovery.portPoole = atoi(dDiscovery.portPooleString);
             dDiscovery.ipBowman = read_until(fd, '\n');
             dDiscovery.portBowman = read_until(fd, '\n');
-            //dDiscovery.portBowman = atoi(dDiscovery.portBowmanString);
 
             free(dDiscovery.ipPoole);
             dDiscovery.ipPoole = NULL;
