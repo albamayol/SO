@@ -45,6 +45,64 @@ void sig_func() {
     exit(EXIT_FAILURE);
 }
 
+void createPooleSocket() {
+    dDiscovery.fdPoole = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (dDiscovery.fdPoole < 0) {
+        perror ("Error al crear el socket de Poole");
+        exit (EXIT_FAILURE);
+    }
+
+    // Specify the adress and port of the socket
+    // We'll admit connexions to any IP of our machine in the specified port
+    bzero (&dDiscovery.poole_addr, sizeof (dDiscovery.poole_addr));
+    dDiscovery.poole_addr.sin_family = AF_INET;
+    dDiscovery.poole_addr.sin_port = htons (atoi(dDiscovery.portPoole));
+
+    if (inet_pton(AF_INET, dDiscovery.ipPoole, &dDiscovery.poole_addr.sin_port) < 0) {
+        perror("Error al convertir la dirección IP");
+        exit(EXIT_FAILURE);
+    }
+
+    // When executing bind, we should add a cast:
+    // bind waits for a struct sockaddr* and we are passing a struct sockaddr_in*
+    if (bind (dDiscovery.fdPoole, (void *) &dDiscovery.poole_addr, sizeof (dDiscovery.poole_addr)) < 0) {
+        perror ("Error al enlazar el socket de Poole");
+        exit (EXIT_FAILURE);
+    }
+
+    // We now open the port (20 backlog queue, typical value)
+    listen (dDiscovery.fdPoole, 20);
+}
+
+void createBowmanSocket() {
+    dDiscovery.fdBowman = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (dDiscovery.fdBowman < 0) {
+        perror ("Error al crear el socket de Bowman");
+        exit (EXIT_FAILURE);
+    }
+
+    // Specify the adress and port of the socket
+    // We'll admit connexions to any IP of our machine in the specified port
+    bzero (&dDiscovery.bowman_addr, sizeof (dDiscovery.bowman_addr));
+    dDiscovery.bowman_addr.sin_family = AF_INET;
+    dDiscovery.bowman_addr.sin_port = htons (atoi(dDiscovery.portBowman));
+
+    if (inet_pton(AF_INET, dDiscovery.ipBowman, &dDiscovery.bowman_addr.sin_port) < 0) {
+        perror("Error al convertir la dirección IP");
+        exit(EXIT_FAILURE);
+    }
+
+    // When executing bind, we should add a cast:
+    // bind waits for a struct sockaddr* and we are passing a struct sockaddr_in*
+    if (bind (dDiscovery.fdBowman, (void *) &dDiscovery.bowman_addr, sizeof (dDiscovery.bowman_addr)) < 0) {
+        perror ("Error al enlazar el socket de Bowman");
+        exit (EXIT_FAILURE);
+    }
+
+    // We now open the port (20 backlog queue, typical value)
+    listen (dDiscovery.fdBowman, 20);
+}
+
 /*
 @Finalitat: Implementar el main del programa.
 @Paràmetres: ---
@@ -65,27 +123,11 @@ int main(int argc, char ** argv) {
             exit(EXIT_FAILURE);
         } else {
             dDiscovery.ipPoole = read_until(fd, '\n');
-            dDiscovery.portPooleString = read_until(fd, '\n');
-            dDiscovery.portPoole = atoi(dDiscovery.portPooleString);
+            dDiscovery.portPoole = read_until(fd, '\n');
+            //dDiscovery.portPoole = atoi(dDiscovery.portPooleString);
             dDiscovery.ipBowman = read_until(fd, '\n');
-            dDiscovery.portBowmanString = read_until(fd, '\n');
-            dDiscovery.portBowman = atoi(dDiscovery.portBowmanString);
-
-            // Create the socket for the poole
-            dDiscovery.fdPoole = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
-            if (dDiscovery.fdPoole < 0) {
-                perror ("socket TCP");
-                exit (EXIT_FAILURE);
-            }
-
-            // Specify the adress and port of the remote host
-            bzero (&dDiscovery.poole_addr, sizeof (dDiscovery.poole_addr));
-            dDiscovery.poole_addr.sin_family = AF_INET;
-            dDiscovery.poole_addr.sin_port = htons (dDiscovery.portPoole);
-            dDiscovery.poole_addr.sin_addr = dDiscovery.ipPoole;
-
-
-            
+            dDiscovery.portBowman = read_until(fd, '\n');
+            //dDiscovery.portBowman = atoi(dDiscovery.portBowmanString);
 
             free(dDiscovery.ipPoole);
             dDiscovery.ipPoole = NULL;
@@ -97,6 +139,10 @@ int main(int argc, char ** argv) {
             dDiscovery.portBowman = NULL;
 
             close(fd);
+
+
+            createPooleSocket();
+            createBowmanSocket();
         }
     }
     return 0;

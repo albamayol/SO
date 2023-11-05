@@ -20,6 +20,9 @@ Autores:
 #include <signal.h>
 #include <stdint.h>
 #include <sys/wait.h> 
+#include <sys/socket.h>
+#include <netinet/in.h>
+
 
 #define printF(x) write(1, x, strlen(x))
 
@@ -35,6 +38,10 @@ typedef struct {
 } dataBowman;
 
 typedef struct {
+    int fdPooleServer;
+    int fdPooleClient;
+    struct sockaddr_in discovery_addr;
+    struct sockaddr_in poole_addr;
     char *serverName;
 	char *pathServerFile;
     char *ipDiscovery; 
@@ -50,9 +57,9 @@ typedef struct {
     struct sockaddr_in poole_addr;
     struct sockaddr_in bowman_addr;
     char *ipPoole;
-	char *portPooleString;
+	//char *portPooleString;
     char *ipBowman; 
-    char *portBowmanString;
+    //char *portBowmanString;
     int portPoole;
     int portBowman;
 } dataDiscovery;

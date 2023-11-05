@@ -6,7 +6,7 @@ Autores:
 
 #include "Global.h"
 
-dataPoole dDiscovery;
+dataPoole dPoole;
 
 /*
 @Finalitat: Inicializar las variables a NULL.
@@ -14,13 +14,13 @@ dataPoole dDiscovery;
 @Retorn: ---
 */
 void inicializarDataPoole() {
-    dDiscovery.serverName = NULL;
-	dDiscovery.pathServerFile = NULL;
-    dDiscovery.ipDiscovery = NULL; 
-    dDiscovery.puertoDiscovery = NULL;
-    dDiscovery.ipServer = NULL; 
-    dDiscovery.puertoServer = NULL;
-    dDiscovery.msg = NULL;
+    dPoole.serverName = NULL;
+	dPoole.pathServerFile = NULL;
+    dPoole.ipDiscovery = NULL; 
+    dPoole.puertoDiscovery = NULL;
+    dPoole.ipServer = NULL; 
+    dPoole.puertoServer = NULL;
+    dPoole.msg = NULL;
 }
 
 /*
@@ -29,33 +29,33 @@ void inicializarDataPoole() {
 @Retorn: ---
 */
 void sig_func() {
-    if (dDiscovery.serverName != NULL) {
-        free(dDiscovery.serverName);
-        dDiscovery.serverName = NULL;
+    if (dPoole.serverName != NULL) {
+        free(dPoole.serverName);
+        dPoole.serverName = NULL;
     }
-    if (dDiscovery.pathServerFile != NULL) {
-        free(dDiscovery.pathServerFile);
-        dDiscovery.pathServerFile = NULL;
+    if (dPoole.pathServerFile != NULL) {
+        free(dPoole.pathServerFile);
+        dPoole.pathServerFile = NULL;
     }
-    if (dDiscovery.ipDiscovery != NULL) {
-        free(dDiscovery.ipDiscovery);
-        dDiscovery.ipDiscovery = NULL;
+    if (dPoole.ipDiscovery != NULL) {
+        free(dPoole.ipDiscovery);
+        dPoole.ipDiscovery = NULL;
     }
-    if (dDiscovery.puertoDiscovery != NULL) {
-        free(dDiscovery.puertoDiscovery);
-        dDiscovery.puertoDiscovery = NULL;
+    if (dPoole.puertoDiscovery != NULL) {
+        free(dPoole.puertoDiscovery);
+        dPoole.puertoDiscovery = NULL;
     }
-    if (dDiscovery.ipServer != NULL) {
-        free(dDiscovery.ipServer);
-        dDiscovery.ipServer = NULL;
+    if (dPoole.ipServer != NULL) {
+        free(dPoole.ipServer);
+        dPoole.ipServer = NULL;
     }
-    if (dDiscovery.puertoServer != NULL) {
-        free(dDiscovery.puertoServer);
-        dDiscovery.puertoServer = NULL;
+    if (dPoole.puertoServer != NULL) {
+        free(dPoole.puertoServer);
+        dPoole.puertoServer = NULL;
     }
-    if (dDiscovery.msg != NULL) {
-        free(dDiscovery.msg);
-        dDiscovery.msg = NULL;
+    if (dPoole.msg != NULL) {
+        free(dPoole.msg);
+        dPoole.msg = NULL;
     }
     exit(EXIT_FAILURE);
 }
@@ -68,34 +68,81 @@ void sig_func() {
 void printInfoFile() {
     
     printF("\nFile read correctly:\n");
-    asprintf(&dDiscovery.msg, "Server - %s\n", dDiscovery.serverName);
-    printF(dDiscovery.msg);
-    free(dDiscovery.msg);
+    asprintf(&dPoole.msg, "Server - %s\n", dPoole.serverName);
+    printF(dPoole.msg);
+    free(dPoole.msg);
     
 
-    asprintf(&dDiscovery.msg, "Server Directory - %s\n", dDiscovery.pathServerFile);
-    printF(dDiscovery.msg);
-    free(dDiscovery.msg);
+    asprintf(&dPoole.msg, "Server Directory - %s\n", dPoole.pathServerFile);
+    printF(dPoole.msg);
+    free(dPoole.msg);
     
 
-    asprintf(&dDiscovery.msg, "IP Discovery - %s\n", dDiscovery.ipDiscovery);
-    printF(dDiscovery.msg);
-    free(dDiscovery.msg);
+    asprintf(&dPoole.msg, "IP Discovery - %s\n", dPoole.ipDiscovery);
+    printF(dPoole.msg);
+    free(dPoole.msg);
     
 
-    asprintf(&dDiscovery.msg, "Port Server - %s\n\n", dDiscovery.puertoServer);
-    printF(dDiscovery.msg);
-    free(dDiscovery.msg);
+    asprintf(&dPoole.msg, "Port Server - %s\n\n", dPoole.puertoServer);
+    printF(dPoole.msg);
+    free(dPoole.msg);
 
-    asprintf(&dDiscovery.msg, "IP Server - %s\n", dDiscovery.ipServer);
-    printF(dDiscovery.msg);
-    free(dDiscovery.msg);
+    asprintf(&dPoole.msg, "IP Server - %s\n", dPoole.ipServer);
+    printF(dPoole.msg);
+    free(dPoole.msg);
 
-    asprintf(&dDiscovery.msg, "Port Server - %s\n\n", dDiscovery.puertoServer);
-    printF(dDiscovery.msg);
-    free(dDiscovery.msg);
+    asprintf(&dPoole.msg, "Port Server - %s\n\n", dPoole.puertoServer);
+    printF(dPoole.msg);
+    free(dPoole.msg);
 
-    dDiscovery.msg = NULL;
+    dPoole.msg = NULL;
+
+}
+
+void connectToDiscovery() {
+    dPoole.fdPooleClient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (dPoole.fdPooleClient < 0) {
+        perror ("Error al crear el socket de Discovery");
+        exit (EXIT_FAILURE);
+    }
+
+    bzero (&dPoole.discovery_addr, sizeof (dPoole.discovery_addr));
+    dPoole.discovery_addr.sin_family = AF_INET;
+    dPoole.discovery_addr.sin_port = htons(atoi(dPoole.puertoDiscovery)); 
+
+    if (inet_pton(AF_INET, dPoole.ipDiscovery, &dPoole.discovery_addr.sin_addr) < 0) {
+        perror("Error al convertir la dirección IP");
+        exit(EXIT_FAILURE);
+    }
+
+    if (connect(dPoole.fdPooleClient, (struct sockaddr*)&dPoole.discovery_addr, sizeof(dPoole.discovery_addr)) < 0) {
+        perror("Error al conectar a Discovery");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void waittingForRequests() {
+    dPoole.fdPooleServer = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (dPoole.fdPooleServer < 0) {
+        perror ("Error al crear el socket de Bowman");
+        exit (EXIT_FAILURE);
+    }
+
+    bzero (&dPoole.poole_addr, sizeof (dPoole.poole_addr));
+    dPoole.poole_addr.sin_family = AF_INET;
+    dPoole.poole_addr.sin_port = htons(aoti(dPoole.puertoServer)); 
+    
+    if (inet_pton(AF_INET, dPoole.ipServer, &dPoole.poole_addr.sin_addr) < 0) {
+        perror("Error al convertir la dirección IP");
+        exit(EXIT_FAILURE);
+    }
+
+    if (bind(dPoole.fdPooleServer, (struct sockaddr*)&dPoole.poole_addr, sizeof(dPoole.poole_addr)) < 0) {
+        perror("Error al enlazar el socket de Poole");
+        exit(EXIT_FAILURE);
+    }
+
+    listen(dPoole.fdPooleServer, 20); // Esperar conexiones entrantes de Bowman
 
 }
 
@@ -118,29 +165,32 @@ int main(int argc, char ** argv) {
             printF("ERROR. Could not open user's file\n");
             exit(EXIT_FAILURE);
         } else {
-            dDiscovery.serverName = read_until(fd, '\n');
-            dDiscovery.pathServerFile = read_until(fd, '\n');
-            dDiscovery.ipDiscovery = read_until(fd, '\n');
-            dDiscovery.puertoDiscovery = read_until(fd, '\n');
-            dDiscovery.ipServer = read_until(fd, '\n');
-            dDiscovery.puertoServer = read_until(fd, '\n');
+            dPoole.serverName = read_until(fd, '\n');
+            dPoole.pathServerFile = read_until(fd, '\n');
+            dPoole.ipDiscovery = read_until(fd, '\n');
+            dPoole.puertoDiscovery = read_until(fd, '\n');
+            dPoole.ipServer = read_until(fd, '\n');
+            dPoole.puertoServer = read_until(fd, '\n');
 
             printInfoFile();
 
-            free(dDiscovery.serverName);
-            dDiscovery.serverName = NULL;
-            free(dDiscovery.pathServerFile);
-            dDiscovery.pathServerFile = NULL;
-            free(dDiscovery.ipDiscovery);
-            dDiscovery.ipDiscovery = NULL;
-            free(dDiscovery.puertoDiscovery);
-            dDiscovery.puertoDiscovery = NULL;
-            free(dDiscovery.ipServer);
-            dDiscovery.ipServer = NULL;
-            free(dDiscovery.puertoServer);
-            dDiscovery.puertoServer = NULL;
+            free(dPoole.serverName);
+            dPoole.serverName = NULL;
+            free(dPoole.pathServerFile);
+            dPoole.pathServerFile = NULL;
+            free(dPoole.ipDiscovery);
+            dPoole.ipDiscovery = NULL;
+            free(dPoole.puertoDiscovery);
+            dPoole.puertoDiscovery = NULL;
+            free(dPoole.ipServer);
+            dPoole.ipServer = NULL;
+            free(dPoole.puertoServer);
+            dPoole.puertoServer = NULL;
 
             close(fd);
+
+            connectToDiscovery();
+            waittingForRequests();
         }
     }
     return 0;
