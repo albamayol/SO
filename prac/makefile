@@ -6,6 +6,9 @@ Bowman.exe: Bowman.o Global.o
 Poole.exe: Poole.o Global.o
 	gcc Poole.o Global.o -o Poole.exe -pthread -Wall -Wextra -g
 
+Discovery.exe: Discovery.o Global.o
+	gcc Discovery.o Global.o -o Discovery.exe -pthread -Wall -Wextra -g
+
 Global.o: Global.c Global.h
 	gcc -c Global.c -Wall -Wextra
 
@@ -15,9 +18,13 @@ Bowman.o: Bowman.c Global.h
 Poole.o: Poole.c Global.h
 	gcc -c Poole.c -pthread -Wall -Wextra
 
+Discovery.o: Discovery.c Global.h
+	gcc -c Discovery.c -pthread -Wall -Wextra
+
 .PHONY: clean
 clean:
 	rm *.o
 	rm Bowman.exe
 	rm Poole.exe
+	rm Discovery.exe
 	
