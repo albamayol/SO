@@ -45,7 +45,7 @@ void sig_func() {
     exit(EXIT_FAILURE);
 }
 
-void createPooleSocket() {
+void startPooleListener() {
     dDiscovery.fdPoole = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dDiscovery.fdPoole < 0) {
         perror ("Error al crear el socket de Poole");
@@ -74,7 +74,7 @@ void createPooleSocket() {
     listen (dDiscovery.fdPoole, 20);
 }
 
-void createBowmanSocket() {
+void startBowmanListener() {
     dDiscovery.fdBowman = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dDiscovery.fdBowman < 0) {
         perror ("Error al crear el socket de Bowman");
@@ -138,9 +138,8 @@ int main(int argc, char ** argv) {
 
             close(fd);
 
-
-            createPooleSocket();
-            createBowmanSocket();
+            startPooleListener();
+            startBowmanListener();
         }
     }
     return 0;

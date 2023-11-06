@@ -99,7 +99,7 @@ void printInfoFile() {
 
 }
 
-void connectToDiscovery() {
+void establishDiscoveryConnection() {
     dPoole.fdPooleClient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dPoole.fdPooleClient < 0) {
         perror ("Error al crear el socket de Discovery");
@@ -189,8 +189,8 @@ int main(int argc, char ** argv) {
 
             close(fd);
 
-            connectToDiscovery();
-            waittingForRequests();
+            establishDiscoveryConnection();
+            //waittingForRequests();
         }
     }
     return 0;

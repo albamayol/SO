@@ -27,6 +27,8 @@ Autores:
 #define printF(x) write(1, x, strlen(x))
 
 typedef struct {
+    int fdDiscovery;
+    struct sockaddr_in discovery_addr;
     char *msg;
     char *input;
     char *upperInput;
