@@ -45,6 +45,15 @@ void sig_func() {
     exit(EXIT_FAILURE);
 }
 
+void *clientHandler(void *arg) {
+    int clientSocket = *((int *)arg);
+    
+    // Aquí puedes leer datos del cliente y procesarlos
+    
+    close(clientSocket);
+    pthread_exit(NULL);
+}
+
 void startPooleListener() {
     dDiscovery.fdPoole = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dDiscovery.fdPoole < 0) {
@@ -72,6 +81,22 @@ void startPooleListener() {
 
     // We now open the port (20 backlog queue, typical value)
     listen (dDiscovery.fdPoole, 20);
+
+
+    // Procesamos las peticiones de Poole
+    while (1) {
+        socklen_t pAddr = sizeof(dDiscovery.poole_addr);
+        int new_fd = accept(dDiscovery.fdPoole, (struct sockaddr *)&dDiscovery.poole_addr, &pAddr);
+        if (new_fd < 0) {
+            perror("Error al aceptar la conexión de Poole");
+            continue;
+        }
+
+        pthread_t thread;
+        if (pthread_create(&thread, NULL, clientHandler, &new_fd) != 0) {
+            perror("Error al crear el hilo para el cliente");
+        }
+    }
 }
 
 void startBowmanListener() {
@@ -137,9 +162,12 @@ int main(int argc, char ** argv) {
             dDiscovery.portBowman = NULL;
 
             close(fd);
-
+            
             startPooleListener();
             startBowmanListener();
+            
+
+            
         }
     }
     return 0;

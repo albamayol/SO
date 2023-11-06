@@ -22,6 +22,7 @@ Autores:
 #include <sys/wait.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <pthread.h>
 
 
 #define printF(x) write(1, x, strlen(x))

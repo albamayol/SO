@@ -254,9 +254,6 @@ int main(int argc, char ** argv) {
 
             printInfoFile();
 
-            // Es en este momento cuando debemos establecer la conexión con Discovery?
-            establishDiscoveryConnection();
-
             while (1) {
                 printF("$ ");
                 
@@ -270,6 +267,7 @@ int main(int argc, char ** argv) {
 
                 if (!clientConnected) {
                     if (strcmp(dBowman.upperInput, "CONNECT") == 0) {
+                        establishDiscoveryConnection();
                         asprintf(&dBowman.msg, "%s connected to HAL 9000 system, welcome music lover!\n", dBowman.clienteName);
                         printF(dBowman.msg);
                         free(dBowman.msg);
@@ -308,8 +306,6 @@ int main(int argc, char ** argv) {
                 dBowman.input = NULL;
                 free(dBowman.upperInput);
                 dBowman.upperInput = NULL;
-
-                //establishDiscoveryConnection();
             }
 
             free(dBowman.upperInput);
