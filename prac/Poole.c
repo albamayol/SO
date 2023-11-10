@@ -130,7 +130,7 @@ void waittingForRequests() {
 
     bzero (&dPoole.poole_addr, sizeof (dPoole.poole_addr));
     dPoole.poole_addr.sin_family = AF_INET;
-    dPoole.poole_addr.sin_port = htons(aoti(dPoole.puertoServer)); 
+    dPoole.poole_addr.sin_port = htons(atoi(dPoole.puertoServer)); 
     
     if (inet_pton(AF_INET, dPoole.ipServer, &dPoole.poole_addr.sin_addr) < 0) {
         perror("Error al convertir la dirección IP");

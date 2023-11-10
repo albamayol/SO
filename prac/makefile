@@ -9,7 +9,10 @@ Poole.exe: Poole.o Global.o
 Discovery.exe: Discovery.o Global.o
 	gcc Discovery.o Global.o -o Discovery.exe -pthread -Wall -Wextra -g
 
-Global.o: Global.c Global.h
+linkedlist.o: linkedlist.c linkedlist.h
+	gcc -c linkedlist.c -Wall -Wextra
+
+Global.o: Global.c Global.h linkedlist.h
 	gcc -c Global.c -Wall -Wextra
 
 Bowman.o: Bowman.c Global.h
@@ -20,6 +23,8 @@ Poole.o: Poole.c Global.h
 
 Discovery.o: Discovery.c Global.h
 	gcc -c Discovery.c -pthread -Wall -Wextra
+
+
 
 .PHONY: clean
 clean:

@@ -42,16 +42,69 @@ void sig_func() {
         free(dDiscovery.portBowman);
         dDiscovery.portBowman = NULL;
     }
+    
+    LINKEDLIST_destroy(&dDiscovery.poole_list); //el destroy itera por toda la list haciendo free's de los elementos
+    LINKEDLIST_destroy(&dDiscovery.bowman_list);
+
+    /* HACER EN EL FUTURO:
+    Element client;
+
+    LINKEDLIST_goToHead(&connections);
+		
+	while(!LINKEDLIST_isAtEnd(connections)) {
+        client = LINKEDLIST_get(&connections);
+    	kill(client.signalID, SIGINT);
+		LINKEDLIST_next(&connections);
+    }
+	LINKEDLIST_destroy(&connections);*/
     exit(EXIT_FAILURE);
 }
 
-void *clientHandler(void *arg) {
-    int clientSocket = *((int *)arg);
+static void *thread_function_poole(void *fd) {
+    int fd_poole = *((int *)fd);
+    //TODO añadir conexion poole a la lista
     
-    // Aquí puedes leer datos del cliente y procesarlos
     
-    close(clientSocket);
+    
+    close(fd_poole);
     pthread_exit(NULL);
+}
+
+static void *thread_function_bowman(void *fd) {
+    int fd_bowman = *((int *)fd);
+    
+    
+    
+    close(fd_bowman);
+    pthread_exit(NULL);
+}
+
+void connect_Poole() {
+    socklen_t pAddr = sizeof(dDiscovery.poole_addr);
+    int fd_poole = accept(dDiscovery.fdPoole, (struct sockaddr *)&dDiscovery.poole_addr, &pAddr);
+    if (fd_poole < 0) {
+        perror("Error al aceptar la conexión de Poole");
+        continue;
+    }
+
+    pthread_t thread_poole;
+    if (pthread_create(&thread_poole, NULL, thread_function_poole, &fd_poole) != 0) {
+        perror("Error al crear el thread para Poole");
+    }
+}
+
+void connect_Bowman() {
+    socklen_t bAddr = sizeof(dDiscovery.bowman_addr);
+    int fd_bowman = accept(dDiscovery.fdBowman, (struct sockaddr *)&dDiscovery.bowman_addr, &bAddr);
+    if (fd_bowman < 0) {
+        perror("Error al aceptar la conexión de Poole");
+        continue;
+    }
+
+    pthread_t thread_bowman;
+    if (pthread_create(&thread_bowman, NULL, thread_function_bowman, &fd_bowman) != 0) {
+        perror("Error al crear el thread para Poole");
+    }
 }
 
 void startPooleListener() {
@@ -83,19 +136,9 @@ void startPooleListener() {
     listen (dDiscovery.fdPoole, 20);
 
 
-    // Procesamos las peticiones de Poole
+    // Procesamos las peticiones de Poole's
     while (1) {
-        socklen_t pAddr = sizeof(dDiscovery.poole_addr);
-        int new_fd = accept(dDiscovery.fdPoole, (struct sockaddr *)&dDiscovery.poole_addr, &pAddr);
-        if (new_fd < 0) {
-            perror("Error al aceptar la conexión de Poole");
-            continue;
-        }
-
-        pthread_t thread;
-        if (pthread_create(&thread, NULL, clientHandler, &new_fd) != 0) {
-            perror("Error al crear el hilo para el cliente");
-        }
+        connect_Poole();
     }
 }
 
@@ -126,6 +169,11 @@ void startBowmanListener() {
 
     // We now open the port (20 backlog queue, typical value)
     listen (dDiscovery.fdBowman, 20);
+
+    //procesamos las peticiones de Bowman's
+    while(1) {
+        connect_Bowman();
+    }
 }
 
 /*
@@ -142,6 +190,9 @@ int main(int argc, char ** argv) {
         printF("ERROR. Number of arguments is not correct\n");
         exit(EXIT_FAILURE);
     } else {
+        dDiscovery.poole_list = LINKEDLIST_create();
+        dDiscovery.bowman_list = LINKEDLIST_create();
+
         int fd = open(argv[1], O_RDONLY);
         if (fd == -1) {
             printF("ERROR. Could not open user's file\n");
@@ -166,7 +217,6 @@ int main(int argc, char ** argv) {
             startPooleListener();
             startBowmanListener();
             
-
             
         }
     }

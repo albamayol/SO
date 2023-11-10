@@ -201,7 +201,7 @@ void establishDiscoveryConnection() {
         perror ("Error al crear el socket de Discovery");
         exit (EXIT_FAILURE);
     }
-
+    
     bzero (&dBowman.discovery_addr, sizeof (dBowman.discovery_addr));
     dBowman.discovery_addr.sin_family = AF_INET;
     dBowman.discovery_addr.sin_port = htons(atoi(dBowman.puerto)); 

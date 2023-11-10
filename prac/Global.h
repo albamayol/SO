@@ -23,6 +23,8 @@ Autores:
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include <arpa/inet.h>
+#include "linkedlist.h"
 
 
 #define printF(x) write(1, x, strlen(x))
@@ -63,6 +65,8 @@ typedef struct {
     char *ipBowman; 
     int portPoole;
     int portBowman;
+    LinkedList poole_list;
+    LinkedList bowman_list;
 } dataDiscovery;
 
 char* read_until(int fd, char delimiter);
