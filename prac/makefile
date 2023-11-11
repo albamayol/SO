@@ -1,4 +1,4 @@
-all: Bowman.exe Poole.exe
+all: Bowman.exe Poole.exe Discovery.exe
 
 Bowman.exe: Bowman.o Global.o
 	gcc Bowman.o Global.o -o Bowman.exe -pthread -Wall -Wextra -g
@@ -10,10 +10,10 @@ Discovery.exe: Discovery.o Global.o
 	gcc Discovery.o Global.o -o Discovery.exe -pthread -Wall -Wextra -g
 
 linkedlist.o: linkedlist.c linkedlist.h
-	gcc -c linkedlist.c -Wall -Wextra
+	gcc -c linkedlist.c -pthread -Wall -Wextra
 
 Global.o: Global.c Global.h linkedlist.h
-	gcc -c Global.c -Wall -Wextra
+	gcc -c Global.c -pthread -Wall -Wextra
 
 Bowman.o: Bowman.c Global.h
 	gcc -c Bowman.c -pthread -Wall -Wextra
@@ -24,6 +24,8 @@ Poole.o: Poole.c Global.h
 Discovery.o: Discovery.c Global.h
 	gcc -c Discovery.c -pthread -Wall -Wextra
 
+Trama.o: Trama.c Trama.h
+	gcc -c Trama.c -pthread -Wall -Wextra
 
 
 .PHONY: clean

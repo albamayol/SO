@@ -63,7 +63,13 @@ void sig_func() {
 static void *thread_function_poole(void *fd) {
     int fd_poole = *((int *)fd);
     //TODO añadir conexion poole a la lista
-    
+
+    Element element;
+    //add element as the last one
+    while(!LINKEDLIST_isAtEnd(poole_list)) {
+        LINKEDLIST_next(&poole_list);
+    }
+    LINKEDLIST_add(&poole_list, element);
     
     
     close(fd_poole);

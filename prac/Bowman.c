@@ -199,22 +199,27 @@ void establishDiscoveryConnection() {
     dBowman.fdDiscovery = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dBowman.fdDiscovery < 0) {
         perror ("Error al crear el socket de Discovery");
-        exit (EXIT_FAILURE);
+        close(dBowman.fdDiscovery);
+        sig_func();
     }
-    
+
     bzero (&dBowman.discovery_addr, sizeof (dBowman.discovery_addr));
     dBowman.discovery_addr.sin_family = AF_INET;
     dBowman.discovery_addr.sin_port = htons(atoi(dBowman.puerto)); 
 
     if (inet_pton(AF_INET, dBowman.ip, &dBowman.discovery_addr.sin_addr) < 0) {
         perror("Error al convertir la dirección IP");
-        exit(EXIT_FAILURE);
+        close(dBowman.fdDiscovery);
+        sig_func();
     }
 
     if (connect(dBowman.fdDiscovery, (struct sockaddr*)&dBowman.discovery_addr, sizeof(dBowman.discovery_addr)) < 0) {
         perror("Error al conectar a Discovery");
-        exit(EXIT_FAILURE);
+        close(dBowman.fdDiscovery);
+        sig_func();
     }
+
+    //TRANSMISIONES DISCOVERY<->BOWMAN
 }
 
 /*

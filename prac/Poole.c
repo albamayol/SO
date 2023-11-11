@@ -103,7 +103,8 @@ void establishDiscoveryConnection() {
     dPoole.fdPooleClient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dPoole.fdPooleClient < 0) {
         perror ("Error al crear el socket de Discovery");
-        exit (EXIT_FAILURE);
+        close(dPoole.fdPooleClient);
+        sig_func();
     }
 
     bzero (&dPoole.discovery_addr, sizeof (dPoole.discovery_addr));
@@ -112,20 +113,25 @@ void establishDiscoveryConnection() {
 
     if (inet_pton(AF_INET, dPoole.ipDiscovery, &dPoole.discovery_addr.sin_addr) < 0) {
         perror("Error al convertir la dirección IP");
-        exit(EXIT_FAILURE);
+        close(dPoole.fdPooleClient);
+        sig_func();
     }
 
     if (connect(dPoole.fdPooleClient, (struct sockaddr*)&dPoole.discovery_addr, sizeof(dPoole.discovery_addr)) < 0) {
         perror("Error al conectar a Discovery");
-        exit(EXIT_FAILURE);
+        close(dPoole.fdPooleClient);
+        sig_func();
     }
+
+    //TRANSMISIONES DISCOVERY<->POOLE
 }
 
-void waittingForRequests() {
+void waitingForRequests() {
     dPoole.fdPooleServer = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dPoole.fdPooleServer < 0) {
         perror ("Error al crear el socket de Bowman");
-        exit (EXIT_FAILURE);
+        close(dPoole.fdPooleServer);
+        sig_func();
     }
 
     bzero (&dPoole.poole_addr, sizeof (dPoole.poole_addr));
@@ -134,16 +140,18 @@ void waittingForRequests() {
     
     if (inet_pton(AF_INET, dPoole.ipServer, &dPoole.poole_addr.sin_addr) < 0) {
         perror("Error al convertir la dirección IP");
-        exit(EXIT_FAILURE);
+        close(dPoole.fdPooleServer);
+        sig_func();
     }
 
     if (bind(dPoole.fdPooleServer, (struct sockaddr*)&dPoole.poole_addr, sizeof(dPoole.poole_addr)) < 0) {
         perror("Error al enlazar el socket de Poole");
-        exit(EXIT_FAILURE);
+        close(dPoole.fdPooleServer);
+        sig_func();
     }
 
     listen(dPoole.fdPooleServer, 20); // Esperar conexiones entrantes de Bowman
-
+    //TRANSMISIONES POOLE<->BOWMAN
 }
 
 /*
@@ -190,7 +198,7 @@ int main(int argc, char ** argv) {
             close(fd);
 
             establishDiscoveryConnection();
-            //waittingForRequests();
+            //waitingForRequests();
         }
     }
     return 0;
