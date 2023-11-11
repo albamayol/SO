@@ -153,7 +153,7 @@ LinkedList LINKEDLIST_create ();
  * @Return: ---
  *
  ****************************************************************************/
-void 	LINKEDLIST_add (LinkedList * list, Element element);
+void LINKEDLIST_add (LinkedList * list, Element element);
 
 
 /**************************************************************************** 
@@ -182,7 +182,7 @@ void 	LINKEDLIST_add (LinkedList * list, Element element);
  * @Return: ---
  *
  ****************************************************************************/
-void 	LINKEDLIST_remove (LinkedList * list);
+void LINKEDLIST_remove (LinkedList * list);
 
 
 /**************************************************************************** 
@@ -207,7 +207,7 @@ Element LINKEDLIST_get (LinkedList * list);
  * @Return: true (!0) if this list contains no elements, false (0) otherwise
  *
  ****************************************************************************/
-int 	LINKEDLIST_isEmpty (LinkedList list);
+int LINKEDLIST_isEmpty (LinkedList list);
 
 
 /**************************************************************************** 
@@ -217,7 +217,7 @@ int 	LINKEDLIST_isEmpty (LinkedList list);
  * @Return: ---
  *
  ****************************************************************************/
-void 	LINKEDLIST_goToHead (LinkedList * list);
+void LINKEDLIST_goToHead (LinkedList * list);
 
 
 /**************************************************************************** 
@@ -230,7 +230,7 @@ void 	LINKEDLIST_goToHead (LinkedList * list);
  * @Return: ---
  *
  ****************************************************************************/
-void 	LINKEDLIST_next (LinkedList * list);
+void LINKEDLIST_next (LinkedList * list);
 
 
 /**************************************************************************** 
@@ -241,7 +241,7 @@ void 	LINKEDLIST_next (LinkedList * list);
  * @Return: true (!0) if the POV is after the last element in the list
  *
  ****************************************************************************/
-int 	LINKEDLIST_isAtEnd (LinkedList list);
+int LINKEDLIST_isAtEnd (LinkedList list);
 
 
 /**************************************************************************** 
@@ -253,7 +253,7 @@ int 	LINKEDLIST_isAtEnd (LinkedList list);
  * @Return: ---
  *
  ****************************************************************************/
-void 	LINKEDLIST_destroy (LinkedList * list);
+void LINKEDLIST_destroy (LinkedList * list);
 
 
 /**************************************************************************** 
@@ -265,8 +265,7 @@ void 	LINKEDLIST_destroy (LinkedList * list);
  * @Return: an error code from the list of constants defined.
  *
  ****************************************************************************/
-int		LINKEDLIST_getErrorCode (LinkedList list);
+int	LINKEDLIST_getErrorCode (LinkedList list);
 
 
 #endif
-

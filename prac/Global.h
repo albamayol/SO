@@ -33,10 +33,10 @@ Autores:
 #define printF(x) write(1, x, strlen(x))
 
 typedef struct {
-  char type;
-  int header_length;
-  char *header;
-  char *data;
+    char type;
+    int header_length;
+    char *header;
+    char *data;
 } Trama;
 
 typedef struct {
@@ -73,8 +73,8 @@ typedef struct {
     struct sockaddr_in bowman_addr;
     char *ipPoole;
     char *ipBowman; 
-    int portPoole;
-    int portBowman;
+    char *portPoole;
+    char *portBowman;
     LinkedList poole_list;
     LinkedList bowman_list;
 } dataDiscovery;

@@ -66,10 +66,10 @@ static void *thread_function_poole(void *fd) {
 
     Element element;
     //add element as the last one
-    while(!LINKEDLIST_isAtEnd(poole_list)) {
-        LINKEDLIST_next(&poole_list);
+    while(!LINKEDLIST_isAtEnd(dDiscovery.poole_list)) {
+        LINKEDLIST_next(&dDiscovery.poole_list);
     }
-    LINKEDLIST_add(&poole_list, element);
+    LINKEDLIST_add(&dDiscovery.poole_list, element);
     
     
     close(fd_poole);
@@ -90,7 +90,7 @@ void connect_Poole() {
     int fd_poole = accept(dDiscovery.fdPoole, (struct sockaddr *)&dDiscovery.poole_addr, &pAddr);
     if (fd_poole < 0) {
         perror("Error al aceptar la conexión de Poole");
-        continue;
+        return;
     }
 
     pthread_t thread_poole;
@@ -104,7 +104,7 @@ void connect_Bowman() {
     int fd_bowman = accept(dDiscovery.fdBowman, (struct sockaddr *)&dDiscovery.bowman_addr, &bAddr);
     if (fd_bowman < 0) {
         perror("Error al aceptar la conexión de Poole");
-        continue;
+        return;
     }
 
     pthread_t thread_bowman;

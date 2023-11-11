@@ -27,11 +27,9 @@ Discovery.o: Discovery.c Global.h
 Trama.o: Trama.c Trama.h
 	gcc -c Trama.c -pthread -Wall -Wextra
 
-
 .PHONY: clean
 clean:
 	rm *.o
 	rm Bowman.exe
 	rm Poole.exe
 	rm Discovery.exe
-	
