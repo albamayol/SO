@@ -123,7 +123,7 @@ void establishDiscoveryConnection() {
         sig_func();
     }
 
-    //TRANSMISIONES DISCOVERY<->POOLE
+    //TRANSMISIONES POOLE->DISCOVERY
 }
 
 void waitingForRequests() {
