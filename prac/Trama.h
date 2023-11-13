@@ -5,6 +5,6 @@
 
 
 Trama TramaCreate (char type, char *header, char *data);
-
+void freeTrama(Trama trama);
 
 #endif

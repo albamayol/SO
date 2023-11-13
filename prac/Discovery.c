@@ -73,7 +73,7 @@ static void *thread_function_poole(void *fd) {
     
     
     close(fd_poole);
-    pthread_exit(NULL);
+    pthread_exit(NULL); //NO ES POT FER --> TODO
 }
 
 static void *thread_function_bowman(void *fd) {
@@ -182,6 +182,17 @@ void startBowmanListener() {
     }
 }
 
+static void *initial_thread_function_bowman() {
+    startBowmanListener();
+    pthread_exit(NULL);
+}
+
+static void *initial_thread_function_poole() {
+    startPooleListener();
+    pthread_exit(NULL);
+}
+
+
 /*
 @Finalitat: Implementar el main del programa.
 @Paràmetres: ---
@@ -219,9 +230,17 @@ int main(int argc, char ** argv) {
             dDiscovery.portBowman = NULL;
 
             close(fd);
+
+            pthread_t initial_thread_bowman;
+            if (pthread_create(&initial_thread_bowman, NULL, initial_thread_function_bowman, NULL) != 0) {
+                perror("Error al crear el thread inicial para Bowman");
+            }
+            pthread_t initial_thread_poole;
+            if (pthread_create(&initial_thread_poole, NULL, initial_thread_function_poole, NULL) != 0) {
+                perror("Error al crear el thread inicial para Poole");
+            }
             
-            startPooleListener();
-            startBowmanListener();
+            
             
             
         }

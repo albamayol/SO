@@ -14,8 +14,15 @@ Trama TramaCreate (char type, char *header, char *data) {
   int sizeData = 256 - 3 - trama.header_length;
   trama.data = malloc(sizeof(char) * (sizeData));
   memset(trama.data, 0, sizeData); //Padding
-  strcpy(trama.data, data);
+  strcpy(trama.data, data); //no redimensiona
 
 
   return trama;
+}
+
+void freeTrama(Trama trama) {
+  free(trama.data);
+  free(trama.header);
+  trama.data = NULL;
+  trama.header = NULL;
 }
