@@ -60,8 +60,9 @@ void sig_func() {
     exit(EXIT_FAILURE);
 }
 
-static void *thread_function_poole(void *fd) {
-    int fd_poole = *((int *)fd);
+void conexionPoole(int fd_poole) {
+    char *stringTrama = (char)malloc(sizeof(char)*256);
+    read(fd_poole, stringTrama, 256); //read esperando 1a trama
     //TODO añadir conexion poole a la lista
 
     Element element;
@@ -73,30 +74,25 @@ static void *thread_function_poole(void *fd) {
     
     
     close(fd_poole);
-    pthread_exit(NULL); //NO ES POT FER --> TODO
 }
 
-static void *thread_function_bowman(void *fd) {
-    int fd_bowman = *((int *)fd);
+void conexionBowman(int fd_bowman) {
+    
     
     
     
     close(fd_bowman);
-    pthread_exit(NULL);
 }
 
 void connect_Poole() {
     socklen_t pAddr = sizeof(dDiscovery.poole_addr);
-    int fd_poole = accept(dDiscovery.fdPoole, (struct sockaddr *)&dDiscovery.poole_addr, &pAddr);
-    if (fd_poole < 0) {
+    int fd_poole = accept(dDiscovery.fdPoole, (struct sockaddr *)&dDiscovery.poole_addr, &pAddr); //fd para interaccionar
+    if (fd_poole < 0) { 
         perror("Error al aceptar la conexión de Poole");
         return;
     }
 
-    pthread_t thread_poole;
-    if (pthread_create(&thread_poole, NULL, thread_function_poole, &fd_poole) != 0) {
-        perror("Error al crear el thread para Poole");
-    }
+    conexionPoole(fd_poole);
 }
 
 void connect_Bowman() {
@@ -107,14 +103,14 @@ void connect_Bowman() {
         return;
     }
 
-    pthread_t thread_bowman;
-    if (pthread_create(&thread_bowman, NULL, thread_function_bowman, &fd_bowman) != 0) {
-        perror("Error al crear el thread para Poole");
-    }
+    //el envío de tramas es muy rapido, alomejor no hace falta crear un thread, poco probable que mientras trato una conexion de poole reciba otra de otro poole
+    //ademas es mucho gasto recursos
+    //cerrar conexion socket!!
+    conexionBowman(fd_bowman);
 }
 
 void startPooleListener() {
-    dDiscovery.fdPoole = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    dDiscovery.fdPoole = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);    //fd para creacion del socket
     if (dDiscovery.fdPoole < 0) {
         perror ("Error al crear el socket de Poole");
         exit (EXIT_FAILURE);
@@ -152,7 +148,7 @@ void startBowmanListener() {
     dDiscovery.fdBowman = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dDiscovery.fdBowman < 0) {
         perror ("Error al crear el socket de Bowman");
-        exit (EXIT_FAILURE);
+        sig_func();
     }
 
     // Specify the adress and port of the socket
@@ -163,14 +159,16 @@ void startBowmanListener() {
 
     if (inet_pton(AF_INET, dDiscovery.ipBowman, &dDiscovery.bowman_addr.sin_port) < 0) {
         perror("Error al convertir la dirección IP");
-        exit(EXIT_FAILURE);
+        close(dDiscovery.fdBowman);
+        sig_func();
     }
 
     // When executing bind, we should add a cast:
     // bind waits for a struct sockaddr* and we are passing a struct sockaddr_in*
     if (bind (dDiscovery.fdBowman, (void *) &dDiscovery.bowman_addr, sizeof (dDiscovery.bowman_addr)) < 0) {
         perror ("Error al enlazar el socket de Bowman");
-        exit (EXIT_FAILURE);
+        close(dDiscovery.fdBowman);
+        sig_func();
     }
 
     // We now open the port (20 backlog queue, typical value)
@@ -182,14 +180,9 @@ void startBowmanListener() {
     }
 }
 
-static void *initial_thread_function_bowman() {
+static void *initial_thread_function_bowman() { //revisar si static o no!
     startBowmanListener();
-    pthread_exit(NULL);
-}
-
-static void *initial_thread_function_poole() {
-    startPooleListener();
-    pthread_exit(NULL);
+    pthread_exit(NULL); //revisar! no se puede hacer! hay otra manera! asi se malgasta memoria
 }
 
 
@@ -220,28 +213,14 @@ int main(int argc, char ** argv) {
             dDiscovery.ipBowman = read_until(fd, '\n');
             dDiscovery.portBowman = read_until(fd, '\n');
 
-            free(dDiscovery.ipPoole);
-            dDiscovery.ipPoole = NULL;
-            free(dDiscovery.portPoole);
-            dDiscovery.portPoole = NULL;
-            free(dDiscovery.ipBowman);
-            dDiscovery.ipBowman = NULL;
-            free(dDiscovery.portBowman);
-            dDiscovery.portBowman = NULL;
-
             close(fd);
-
+            
             pthread_t initial_thread_bowman;
             if (pthread_create(&initial_thread_bowman, NULL, initial_thread_function_bowman, NULL) != 0) {
                 perror("Error al crear el thread inicial para Bowman");
             }
-            pthread_t initial_thread_poole;
-            if (pthread_create(&initial_thread_poole, NULL, initial_thread_function_poole, NULL) != 0) {
-                perror("Error al crear el thread inicial para Poole");
-            }
-            
-            
-            
+
+            startPooleListener();
             
         }
     }

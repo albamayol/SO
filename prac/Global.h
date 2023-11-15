@@ -32,9 +32,13 @@ Autores:
 
 #define printF(x) write(1, x, strlen(x))
 
+//12 --> ~
+//short header_length
+//read(fd, header_length, sizeof(char)*2)
+
 typedef struct {
     char type;
-    int header_length;
+    short header_length; //12
     char *header;
     char *data;
 } Trama;
