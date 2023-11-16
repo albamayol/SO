@@ -71,6 +71,7 @@ void setTramaString(Trama trama, int fd) {
     ++offset;
   }
 
+  //TESTING
   write(1, "resultat construcció string trama: \n", strlen("resultat construcció string trama: \n"));
   write(1, string, strlen(string));
   

@@ -23,6 +23,8 @@
 #define CONKO "CONKO"
 #define UNKNOWN "UNKNOWN"
 
+Trama setStringTrama(char *string);
+void shortToChars(short valor, char *cadena);
 void setTramaString (Trama trama, int fd);
 Trama TramaCreate (char type, char *header, char *data);
 void freeTrama(Trama trama);
