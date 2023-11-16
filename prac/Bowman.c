@@ -219,7 +219,22 @@ void establishDiscoveryConnection() {
         sig_func();
     }
 
-    //TRANSMISIONES DISCOVERY<->BOWMAN
+    //TRANSMISIONES DISCOVERY->BOWMAN
+    char *aux = NULL;
+
+    int length = strlen(dBowman.clienteName) + 3;
+    aux = (char *) malloc(sizeof(char) * length);
+
+    for (int i = 0; i < length; i++) {
+        aux[i] = '\0';
+    }
+
+    strcpy(aux, dBowman.clienteName);
+
+    setTramaString(TramaCreate(0x01, "NEW_BOWMAN", añadirClaudators(aux)), dBowman.fdDiscovery);
+
+    free(aux);
+    aux = NULL;
 }
 
 /*

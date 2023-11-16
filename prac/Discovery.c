@@ -77,7 +77,7 @@ void conexionPoole(int fd_poole) {
 }
 
 void conexionBowman(int fd_bowman) {
-    
+    // enviar trama con ip y port del Poole
     
     
     
@@ -222,6 +222,11 @@ int main(int argc, char ** argv) {
             }
 
             startPooleListener();
+
+            //join, buscar la manera de matar el hilo para liberar recuersos.
+
+            //en los casos en los cuales no finalize signals podemos utilizar return null.
+
             
         }
     }
