@@ -182,7 +182,8 @@ void startBowmanListener() {
 
 static void *initial_thread_function_bowman() { //revisar si static o no!
     startBowmanListener();
-    pthread_exit(NULL); //revisar! no se puede hacer! hay otra manera! asi se malgasta memoria
+    //pthread_exit(NULL); //revisar! no se puede hacer! hay otra manera! asi se malgasta memoria
+    return NULL;
 }
 
 

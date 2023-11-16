@@ -152,6 +152,9 @@ void waitingForRequests() {
 
     listen(dPoole.fdPooleServer, 20); // Esperar conexiones entrantes de Bowman
     //TRANSMISIONES POOLE<->BOWMAN
+
+
+    
 }
 
 /*
