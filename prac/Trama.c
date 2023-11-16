@@ -2,7 +2,7 @@
 
 //string -> trama
 Trama setStringTrama(char *string) {
-  //1 09 kevi lijasdnfajsdnfjksandfkjasndfkjansdkjfnasdfdnfjnasdfjnasdjfnvjdsfnvjksdnvjk
+  //1 01 kevi lijasdnfajsdnfjksandfkjasndfkjansdkjfnasdfdnfjnasdfjnasdjfnvjdsfnvjksdnvjk
   //ej:       00000001              0000000000000100             0000000011111110000000011111111        256-7 = 258Bytes
   //          type = 1Byte      header_length = 2Bytes                Header = 4Bytes                    DATA
   Trama trama;
@@ -13,8 +13,15 @@ Trama setStringTrama(char *string) {
 
   // Gestion del Header Length
   int valor = (string[1] - '0') * 10 + (string[2] - '0');
+  //char short
+
+  
+
+  
 
   trama.header_length = valor;
+
+
 
   // Gestion del Header
   trama.header = (char *)malloc((trama.header_length + 1) * sizeof(char)); 
@@ -40,6 +47,8 @@ Trama setStringTrama(char *string) {
 }
 
 void shortToChars(short valor, char *cadena) {
+  //0000000000000001
+  01
   char cadena[1] = (char)(valor & 0xFF);        // Obtener el byte de menor peso
   char cadena[0] = (char)((valor >> 8) & 0xFF); // Obtener el byte de mayor peso
 }

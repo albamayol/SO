@@ -77,7 +77,7 @@ void conexionPoole(int fd_poole) {
 }
 
 void conexionBowman(int fd_bowman) {
-    
+    // enviar trama con ip y port del Poole
     
     
     
@@ -182,7 +182,7 @@ void startBowmanListener() {
 
 static void *initial_thread_function_bowman() { //revisar si static o no!
     startBowmanListener();
-    pthread_exit(NULL); //revisar! no se puede hacer! hay otra manera! asi se malgasta memoria
+    //pthread_exit(NULL); //revisar! no se puede hacer! hay otra manera! asi se malgasta memoria
 }
 
 
@@ -221,6 +221,11 @@ int main(int argc, char ** argv) {
             }
 
             startPooleListener();
+
+            //join, buscar la manera de matar el hilo para liberar recuersos.
+
+            //en los casos en los cuales no finalize signals podemos utilizar return null.
+
             
         }
     }
