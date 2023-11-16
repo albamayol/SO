@@ -1,6 +1,48 @@
 #include "Trama.h"
 
 //string -> trama
+Trama setStringTrama(char *string) {
+  //1 09 kevi lijasdnfajsdnfjksandfkjasndfkjansdkjfnasdfdnfjnasdfjnasdjfnvjdsfnvjksdnvjk
+  //ej:       00000001              0000000000000100             0000000011111110000000011111111        256-7 = 258Bytes
+  //          type = 1Byte      header_length = 2Bytes                Header = 4Bytes                    DATA
+  Trama trama;
+  int i;
+
+  // Gestion del Type
+  trama.type = string[0];
+
+  // Gestion del Header Length
+  int valor = (string[1] - '0') * 10 + (string[2] - '0');
+
+  trama.header_length = valor;
+
+  // Gestion del Header
+  trama.header = (char *)malloc((trama.header_length + 1) * sizeof(char)); 
+
+  for (i = 0; i < trama.header_length; i++) {
+      trama.header[i] = string[i + 3];
+  }
+
+  trama.header[i] = '\0';
+
+  // Gestion del Data
+  int dataSize = 256 - 3 - trama.header_length;
+
+  trama.data = (char *)malloc((dataSize + 1) * sizeof(char)); 
+
+  for (i = 0; i < dataSize; i++) {
+    trama.data[i] = string[i + 3 + trama.header_length];
+  }
+
+  trama.data[i] = '\0';
+
+  return trama;
+}
+
+void shortToChars(short valor, char *cadena) {
+  char cadena[1] = (char)(valor & 0xFF);        // Obtener el byte de menor peso
+  char cadena[0] = (char)((valor >> 8) & 0xFF); // Obtener el byte de mayor peso
+}
 
 //trama -> string 
 void setTramaString(Trama trama, int fd) {
