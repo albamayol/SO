@@ -51,7 +51,7 @@ void setTramaString(Trama trama, int fd) {
   string[0] = trama.type;
  
   char *header_len = malloc(2 * sizeof(char));
-  intToBytes(trama.header, header_len);
+  shortToChars(trama.header_length, header_len);
 
   string[1] = header_len[1];
   string[2] = header_len[0];
