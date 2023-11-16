@@ -54,41 +54,39 @@ void shortToChars(short valor, char *cadena) {
 }
 
 //trama -> string 
-void setTramaString (Trama trama, int fd) {
-    char * string = (char *)malloc(sizeof(char) * 256); // tramas fijas de 256 Bytes
+void setTramaString(Trama trama, int fd) {
+  char *string = malloc((trama.header_length + strlen(trama.data) + 3) * sizeof(char)); //3 --> 1Byte type, 2Bytes header_length
 
-    string[0] = trama.type;//0x02
+  string[0] = trama.type;
+ 
+  char *header_len = malloc(2 * sizeof(char));
+  shortToChars(trama.header_length, header_len);
 
-    //asprintf(&string, "%s%s", string, header);
-    string = concatStringsWithoutNull(string, header);
-  
-    char* length = malloc(2 * sizeof(char));
-    intToBytes(/*trama.length*/2, length);
-  
-    printf("BYTES: -%02X- -%02X-\n", length[0], length[1]);
-    printf("BYTES: -%c- -%c-\n", length[0], length[1]);
-  
-    // teniendo en cuenta que el strlen devuelve un +1 a la posicion real
-    int offset = strlen(trama.header) + 2;
-    printf("OFFSET: %d\n", offset);
-  
-    //string[++offset] = 0b00010000;//length[0];
-    string[++offset] = length[0];
-    //string[++offset] = 0b11110000;//length[1];
-    string[++offset] = length[1];
+  string[1] = header_len[1];
+  string[2] = header_len[0];
 
-    // no tocar
-    for (int i = 0; i < trama.length; i++) {
-        string[++offset] = trama.data[i];
-    }
-    printf("STRING END: -%s-\n", string);
-  
-    write(fd, string, 5 + strlen(header) + trama.length); 
+  //posiciones 0, 1 y 2 ya ocupadas
+  int offset = 3;
 
+  //HEADER
+  for (int i = 0; i < trama.header_length; i++) {
+    string[offset] = trama.header[i];
+    ++offset;
+  }
+
+  //DATA
+  for(int i = 0; i < strlen(trama.data); i++) {
+    string[offset] = trama.data[i];
+    ++offset;
+  }
+
+  write(1, "resultat construcció string trama: \n", strlen("resultat construcció string trama: \n"));
+  write(1, string, strlen(string));
   
-  	free(string);
-  	free(length);
-  	free(header);
+  write(fd, string, strlen(string));
+
+  free(string);
+  free(header_len);
 }
 
 Trama TramaCreate (char type, char *header, char *data) {
