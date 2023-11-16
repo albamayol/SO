@@ -47,8 +47,6 @@ Trama setStringTrama(char *string) {
 }
 
 void shortToChars(short valor, char *cadena) {
-  //0000000000000001
-  01
   char cadena[1] = (char)(valor & 0xFF);        // Obtener el byte de menor peso
   char cadena[0] = (char)((valor >> 8) & 0xFF); // Obtener el byte de mayor peso
 }
