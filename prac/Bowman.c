@@ -5,6 +5,7 @@ Autores:
 */
 
 #include "Global.h"
+#include "Trama.h"
 
 dataBowman dBowman;
 
@@ -231,7 +232,7 @@ void establishDiscoveryConnection() {
 
     strcpy(aux, dBowman.clienteName);
 
-    setTramaString(TramaCreate(0x01, "NEW_BOWMAN", añadirClaudators(aux)), dBowman.fdDiscovery);
+    setTramaString(TramaCreate(0x01, NEW_BOWMAN, anadirClaudators(aux)), dBowman.fdDiscovery);
 
     free(aux);
     aux = NULL;

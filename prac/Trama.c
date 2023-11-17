@@ -1,5 +1,33 @@
 #include "Trama.h"
 
+
+char* anadirClaudators(char *charheader) {
+    char *newHeader = NULL;
+    asprintf(&newHeader, "[%s]", charheader);
+
+    return newHeader;
+}
+
+char* createString3Params(char* param1, char* param2, char* param3) {
+    //[dPoole.serverName&dPoole.ipServer&dPoole.puertoServer]
+    char *aux = NULL;
+
+    int length = strlen(param1) + strlen(param2) + strlen(param3) + 3 + 1;
+    aux = (char *) malloc(sizeof(char) * length);
+
+    for (int i = 0; i < length; i++) {
+        aux[i] = '\0';
+    }
+
+    strcpy(aux, param1);
+    strcat(aux, "&"); 
+    strcat(aux, param2);
+    strcat(aux, "&");
+    strcat(aux, param3); 
+
+    return aux;
+}
+
 //string -> trama
 Trama setStringTrama(char *string) {
   //1 01 kevi lijasdnfajsdnfjksandfkjasndfkjansdkjfnasdfdnfjnasdfjnasdjfnvjdsfnvjksdnvjk
@@ -40,13 +68,14 @@ Trama setStringTrama(char *string) {
 }
 
 void shortToChars(short valor, char *cadena) {
-  char cadena[1] = (char)(valor & 0xFF);        // Obtener el byte de menor peso
-  char cadena[0] = (char)((valor >> 8) & 0xFF); // Obtener el byte de mayor peso
+  cadena[1] = (char)(valor & 0xFF);        // Obtener el byte de menor peso
+  cadena[0] = (char)((valor >> 8) & 0xFF); // Obtener el byte de mayor peso
 }
 
 short charsToShort(char *cadena) {
     return (short)atoi(cadena);
 }
+
 
 //trama -> string 
 void setTramaString(Trama trama, int fd) {
@@ -70,7 +99,8 @@ void setTramaString(Trama trama, int fd) {
   }
 
   //DATA
-  for(int i = 0; i < strlen(trama.data); i++) {
+  int data_len = 256 - 3 - trama.header_length; 
+  for(int i = 0; i < data_len; i++) {
     string[offset] = trama.data[i];
     ++offset;
   }

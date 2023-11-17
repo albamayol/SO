@@ -1,8 +1,6 @@
 #ifndef _TRAMA_H_
 #define _TRAMA_H_
 
-#include "Global.h"
-
 //HEADER's defines
 #define NEW_POOLE "NEW_POOLE"
 #define CON_OK "CON_OK"
@@ -23,6 +21,26 @@
 #define CONKO "CONKO"
 #define UNKNOWN "UNKNOWN"
 
+#define _GNU_SOURCE
+
+#include <unistd.h>
+#include <fcntl.h>
+#include <string.h>
+#include <strings.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <stdint.h>
+
+typedef struct {
+    char type;
+    short header_length; 
+    char *header;
+    char *data;
+} Trama;
+
+char* anadirClaudators(char *charheader);
+char* createString3Params(char* param1, char* param2, char* param3);
 Trama setStringTrama(char *string);
 void shortToChars(short valor, char *cadena);
 void setTramaString (Trama trama, int fd);

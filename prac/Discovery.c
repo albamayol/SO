@@ -5,6 +5,7 @@ Autores:
 */
 
 #include "Global.h"
+#include "Trama.h"
 
 dataDiscovery dDiscovery;
 
@@ -43,38 +44,57 @@ void sig_func() {
         dDiscovery.portBowman = NULL;
     }
     
+    /*if (!LINKEDLIST_isEmpty (dDiscovery.poole_list)) {
+        Element client;
+
+        LINKEDLIST_goToHead(&dDiscovery.poole_list);
+            
+        while(!LINKEDLIST_isAtEnd(dDiscovery.poole_list)) {
+            client = LINKEDLIST_get(&dDiscovery.poole_list);
+            //kill(client.signalID, SIGINT);
+            LINKEDLIST_next(&dDiscovery.poole_list);
+        }
+        LINKEDLIST_destroy(&dDiscovery.poole_list);
+    }*/
+
     LINKEDLIST_destroy(&dDiscovery.poole_list); //el destroy itera por toda la list haciendo free's de los elementos
     LINKEDLIST_destroy(&dDiscovery.bowman_list);
 
-    /* HACER EN EL FUTURO:
-    Element client;
 
-    LINKEDLIST_goToHead(&connections);
-		
-	while(!LINKEDLIST_isAtEnd(connections)) {
-        client = LINKEDLIST_get(&connections);
-    	kill(client.signalID, SIGINT);
-		LINKEDLIST_next(&connections);
-    }
-	LINKEDLIST_destroy(&connections);*/
     exit(EXIT_FAILURE);
 }
 
 void conexionPoole(int fd_poole) {
-    char *stringTrama = (char)malloc(sizeof(char)*256);
+    char *stringTrama = (char *)malloc(sizeof(char)*256);
     read(fd_poole, stringTrama, 256); //read esperando 1a trama
-    //TODO añadir conexion poole a la lista
-
+    //convertimos lo leido en trama
+    Trama trama = setStringTrama(stringTrama);
     Element element;
+    separaDataToElement(trama.data, &element);
+
+    freeTrama(trama);
+
+    printf("nom: %s\n", element.name);
+    printf("ip: %s\n", element.ip);
+    printf("port: %d\n", element.port);
+    printf("num_connections: %d\n", element.num_connections);
+    
     //add element as the last one
+    LINKEDLIST_goToHead (&dDiscovery.poole_list);
     while(!LINKEDLIST_isAtEnd(dDiscovery.poole_list)) {
         LINKEDLIST_next(&dDiscovery.poole_list);
     }
     LINKEDLIST_add(&dDiscovery.poole_list, element);
-    
+    freeElement(&element);
+
+
+    setTramaString(TramaCreate(0x01, CON_OK, ""), fd_poole);
+
     
     close(fd_poole);
 }
+
+
 
 void conexionBowman(int fd_bowman) {
     // Lectura de la trama de Bowman conectado
@@ -110,6 +130,8 @@ void conexionBowman(int fd_bowman) {
     strcat(aux, "&");
     strcat(aux, e.port); 
 
+    freeElement(&e);
+
     setTramaString(TramaCreate(0x01, "CON_OK", añadirClaudators(aux)), fd_bowman);
 
     free(aux);
@@ -122,7 +144,9 @@ void connect_Poole() {
     socklen_t pAddr = sizeof(dDiscovery.poole_addr);
     int fd_poole = accept(dDiscovery.fdPoole, (struct sockaddr *)&dDiscovery.poole_addr, &pAddr); //fd para interaccionar
     if (fd_poole < 0) { 
+        setTramaString(TramaCreate(0x01, CON_KO, ""), fd_poole);
         perror("Error al aceptar la conexión de Poole");
+        close(fd_poole);
         return;
     }
 
@@ -133,7 +157,9 @@ void connect_Bowman() {
     socklen_t bAddr = sizeof(dDiscovery.bowman_addr);
     int fd_bowman = accept(dDiscovery.fdBowman, (struct sockaddr *)&dDiscovery.bowman_addr, &bAddr);
     if (fd_bowman < 0) {
-        perror("Error al aceptar la conexión de Poole");
+        setTramaString(TramaCreate(0x01, CON_KO, ""), fd_bowman);
+        perror("Error al aceptar la conexión de Bowman");
+        close(fd_bowman);
         return;
     }
 
