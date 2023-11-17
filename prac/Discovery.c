@@ -102,6 +102,8 @@ void conexionBowman(int fd_bowman) {
     }
     
     Trama trama = setStringTrama(string);
+    printf("Datos de la trama: %s\n", trama.data);
+
     //hacemos algo con esta trama?
     freeString(string);
     // Enviar trama con servername, ip y port del Poole
@@ -166,11 +168,12 @@ void startPooleListener() {
     bzero (&dDiscovery.poole_addr, sizeof (dDiscovery.poole_addr));
     dDiscovery.poole_addr.sin_family = AF_INET;
     dDiscovery.poole_addr.sin_port = htons (atoi(dDiscovery.portPoole));
+    dDiscovery.poole_addr.sin_addr.s_addr = inet_addr(dDiscovery.ipPoole);
 
-    if (inet_pton(AF_INET, dDiscovery.ipPoole, &dDiscovery.poole_addr.sin_port) < 0) {
+    /*if (inet_pton(AF_INET, dDiscovery.ipPoole, &dDiscovery.poole_addr.sin_addr) < 0) {
         perror("Error al convertir la dirección IP");
         exit(EXIT_FAILURE);
-    }
+    }*/
 
     // When executing bind, we should add a cast:
     // bind waits for a struct sockaddr* and we are passing a struct sockaddr_in*

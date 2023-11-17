@@ -1,16 +1,12 @@
 #include "Trama.h"
 
-void shortToChars(short valor, char *cadena) {
+void shortToChars(short valor, char *cadena) { 
   cadena[1] = (char)(valor & 0xFF);        // Obtener el byte de menor peso
   cadena[0] = (char)((valor >> 8) & 0xFF); // Obtener el byte de mayor peso
 }
 
-//short = 2Bytes
-//short = 9 --> 00000000 00001001 --> NULL HORIZONTAL_TAB
-//short = 12 --> 00000000 00001100 --> NULL FORM_FEED
-//queremos la correspondencia en decimal de cada uno de los char's
-short charsToShort(char *cadena) { 
-    return (short)atoi(cadena);
+short charsToShort(char char1, char char2) {
+    return ((short)(char1) << 8) | (short)(char2);
 }
 
 char* anadirClaudators(char *charheader) {
@@ -42,9 +38,6 @@ char* createString3Params(char* param1, char* param2, char* param3) {
 
 //string -> trama
 Trama setStringTrama(char *string) {
-  //1 01 kevi lijasdnfajsdnfjksandfkjasndfkjansdkjfnasdfdnfjnasdfjnasdjfnvjdsfnvjksdnvjk
-  //ej:       00000001              0000000000000100             0000000011111110000000011111111        256-7 = 258Bytes
-  //          type = 1Byte      header_length = 2Bytes                Header = 4Bytes                    DATA
   Trama trama;
   int i;
 
@@ -52,13 +45,8 @@ Trama setStringTrama(char *string) {
   trama.type = string[0];
 
   // Gestion del Header Length
-  char *string_aux = NULL;
-  string_aux = (char* )malloc(sizeof(char)*2);
-  string_aux[0] = string[1];
-  string_aux[1] = string[0];
-
-  trama.header_length = charsToShort(string_aux);
-  freeString(string_aux);
+  trama.header_length = charsToShort(string[1], string[2]);
+  
 
   // Gestion del Header
   trama.header = (char *)malloc((trama.header_length + 1) * sizeof(char)); 
