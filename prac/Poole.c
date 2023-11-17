@@ -5,6 +5,7 @@ Autores:
 */
 
 #include "Global.h"
+#include "Trama.h"
 
 dataPoole dPoole;
 
@@ -99,13 +100,6 @@ void printInfoFile() {
 
 }
 
-char* anadirClaudators(char *charheader) {
-    char *newHeader = NULL;
-    asprintf(&newHeader, "[%s]", charheader);
-
-    return newHeader;
-}
-
 void establishDiscoveryConnection() {
     dPoole.fdPooleClient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dPoole.fdPooleClient < 0) {
@@ -131,28 +125,13 @@ void establishDiscoveryConnection() {
     }
 
     //TRANSMISIONES POOLE->DISCOVERY
-    //[dPoole.serverName&dPoole.ipServer&dPoole.puertoServer]
-    char *aux = NULL;
-
-    int length = strlen(dPoole.serverName) + strlen(dPoole.ipServer) + strlen(dPoole.puertoServer) + 3;
-    aux = (char *) malloc(sizeof(char) * length);
-
-    for (int i = 0; i < length; i++) {
-        aux[i] = '\0';
-    }
-
-    strcpy(aux, dPoole.serverName);
-    strcat(aux, "&"); 
-    strcat(aux, dPoole.ipServer);
-    strcat(aux, "&");
-    strcat(aux, dPoole.puertoServer); 
-
-
-    //Trama trama = TramaCreate(0x01, "NEW_POOLE", añadirClaudators(aux));
-    setTramaString(TramaCreate(0x01, "NEW_POOLE", añadirClaudators(aux)), dPoole.fdPooleClient);
     
+    char* aux = NULL;
+    aux = createString3Params(dPoole.serverName, dPoole.ipServer, dPoole.puertoServer);
+    setTramaString(TramaCreate(0x01, NEW_POOLE, anadirClaudators(aux)), dPoole.fdPooleClient);
     free(aux);
     aux = NULL;
+
 }
 
 void waitingForRequests() {
@@ -183,7 +162,7 @@ void waitingForRequests() {
     //TRANSMISIONES POOLE<->BOWMAN
 
 
-    
+
 }
 
 /*
