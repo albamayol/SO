@@ -110,7 +110,6 @@ void conexionBowman(int fd_bowman) {
     
     Trama trama = setStringTrama(string);
     
-
     // Enviar trama con servername, ip y port del Poole
     Element e = pooleMinConnections(&dDiscovery.poole_list);
     
