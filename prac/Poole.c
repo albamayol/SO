@@ -31,32 +31,25 @@ void inicializarDataPoole() {
 */
 void sig_func() {
     if (dPoole.serverName != NULL) {
-        free(dPoole.serverName);
-        dPoole.serverName = NULL;
+        freeString(dPoole.serverName);
     }
     if (dPoole.pathServerFile != NULL) {
-        free(dPoole.pathServerFile);
-        dPoole.pathServerFile = NULL;
+        freeString(dPoole.pathServerFile);
     }
     if (dPoole.ipDiscovery != NULL) {
-        free(dPoole.ipDiscovery);
-        dPoole.ipDiscovery = NULL;
+        freeString(dPoole.ipDiscovery);
     }
     if (dPoole.puertoDiscovery != NULL) {
-        free(dPoole.puertoDiscovery);
-        dPoole.puertoDiscovery = NULL;
+        freeString(dPoole.puertoDiscovery);
     }
     if (dPoole.ipServer != NULL) {
-        free(dPoole.ipServer);
-        dPoole.ipServer = NULL;
+        freeString(dPoole.ipServer);
     }
     if (dPoole.puertoServer != NULL) {
-        free(dPoole.puertoServer);
-        dPoole.puertoServer = NULL;
+        freeString(dPoole.puertoServer);
     }
     if (dPoole.msg != NULL) {
-        free(dPoole.msg);
-        dPoole.msg = NULL;
+        freeString(dPoole.msg);
     }
     exit(EXIT_FAILURE);
 }
@@ -129,9 +122,7 @@ void establishDiscoveryConnection() {
     char* aux = NULL;
     aux = createString3Params(dPoole.serverName, dPoole.ipServer, dPoole.puertoServer);
     setTramaString(TramaCreate(0x01, NEW_POOLE, anadirClaudators(aux)), dPoole.fdPooleClient);
-    free(aux);
-    aux = NULL;
-
+    freeString(aux);
 }
 
 void waitingForRequests() {
@@ -193,18 +184,12 @@ int main(int argc, char ** argv) {
 
             printInfoFile();
 
-            free(dPoole.serverName);
-            dPoole.serverName = NULL;
-            free(dPoole.pathServerFile);
-            dPoole.pathServerFile = NULL;
-            free(dPoole.ipDiscovery);
-            dPoole.ipDiscovery = NULL;
-            free(dPoole.puertoDiscovery);
-            dPoole.puertoDiscovery = NULL;
-            free(dPoole.ipServer);
-            dPoole.ipServer = NULL;
-            free(dPoole.puertoServer);
-            dPoole.puertoServer = NULL;
+            freeString(dPoole.serverName);
+            freeString(dPoole.pathServerFile);
+            freeString(dPoole.ipDiscovery);
+            freeString(dPoole.puertoDiscovery);
+            freeString(dPoole.ipServer);
+            freeString(dPoole.puertoServer);
 
             close(fd);
 

@@ -32,36 +32,28 @@ void inicializarDataBowman() {
 */
 void sig_func() {
     if(dBowman.upperInput != NULL) {
-        free(dBowman.upperInput);
-        dBowman.upperInput = NULL;
+        freeString(dBowman.upperInput);
     }
     if(dBowman.msg != NULL) {
-        free(dBowman.msg);
-        dBowman.msg = NULL;
+        freeString(dBowman.msg);
     }
     if(dBowman.input != NULL) {
-        free(dBowman.input);
-        dBowman.input = NULL;
+        freeString(dBowman.input);
     }
     if(dBowman.clienteName != NULL) {
-        free(dBowman.clienteName);
-        dBowman.clienteName = NULL;
+        freeString(dBowman.clienteName);
     }
     if(dBowman.clienteNameAux != NULL) {
-        free(dBowman.clienteNameAux);
-        dBowman.clienteNameAux = NULL;
+        freeString(dBowman.clienteNameAux);
     }
     if(dBowman.pathClienteFile != NULL) {
-        free(dBowman.pathClienteFile);
-        dBowman.pathClienteFile = NULL;
+        freeString(dBowman.pathClienteFile);
     }
     if(dBowman.ip != NULL) {
-        free(dBowman.ip);
-        dBowman.ip = NULL;
+        freeString(dBowman.ip);
     }
     if(dBowman.puerto != NULL) {
-        free(dBowman.puerto);
-        dBowman.puerto = NULL;
+        freeString(dBowman.puerto);
     }
     exit(EXIT_FAILURE);
 }
@@ -234,7 +226,7 @@ void establishDiscoveryConnection() {
 
     setTramaString(TramaCreate(0x01, NEW_BOWMAN, anadirClaudators(aux)), dBowman.fdDiscovery);
 
-    free(aux);
+    freeString(aux);
     aux = NULL;
 }
 
@@ -261,8 +253,7 @@ int main(int argc, char ** argv) {
             dBowman.clienteNameAux = read_until(fd, '\n');
 
             dBowman.clienteName = verifyClientName(dBowman.clienteNameAux);
-            free(dBowman.clienteNameAux);
-            dBowman.clienteNameAux = NULL;
+            freeString(dBowman.clienteNameAux);
 
             dBowman.pathClienteFile = read_until(fd, '\n');
             dBowman.ip = read_until(fd, '\n');
@@ -270,8 +261,7 @@ int main(int argc, char ** argv) {
             
             asprintf(&dBowman.msg, "\n%s user initialized\n", dBowman.clienteName);
             printF(dBowman.msg);
-            free(dBowman.msg);
-            dBowman.msg = NULL;
+            freeString(dBowman.msg);
 
             printInfoFile();
 
@@ -291,8 +281,7 @@ int main(int argc, char ** argv) {
                         establishDiscoveryConnection();
                         asprintf(&dBowman.msg, "%s connected to HAL 9000 system, welcome music lover!\n", dBowman.clienteName);
                         printF(dBowman.msg);
-                        free(dBowman.msg);
-                        dBowman.msg = NULL;
+                        freeString(dBowman.msg);
                         clientConnected = 1;
                     } else {
                         printF("You must establish a connection with the server before making any request\n");
@@ -323,25 +312,17 @@ int main(int argc, char ** argv) {
                     }
                 }
 
-                free(dBowman.input);
-                dBowman.input = NULL;
-                free(dBowman.upperInput);
-                dBowman.upperInput = NULL;
+                freeString(dBowman.input);
+                freeString(dBowman.upperInput);
             }
 
-            free(dBowman.upperInput);
-            dBowman.upperInput = NULL;
+            freeString(dBowman.upperInput);
             dBowman.msg = NULL;
-            free(dBowman.input);
-            dBowman.input = NULL;
-            free(dBowman.clienteName);
-            dBowman.clienteName = NULL;
-            free(dBowman.pathClienteFile);
-            dBowman.pathClienteFile = NULL;
-            free(dBowman.ip);
-            dBowman.ip = NULL;
-            free(dBowman.puerto);
-            dBowman.puerto = NULL;
+            freeString(dBowman.input);
+            freeString(dBowman.clienteName);
+            freeString(dBowman.pathClienteFile);
+            freeString(dBowman.ip);
+            freeString(dBowman.puerto);
             
             close(fd);
         }

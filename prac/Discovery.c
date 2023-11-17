@@ -28,20 +28,16 @@ void inicializarDataDiscovery() {
 */
 void sig_func() {
     if (dDiscovery.ipPoole != NULL) {
-        free(dDiscovery.ipPoole);
-        dDiscovery.ipPoole = NULL;
+        freeString(dDiscovery.ipPoole);
     }
     if (dDiscovery.portPoole != NULL) {
-        free(dDiscovery.portPoole);
-        dDiscovery.portPoole = NULL;
+        freeString(dDiscovery.portPoole);
     }
     if (dDiscovery.ipBowman != NULL) {
-        free(dDiscovery.ipBowman);
-        dDiscovery.ipBowman = NULL;
+        freeString(dDiscovery.ipBowman);
     }
     if (dDiscovery.portBowman != NULL) {
-        free(dDiscovery.portBowman);
-        dDiscovery.portBowman = NULL;
+        freeString(dDiscovery.portBowman);
     }
     
     /*if (!LINKEDLIST_isEmpty (dDiscovery.poole_list)) {
@@ -71,7 +67,6 @@ void conexionPoole(int fd_poole) {
     Trama trama = setStringTrama(stringTrama);
     Element element;
     separaDataToElement(trama.data, &element);
-
     freeTrama(trama);
 
     printf("nom: %s\n", element.name);
@@ -99,9 +94,7 @@ void conexionPoole(int fd_poole) {
 void conexionBowman(int fd_bowman) {
     // Lectura de la trama de Bowman conectado
     char *string = (char *)malloc(sizeof(char) * 256);
-
     int error = read(fd_bowman, string, 256);
-
     if (error == -1) {
         perror("Error al recibir la trama");
         close(fd_bowman);
@@ -109,17 +102,26 @@ void conexionBowman(int fd_bowman) {
     }
     
     Trama trama = setStringTrama(string);
-    
+    //hacemos algo con esta trama?
+    freeString(string);
     // Enviar trama con servername, ip y port del Poole
     Element e = pooleMinConnections(&dDiscovery.poole_list);
-    
+    //TODO si e.num_connections == -1, no hay elementos en la lista, es decir, no hay Poole's conectados aún
+    if (e.num_connections == -1) {
+        //NO HAY POOLE'S CONECTADOS! NO PODEMOS REDIRIGIR EL BOWMAN A NINGUN POOLE --> ENVIAMOS TRAMA CON_KO!!!
+        setTramaString(TramaCreate(0x01, CON_KO, ""), fd_bowman);
+    } else {
+        char* aux = NULL;
+        char* portString = NULL;
+        portString = convertIntToString(e.port);
 
-    char* aux = NULL;
-    aux = createString3Params(e.name, e.ip, e.port);
-    freeElement(&e);
-    setTramaString(TramaCreate(0x01, CON_OK, anadirClaudators(aux)), fd_bowman);
-    free(aux);
-    aux = NULL;
+        aux = createString3Params(e.name, e.ip, portString);
+        freeElement(&e);
+        freeString(portString);
+
+        setTramaString(TramaCreate(0x01, CON_OK, anadirClaudators(aux)), fd_bowman);
+        freeString(aux);
+    }
 
     close(fd_bowman);
 }
@@ -128,7 +130,7 @@ void connect_Poole() {
     socklen_t pAddr = sizeof(dDiscovery.poole_addr);
     int fd_poole = accept(dDiscovery.fdPoole, (struct sockaddr *)&dDiscovery.poole_addr, &pAddr); //fd para interaccionar
     if (fd_poole < 0) { 
-        setTramaString(TramaCreate(0x01, CON_KO, ""), fd_poole);
+        setTramaString(TramaCreate(0x01, CON_KO, ""), fd_poole);    //TODO REVISAR DONDE VA ESTA TRAMA CON_KO!!!
         perror("Error al aceptar la conexión de Poole");
         close(fd_poole);
         return;
@@ -141,7 +143,6 @@ void connect_Bowman() {
     socklen_t bAddr = sizeof(dDiscovery.bowman_addr);
     int fd_bowman = accept(dDiscovery.fdBowman, (struct sockaddr *)&dDiscovery.bowman_addr, &bAddr);
     if (fd_bowman < 0) {
-        setTramaString(TramaCreate(0x01, CON_KO, ""), fd_bowman);
         perror("Error al aceptar la conexión de Bowman");
         close(fd_bowman);
         return;

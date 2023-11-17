@@ -1,5 +1,17 @@
 #include "Trama.h"
 
+void shortToChars(short valor, char *cadena) {
+  cadena[1] = (char)(valor & 0xFF);        // Obtener el byte de menor peso
+  cadena[0] = (char)((valor >> 8) & 0xFF); // Obtener el byte de mayor peso
+}
+
+//short = 2Bytes
+//short = 9 --> 00000000 00001001 --> NULL HORIZONTAL_TAB
+//short = 12 --> 00000000 00001100 --> NULL FORM_FEED
+//queremos la correspondencia en decimal de cada uno de los char's
+short charsToShort(char *cadena) { 
+    return (short)atoi(cadena);
+}
 
 char* anadirClaudators(char *charheader) {
     char *newHeader = NULL;
@@ -9,7 +21,7 @@ char* anadirClaudators(char *charheader) {
 }
 
 char* createString3Params(char* param1, char* param2, char* param3) {
-    //[dPoole.serverName&dPoole.ipServer&dPoole.puertoServer]
+    //dPoole.serverName&dPoole.ipServer&dPoole.puertoServer
     char *aux = NULL;
 
     int length = strlen(param1) + strlen(param2) + strlen(param3) + 3 + 1;
@@ -40,9 +52,13 @@ Trama setStringTrama(char *string) {
   trama.type = string[0];
 
   // Gestion del Header Length
-  char string[2] = strcat(string[1], string[2]);
+  char *string_aux = NULL;
+  string_aux = (char* )malloc(sizeof(char)*2);
+  string_aux[0] = string[1];
+  string_aux[1] = string[0];
 
-  trama.header_length = charsToShort(string);
+  trama.header_length = charsToShort(string_aux);
+  freeString(string_aux);
 
   // Gestion del Header
   trama.header = (char *)malloc((trama.header_length + 1) * sizeof(char)); 
@@ -67,14 +83,7 @@ Trama setStringTrama(char *string) {
   return trama;
 }
 
-void shortToChars(short valor, char *cadena) {
-  cadena[1] = (char)(valor & 0xFF);        // Obtener el byte de menor peso
-  cadena[0] = (char)((valor >> 8) & 0xFF); // Obtener el byte de mayor peso
-}
 
-short charsToShort(char *cadena) {
-    return (short)atoi(cadena);
-}
 
 
 //trama -> string 
@@ -112,7 +121,9 @@ void setTramaString(Trama trama, int fd) {
   write(fd, string, strlen(string));
 
   free(string);
+  string = NULL;
   free(header_len);
+  header_len = NULL;
 }
 
 Trama TramaCreate (char type, char *header, char *data) {
@@ -135,7 +146,7 @@ Trama TramaCreate (char type, char *header, char *data) {
 
 void freeTrama(Trama trama) {
   free(trama.data);
-  free(trama.header);
   trama.data = NULL;
+  free(trama.header);
   trama.header = NULL;
 }

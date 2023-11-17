@@ -79,6 +79,13 @@ char* read_until_string(char *string, char delimiter) {
     return msg;
 }
 
+char* convertIntToString(int num) {
+    int numDigits = snprintf(NULL, 0, "%d", num);  //calcula el numero de digitos necesarios para interpretar un int como string
+    char* string = (char*)malloc(sizeof(char)*(numDigits + 1)); 
+    sprintf(string, "%d", num); //CONVERSION --> sprintf está diseñada para formatear y printar uns string. Añade automaticamente el \0 al final. Si no hubiese hecho malloc +1 para el \0, el último caracter se lo hubiese "comido" el \0
+
+    return string;
+}
 
 void separaDataToElement(char* data, Element* e) {
     int i = 0, j = 0;
@@ -139,4 +146,9 @@ void freeElement(Element* e) {
   free(e->ip);
   e->name = NULL;
   e->ip = NULL;
+}
+
+void freeString(char *string) {
+    free(string);
+    string = NULL;
 }
