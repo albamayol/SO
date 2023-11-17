@@ -12,22 +12,15 @@ Trama setStringTrama(char *string) {
   trama.type = string[0];
 
   // Gestion del Header Length
-  int valor = (string[1] - '0') * 10 + (string[2] - '0');
-  //char short
+  char string[2] = strcat(string[1], string[2]);
 
-  
-
-  
-
-  trama.header_length = valor;
-
-
+  trama.header_length = charsToShort(string);
 
   // Gestion del Header
   trama.header = (char *)malloc((trama.header_length + 1) * sizeof(char)); 
 
   for (i = 0; i < trama.header_length; i++) {
-      trama.header[i] = string[i + 3];
+    trama.header[i] = string[i + 3];
   }
 
   trama.header[i] = '\0';
@@ -51,12 +44,16 @@ void shortToChars(short valor, char *cadena) {
   char cadena[0] = (char)((valor >> 8) & 0xFF); // Obtener el byte de mayor peso
 }
 
+short charsToShort(char *cadena) {
+    return (short)atoi(cadena);
+}
+
 //trama -> string 
 void setTramaString(Trama trama, int fd) {
   char *string = malloc((trama.header_length + strlen(trama.data) + 3) * sizeof(char)); //3 --> 1Byte type, 2Bytes header_length
 
   string[0] = trama.type;
- 
+
   char *header_len = malloc(2 * sizeof(char));
   shortToChars(trama.header_length, header_len);
 
@@ -94,8 +91,8 @@ Trama TramaCreate (char type, char *header, char *data) {
   trama.type = type;
   trama.header_length = strlen(header);
 
-  trama.header = malloc(sizeof(char) * (Trama.header_length+1));
-  memset(trama.header, 0, (Trama.header_length+1));
+  trama.header = malloc(sizeof(char) * (trama.header_length + 1));
+  memset(trama.header, 0, (trama.header_length + 1));
   strcpy(trama.header, header);
   
   int sizeData = 256 - 3 - trama.header_length;

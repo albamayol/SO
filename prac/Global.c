@@ -29,3 +29,30 @@ char* read_until(int fd, char delimiter) {
     return msg;
 }
 
+Element pooleMinConnections(LinkedList * list) {
+    Element e ;
+    e.name = NULL;
+    e.ip = NULL;
+    e.port = 0;
+    e.num_connections = -1;
+    
+    int minConnections = 0;
+
+    if (!LINKEDLIST_isEmpty(*list)) {
+        LINKEDLIST_goToHead (list);
+        while(!LINKEDLIST_isAtEnd(*list)) {
+            Element e_aux = LINKEDLIST_get(list);
+            if (e_aux.num_connections <= minConnections) {
+                e.name = strdup(e_aux.name);
+                e.ip = strdup(e_aux.ip);
+                e.port = e_aux.port;
+                e.num_connections = e_aux.num_connections;
+            }
+            freeElement(&e_aux);
+            LINKEDLIST_next(list);
+        }
+        
+    } 
+    return e;
+}
+
