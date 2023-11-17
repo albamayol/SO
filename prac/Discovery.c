@@ -114,26 +114,11 @@ void conexionBowman(int fd_bowman) {
     // Enviar trama con servername, ip y port del Poole
     Element e = pooleMinConnections(&dDiscovery.poole_list);
     
-    char *aux = NULL;
 
-    int length = strlen(e.name) + strlen(e.port) + strlen(e.ip) + 3;
-
-    aux = (char *) malloc(sizeof(char) * length);
-
-    for (int i = 0; i < length; i++) {
-        aux[i] = '\0';
-    }
-
-    strcpy(aux, e.name);
-    strcat(aux, "&"); 
-    strcat(aux, e.ip);
-    strcat(aux, "&");
-    strcat(aux, e.port); 
-
+    char* aux = NULL;
+    aux = createString3Params(e.name, e.ip, e.port);
     freeElement(&e);
-
-    setTramaString(TramaCreate(0x01, "CON_OK", añadirClaudators(aux)), fd_bowman);
-
+    setTramaString(TramaCreate(0x01, CON_OK, anadirClaudators(aux)), fd_bowman);
     free(aux);
     aux = NULL;
 
