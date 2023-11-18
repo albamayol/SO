@@ -39,6 +39,8 @@ typedef struct {
     char *data;
 } Trama;
 
+#define printF(x) write(1, x, strlen(x))
+
 char* anadirClaudators(char *charheader);
 char* createString3Params(char* param1, char* param2, char* param3);
 Trama setStringTrama(char *string);
