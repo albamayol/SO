@@ -199,12 +199,7 @@ void establishDiscoveryConnection() {
     bzero (&dBowman.discovery_addr, sizeof (dBowman.discovery_addr));
     dBowman.discovery_addr.sin_family = AF_INET;
     dBowman.discovery_addr.sin_port = htons(atoi(dBowman.puerto)); 
-
-    if (inet_pton(AF_INET, dBowman.ip, &dBowman.discovery_addr.sin_addr) < 0) {
-        perror("Error al convertir la dirección IP");
-        close(dBowman.fdDiscovery);
-        sig_func();
-    }
+    dBowman.discovery_addr.sin_addr.s_addr = inet_addr(dBowman.ip);
 
     if (connect(dBowman.fdDiscovery, (struct sockaddr*)&dBowman.discovery_addr, sizeof(dBowman.discovery_addr)) < 0) {
         perror("Error al conectar a Discovery");
@@ -316,15 +311,9 @@ int main(int argc, char ** argv) {
                 freeString(dBowman.upperInput);
             }
 
-            freeString(dBowman.upperInput);
-            dBowman.msg = NULL;
-            freeString(dBowman.input);
-            freeString(dBowman.clienteName);
-            freeString(dBowman.pathClienteFile);
-            freeString(dBowman.ip);
-            freeString(dBowman.puerto);
-            
             close(fd);
+            dBowman.msg = NULL;
+            sig_func();
         }
     }
     return 0;

@@ -157,11 +157,12 @@ void connect_Bowman() {
 }
 
 void startPooleListener() {
+
     dDiscovery.fdPoole = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);    //fd para creacion del socket
     if (dDiscovery.fdPoole < 0) {
         perror ("Error al crear el socket de Poole");
         exit (EXIT_FAILURE);
-    }
+    } 
 
     // Specify the adress and port of the socket
     // We'll admit connexions to any IP of our machine in the specified port
@@ -170,22 +171,18 @@ void startPooleListener() {
     dDiscovery.poole_addr.sin_port = htons (atoi(dDiscovery.portPoole));
     dDiscovery.poole_addr.sin_addr.s_addr = inet_addr(dDiscovery.ipPoole);
 
-    /*if (inet_pton(AF_INET, dDiscovery.ipPoole, &dDiscovery.poole_addr.sin_addr) < 0) {
-        perror("Error al convertir la dirección IP");
-        exit(EXIT_FAILURE);
-    }*/
-
     // When executing bind, we should add a cast:
     // bind waits for a struct sockaddr* and we are passing a struct sockaddr_in*
     if (bind (dDiscovery.fdPoole, (void *) &dDiscovery.poole_addr, sizeof (dDiscovery.poole_addr)) < 0) {
         perror ("Error al enlazar el socket de Poole");
+        close(dDiscovery.fdPoole);
         exit (EXIT_FAILURE);
     }
-
+    
+    
     // We now open the port (20 backlog queue, typical value)
     listen (dDiscovery.fdPoole, 20);
-
-
+    
     // Procesamos las peticiones de Poole's
     while (1) {
         connect_Poole();
@@ -204,12 +201,7 @@ void startBowmanListener() {
     bzero (&dDiscovery.bowman_addr, sizeof (dDiscovery.bowman_addr));
     dDiscovery.bowman_addr.sin_family = AF_INET;
     dDiscovery.bowman_addr.sin_port = htons (atoi(dDiscovery.portBowman));
-
-    if (inet_pton(AF_INET, dDiscovery.ipBowman, &dDiscovery.bowman_addr.sin_port) < 0) {
-        perror("Error al convertir la dirección IP");
-        close(dDiscovery.fdBowman);
-        sig_func();
-    }
+    dDiscovery.bowman_addr.sin_addr.s_addr = inet_addr(dDiscovery.ipBowman);
 
     // When executing bind, we should add a cast:
     // bind waits for a struct sockaddr* and we are passing a struct sockaddr_in*
@@ -233,7 +225,6 @@ static void *initial_thread_function_bowman() { //revisar si static o no!
     //pthread_exit(NULL); //revisar! no se puede hacer! hay otra manera! asi se malgasta memoria
     return NULL;
 }
-
 
 /*
 @Finalitat: Implementar el main del programa.
@@ -271,11 +262,11 @@ int main(int argc, char ** argv) {
 
             startPooleListener();
 
+            sig_func();
+
             //join, buscar la manera de matar el hilo para liberar recuersos.
 
             //en los casos en los cuales no finalize signals podemos utilizar return null.
-
-            
         }
     }
     return 0;
