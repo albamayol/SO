@@ -223,6 +223,9 @@ void establishDiscoveryConnection() {
 
     freeString(aux);
     aux = NULL;
+
+
+    close(dBowman.fdDiscovery);
 }
 
 /*
