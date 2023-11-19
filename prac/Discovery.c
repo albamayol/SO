@@ -64,6 +64,7 @@ void conexionPoole(int fd_poole) {
     char *stringTrama = (char *)malloc(sizeof(char)*256);
     read(fd_poole, stringTrama, 256); //read esperando 1a trama
     //convertimos lo leido en trama
+
     Trama trama = setStringTrama(stringTrama);
     Element element;
     separaDataToElement(trama.data, &element);

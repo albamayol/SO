@@ -116,6 +116,8 @@ void establishDiscoveryConnection() {
     
     char* aux = NULL;
     aux = createString3Params(dPoole.serverName, dPoole.ipServer, dPoole.puertoServer);
+    //printar aux
+    //write(1, aux, strlen(aux));
     setTramaString(TramaCreate(0x01, NEW_POOLE, anadirClaudators(aux)), dPoole.fdPooleClient);
     freeString(aux);
 }
