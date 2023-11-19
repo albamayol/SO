@@ -5,6 +5,7 @@ Autores:
 */
 
 #include "Global.h"
+#include "Trama.h"
 
 dataDiscovery dDiscovery;
 
@@ -27,60 +28,117 @@ void inicializarDataDiscovery() {
 */
 void sig_func() {
     if (dDiscovery.ipPoole != NULL) {
-        free(dDiscovery.ipPoole);
-        dDiscovery.ipPoole = NULL;
+        freeString(dDiscovery.ipPoole);
     }
     if (dDiscovery.portPoole != NULL) {
-        free(dDiscovery.portPoole);
-        dDiscovery.portPoole = NULL;
+        freeString(dDiscovery.portPoole);
     }
     if (dDiscovery.ipBowman != NULL) {
-        free(dDiscovery.ipBowman);
-        dDiscovery.ipBowman = NULL;
+        freeString(dDiscovery.ipBowman);
     }
     if (dDiscovery.portBowman != NULL) {
-        free(dDiscovery.portBowman);
-        dDiscovery.portBowman = NULL;
+        freeString(dDiscovery.portBowman);
     }
     
+    /*if (!LINKEDLIST_isEmpty (dDiscovery.poole_list)) {
+        Element client;
+
+        LINKEDLIST_goToHead(&dDiscovery.poole_list);
+            
+        while(!LINKEDLIST_isAtEnd(dDiscovery.poole_list)) {
+            client = LINKEDLIST_get(&dDiscovery.poole_list);
+            //kill(client.signalID, SIGINT);
+            LINKEDLIST_next(&dDiscovery.poole_list);
+        }
+        LINKEDLIST_destroy(&dDiscovery.poole_list);
+    }*/
+
     LINKEDLIST_destroy(&dDiscovery.poole_list); //el destroy itera por toda la list haciendo free's de los elementos
     LINKEDLIST_destroy(&dDiscovery.bowman_list);
 
-    /* HACER EN EL FUTURO:
-    Element client;
+    close(dDiscovery.fdPoole);
+    close(dDiscovery.fdBowman);
 
-    LINKEDLIST_goToHead(&connections);
-		
-	while(!LINKEDLIST_isAtEnd(connections)) {
-        client = LINKEDLIST_get(&connections);
-    	kill(client.signalID, SIGINT);
-		LINKEDLIST_next(&connections);
-    }
-	LINKEDLIST_destroy(&connections);*/
     exit(EXIT_FAILURE);
 }
 
 void conexionPoole(int fd_poole) {
-    char *stringTrama = (char)malloc(sizeof(char)*256);
+    char *stringTrama = (char *)malloc(sizeof(char)*256);
     read(fd_poole, stringTrama, 256); //read esperando 1a trama
-    //TODO añadir conexion poole a la lista
+    //convertimos lo leido en trama
+    write(1, stringTrama, sizeof(char)*256);
+    Trama trama = setStringTrama(stringTrama);
+
+    printf("type: %c\n", trama.type);
+    printf("header_length: %hd\n", trama.header_length);
+    printf("header: %s\n", trama.header);
+    
+    int size_data = 256 - 3 - trama.header_length;
+    for(int i = 0; i < size_data; i++) {
+      write(1, &trama.data[i], sizeof(char));
+    }
+    
 
     Element element;
+    separaDataToElement(trama.data, &element);
+    freeTrama(trama);
+
+    printf("nom: %s\n", element.name);
+    printf("ip: %s\n", element.ip);
+    printf("port: %d\n", element.port);
+    printf("num_connections: %d\n", element.num_connections);
+    
     //add element as the last one
+    LINKEDLIST_goToHead (&dDiscovery.poole_list);
     while(!LINKEDLIST_isAtEnd(dDiscovery.poole_list)) {
         LINKEDLIST_next(&dDiscovery.poole_list);
     }
     LINKEDLIST_add(&dDiscovery.poole_list, element);
-    
+    freeElement(&element);
+
+
+    setTramaString(TramaCreate(0x01, CON_OK, ""), fd_poole);
+
     
     close(fd_poole);
 }
 
+
+
 void conexionBowman(int fd_bowman) {
+    // Lectura de la trama de Bowman conectado
+    char *string = (char *)malloc(sizeof(char) * 256);
+    int error = read(fd_bowman, string, 256);
+    if (error == -1) {
+        perror("Error al recibir la trama");
+        close(fd_bowman);
+        sig_func();
+    }
     
-    
-    
-    
+    Trama trama = setStringTrama(string);
+    printf("Datos de la trama: %s\n", trama.data);
+
+    //hacemos algo con esta trama?
+    freeString(string);
+    // Enviar trama con servername, ip y port del Poole
+    Element e = pooleMinConnections(&dDiscovery.poole_list);
+    //TODO si e.num_connections == -1, no hay elementos en la lista, es decir, no hay Poole's conectados aún
+    if (e.num_connections == -1) {
+        //NO HAY POOLE'S CONECTADOS! NO PODEMOS REDIRIGIR EL BOWMAN A NINGUN POOLE --> ENVIAMOS TRAMA CON_KO!!!
+        setTramaString(TramaCreate(0x01, CON_KO, ""), fd_bowman);
+    } else {
+        char* aux = NULL;
+        char* portString = NULL;
+        portString = convertIntToString(e.port);
+
+        aux = createString3Params(e.name, e.ip, portString);
+        freeElement(&e);
+        freeString(portString);
+
+        setTramaString(TramaCreate(0x01, CON_OK, anadirClaudators(aux)), fd_bowman);
+        freeString(aux);
+    }
+
     close(fd_bowman);
 }
 
@@ -88,7 +146,9 @@ void connect_Poole() {
     socklen_t pAddr = sizeof(dDiscovery.poole_addr);
     int fd_poole = accept(dDiscovery.fdPoole, (struct sockaddr *)&dDiscovery.poole_addr, &pAddr); //fd para interaccionar
     if (fd_poole < 0) { 
+        setTramaString(TramaCreate(0x01, CON_KO, ""), fd_poole);    //TODO REVISAR DONDE VA ESTA TRAMA CON_KO!!!
         perror("Error al aceptar la conexión de Poole");
+        close(fd_poole);
         return;
     }
 
@@ -99,7 +159,8 @@ void connect_Bowman() {
     socklen_t bAddr = sizeof(dDiscovery.bowman_addr);
     int fd_bowman = accept(dDiscovery.fdBowman, (struct sockaddr *)&dDiscovery.bowman_addr, &bAddr);
     if (fd_bowman < 0) {
-        perror("Error al aceptar la conexión de Poole");
+        perror("Error al aceptar la conexión de Bowman");
+        close(fd_bowman);
         return;
     }
 
@@ -110,34 +171,32 @@ void connect_Bowman() {
 }
 
 void startPooleListener() {
+
     dDiscovery.fdPoole = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);    //fd para creacion del socket
     if (dDiscovery.fdPoole < 0) {
         perror ("Error al crear el socket de Poole");
         exit (EXIT_FAILURE);
-    }
+    } 
 
     // Specify the adress and port of the socket
     // We'll admit connexions to any IP of our machine in the specified port
     bzero (&dDiscovery.poole_addr, sizeof (dDiscovery.poole_addr));
     dDiscovery.poole_addr.sin_family = AF_INET;
     dDiscovery.poole_addr.sin_port = htons (atoi(dDiscovery.portPoole));
-
-    if (inet_pton(AF_INET, dDiscovery.ipPoole, &dDiscovery.poole_addr.sin_port) < 0) {
-        perror("Error al convertir la dirección IP");
-        exit(EXIT_FAILURE);
-    }
+    dDiscovery.poole_addr.sin_addr.s_addr = inet_addr(dDiscovery.ipPoole);
 
     // When executing bind, we should add a cast:
     // bind waits for a struct sockaddr* and we are passing a struct sockaddr_in*
     if (bind (dDiscovery.fdPoole, (void *) &dDiscovery.poole_addr, sizeof (dDiscovery.poole_addr)) < 0) {
         perror ("Error al enlazar el socket de Poole");
+        close(dDiscovery.fdPoole);
         exit (EXIT_FAILURE);
     }
-
+    
+    
     // We now open the port (20 backlog queue, typical value)
     listen (dDiscovery.fdPoole, 20);
-
-
+    
     // Procesamos las peticiones de Poole's
     while (1) {
         connect_Poole();
@@ -156,12 +215,7 @@ void startBowmanListener() {
     bzero (&dDiscovery.bowman_addr, sizeof (dDiscovery.bowman_addr));
     dDiscovery.bowman_addr.sin_family = AF_INET;
     dDiscovery.bowman_addr.sin_port = htons (atoi(dDiscovery.portBowman));
-
-    if (inet_pton(AF_INET, dDiscovery.ipBowman, &dDiscovery.bowman_addr.sin_port) < 0) {
-        perror("Error al convertir la dirección IP");
-        close(dDiscovery.fdBowman);
-        sig_func();
-    }
+    dDiscovery.bowman_addr.sin_addr.s_addr = inet_addr(dDiscovery.ipBowman);
 
     // When executing bind, we should add a cast:
     // bind waits for a struct sockaddr* and we are passing a struct sockaddr_in*
@@ -182,11 +236,9 @@ void startBowmanListener() {
 
 static void *initial_thread_function_bowman() { //revisar si static o no!
     startBowmanListener();
-    //pthread_exit(NULL); //revisar! no se puede hacer! hay otra manera! asi se malgasta memoria --> no libera la memoria y recursos generados por el thread
-    
+    //pthread_exit(NULL); //revisar! no se puede hacer! hay otra manera! asi se malgasta memoria
     return NULL;
 }
-
 
 /*
 @Finalitat: Implementar el main del programa.
@@ -223,7 +275,12 @@ int main(int argc, char ** argv) {
             }
 
             startPooleListener();
-            
+
+            sig_func();
+
+            //join, buscar la manera de matar el hilo para liberar recuersos.
+
+            //en los casos en los cuales no finalize signals podemos utilizar return null.
         }
     }
     return 0;

@@ -27,7 +27,7 @@ Autores:
 #include <pthread.h>
 #include <arpa/inet.h>
 #include "linkedlist.h"
-//#include "trama.h"
+//#include "Trama.h"
 
 
 #define printF(x) write(1, x, strlen(x))
@@ -36,12 +36,14 @@ Autores:
 //short header_length
 //read(fd, header_length, sizeof(char)*2)
 
+/*
 typedef struct {
     char type;
     short header_length; //12
     char *header;
     char *data;
 } Trama;
+*/
 
 typedef struct {
     int fdDiscovery;
@@ -84,5 +86,11 @@ typedef struct {
 } dataDiscovery;
 
 char* read_until(int fd, char delimiter);
+char* read_until_string(char *string, char delimiter);
+void separaDataToElement(char* data, Element* e);
+Element pooleMinConnections(LinkedList * list);
+char* convertIntToString(int num);
+void freeElement(Element* e);
+void freeString(char *string);
 
 #endif

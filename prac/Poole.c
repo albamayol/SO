@@ -5,6 +5,7 @@ Autores:
 */
 
 #include "Global.h"
+#include "Trama.h"
 
 dataPoole dPoole;
 
@@ -30,32 +31,25 @@ void inicializarDataPoole() {
 */
 void sig_func() {
     if (dPoole.serverName != NULL) {
-        free(dPoole.serverName);
-        dPoole.serverName = NULL;
+        freeString(dPoole.serverName);
     }
     if (dPoole.pathServerFile != NULL) {
-        free(dPoole.pathServerFile);
-        dPoole.pathServerFile = NULL;
+        freeString(dPoole.pathServerFile);
     }
     if (dPoole.ipDiscovery != NULL) {
-        free(dPoole.ipDiscovery);
-        dPoole.ipDiscovery = NULL;
+        freeString(dPoole.ipDiscovery);
     }
     if (dPoole.puertoDiscovery != NULL) {
-        free(dPoole.puertoDiscovery);
-        dPoole.puertoDiscovery = NULL;
+        freeString(dPoole.puertoDiscovery);
     }
     if (dPoole.ipServer != NULL) {
-        free(dPoole.ipServer);
-        dPoole.ipServer = NULL;
+        freeString(dPoole.ipServer);
     }
     if (dPoole.puertoServer != NULL) {
-        free(dPoole.puertoServer);
-        dPoole.puertoServer = NULL;
+        freeString(dPoole.puertoServer);
     }
     if (dPoole.msg != NULL) {
-        free(dPoole.msg);
-        dPoole.msg = NULL;
+        freeString(dPoole.msg);
     }
     exit(EXIT_FAILURE);
 }
@@ -110,12 +104,7 @@ void establishDiscoveryConnection() {
     bzero (&dPoole.discovery_addr, sizeof (dPoole.discovery_addr));
     dPoole.discovery_addr.sin_family = AF_INET;
     dPoole.discovery_addr.sin_port = htons(atoi(dPoole.puertoDiscovery)); 
-
-    if (inet_pton(AF_INET, dPoole.ipDiscovery, &dPoole.discovery_addr.sin_addr) < 0) {
-        perror("Error al convertir la dirección IP");
-        close(dPoole.fdPooleClient);
-        sig_func();
-    }
+    dPoole.discovery_addr.sin_addr.s_addr = inet_addr(dPoole.ipDiscovery);
 
     if (connect(dPoole.fdPooleClient, (struct sockaddr*)&dPoole.discovery_addr, sizeof(dPoole.discovery_addr)) < 0) {
         perror("Error al conectar a Discovery");
@@ -124,6 +113,19 @@ void establishDiscoveryConnection() {
     }
 
     //TRANSMISIONES POOLE->DISCOVERY
+    
+    char* aux = NULL;
+    aux = createString3Params(dPoole.serverName, dPoole.ipServer, dPoole.puertoServer);
+    //printar aux
+    //write(1, aux, strlen(aux));
+    setTramaString(TramaCreate(0x01, NEW_POOLE, anadirClaudators(aux)), dPoole.fdPooleClient);
+
+    freeString(aux);
+    aux = NULL;
+
+
+    
+    close(dPoole.fdPooleClient);
 }
 
 void waitingForRequests() {
@@ -137,12 +139,7 @@ void waitingForRequests() {
     bzero (&dPoole.poole_addr, sizeof (dPoole.poole_addr));
     dPoole.poole_addr.sin_family = AF_INET;
     dPoole.poole_addr.sin_port = htons(atoi(dPoole.puertoServer)); 
-    
-    if (inet_pton(AF_INET, dPoole.ipServer, &dPoole.poole_addr.sin_addr) < 0) {
-        perror("Error al convertir la dirección IP");
-        close(dPoole.fdPooleServer);
-        sig_func();
-    }
+    dPoole.poole_addr.sin_addr.s_addr = inet_addr(dPoole.ipServer);
 
     if (bind(dPoole.fdPooleServer, (struct sockaddr*)&dPoole.poole_addr, sizeof(dPoole.poole_addr)) < 0) {
         perror("Error al enlazar el socket de Poole");
@@ -152,6 +149,9 @@ void waitingForRequests() {
 
     listen(dPoole.fdPooleServer, 20); // Esperar conexiones entrantes de Bowman
     //TRANSMISIONES POOLE<->BOWMAN
+
+
+    
 }
 
 /*
@@ -182,24 +182,14 @@ int main(int argc, char ** argv) {
 
             printInfoFile();
 
-            free(dPoole.serverName);
-            dPoole.serverName = NULL;
-            free(dPoole.pathServerFile);
-            dPoole.pathServerFile = NULL;
-            free(dPoole.ipDiscovery);
-            dPoole.ipDiscovery = NULL;
-            free(dPoole.puertoDiscovery);
-            dPoole.puertoDiscovery = NULL;
-            free(dPoole.ipServer);
-            dPoole.ipServer = NULL;
-            free(dPoole.puertoServer);
-            dPoole.puertoServer = NULL;
-
             close(fd);
 
             establishDiscoveryConnection();
             //waitingForRequests();
+
+            sig_func();
         }
     }
+
     return 0;
 }
