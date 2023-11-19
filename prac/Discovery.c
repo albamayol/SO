@@ -56,8 +56,8 @@ void sig_func() {
     LINKEDLIST_destroy(&dDiscovery.poole_list); //el destroy itera por toda la list haciendo free's de los elementos
     LINKEDLIST_destroy(&dDiscovery.bowman_list);
 
-    close(dDiscovery.fd_poole);
-    close(dDiscovery.fd_bowman);
+    close(dDiscovery.fdPoole);
+    close(dDiscovery.fdBowman);
 
     exit(EXIT_FAILURE);
 }
