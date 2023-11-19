@@ -46,9 +46,14 @@ Trama TramaCreate (char type, char *header, char *data) {
   trama.type = type;
   trama.header_length = strlen(header);
 
-  trama.header = malloc(sizeof(char) * (Trama.header_length+1));
-  memset(trama.header, 0, (Trama.header_length+1));
-  strcpy(trama.header, header);
+  trama.header = malloc(sizeof(char) * (Trama.header_length));
+  memset(trama.header, 0, (Trama.header_length));
+  //TODO Copiar byte a byte en bucle
+  for(int i = 0; i < trama.header_length; i++) {
+    trama.header[i] = header[i];
+    j++;
+  }
+  
   
   int sizeData = 256 - 3 - trama.header_length;
   trama.data = malloc(sizeof(char) * (sizeData));
