@@ -229,6 +229,7 @@ void establishDiscoveryConnection() {
     close(dBowman.fdDiscovery);
 }
 
+
 /*
 @Finalitat: Implementar el main del programa.
 @Paràmetres: ---

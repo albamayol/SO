@@ -276,6 +276,9 @@ int main(int argc, char ** argv) {
 
             startPooleListener();
 
+
+    
+
             sig_func();
 
             //join, buscar la manera de matar el hilo para liberar recuersos.
