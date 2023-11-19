@@ -1,94 +1,6 @@
 #include "Trama.h"
 
-void shortToChars(short valor, char *cadena) { 
-  cadena[1] = (char)(valor & 0xFF);        // Obtener el byte de menor peso
-  cadena[0] = (char)((valor >> 8) & 0xFF); // Obtener el byte de mayor peso
-}
-
-short charsToShort(char char1, char char2) {
-    return ((short)(char1) << 8) | (short)(char2);
-}
-
-char* anadirClaudators(char *charheader) {
-    char *newHeader = NULL;
-    asprintf(&newHeader, "[%s]", charheader);
-    return newHeader;
-}
-
-char* createString3Params(char* param1, char* param2, char* param3) {
-  
-
-
-    //dPoole.serverName &dPoole.ipServer &dPoole.puertoServer 
-    char *aux = NULL;
-
-    //hola\0 --> 4
-    int length = strlen(param1) + strlen(param2) + strlen(param3) + 3 + 1;
-    aux = (char *) malloc(sizeof(char) * length);
-    memset(aux, 0, length);
-
-    strcpy(aux, param1);
-    strcat(aux, "&"); 
-    strcat(aux, param2);
-    strcat(aux, "&");
-    strcat(aux, param3); 
-
-    return aux;
-}
-
-
 //string -> trama
-Trama setStringTrama(char *string) {
-  Trama trama;
-  int j = 0;
-  int i = 3;
-
-  // Gestion del Type
-  write(1, "TYPE\n", strlen("TYPE\n"));
-  trama.type = string[0];
-  printf("%d\n", trama.type);
-
-  // Gestion del Header Length
-  write(1, "HEADER_LEN\n", strlen("HEADER_LEN\n"));
-  printf("type[0]: %d\n", string[1]);
-  printf("type[1]: %d\n", string[2]);
-  
-  trama.header_length = charsToShort(string[2], string[1]);
-  
-  printf("header length: %hd\n", trama.header_length);
-
-  // Gestion del Header
-  write(1, "HEADER\n", strlen("HEADER\n"));
-  trama.header = (char *)malloc((trama.header_length + 1) * sizeof(char)); 
-  for (i = 0; i < trama.header_length; i++) {
-    trama.header[j] = string[i];
-    printf("string: %c\n", string[i]);
-    printf("trama.header: %c\n", trama.header[j]);
-    j++;
-  }
-  trama.header[i] = '\0';
-  write(1, trama.header, strlen(trama.header));
-
-  // Gestion del Data
-  write(1, "DATA\n", strlen("DATA\n"));
-  int dataSize = 256 - 3 - trama.header_length;
-  trama.data = (char *)malloc((dataSize) * sizeof(char)); 
-
-  for (i = 0; i < dataSize; i++) {
-    trama.data[i] = string[i + 3 + trama.header_length];
-  }
-
-  int size_data = 256 - 3 - trama.header_length;
-  for(int i = 0; i < size_data; i++) {
-    write(1, &trama.data[i], sizeof(char));
-  }
-
-
-  return trama;
-}
-
-
-
 
 //trama -> string 
 void setTramaString(Trama trama, int fd) {
@@ -177,30 +89,26 @@ Trama TramaCreate (char type, char *header, char *data) {
   trama.type = type;
   trama.header_length = strlen(header);
 
-  trama.header = malloc(sizeof(char) * (trama.header_length + 1));
-  memset(trama.header, 0, (trama.header_length + 1));
-  strcpy(trama.header, header);
+  trama.header = malloc(sizeof(char) * (Trama.header_length));
+  memset(trama.header, 0, (Trama.header_length));
+  //TODO Copiar byte a byte en bucle
+  for(int i = 0; i < trama.header_length; i++) {
+    trama.header[i] = header[i];
+    j++;
+  }
+  
   
   int sizeData = 256 - 3 - trama.header_length;
-
-  //write(1, data, sizeData *sizeof(char));
   trama.data = malloc(sizeof(char) * (sizeData));
   memset(trama.data, 0, sizeData); //Padding
-  //strcpy(trama.data, data); //no redimensiona
+  strcpy(trama.data, data); //no redimensiona
 
-  int sizeDataString = 0;
-  sizeDataString = strlen(data);
-  for(int i = 0; i < sizeDataString; i++) {
-      trama.data[i] = data[i];
-  }
-
-  //write(1, trama.data, strlen(trama.data));
   return trama;
 }
 
 void freeTrama(Trama trama) {
   free(trama.data);
-  trama.data = NULL;
   free(trama.header);
+  trama.data = NULL;
   trama.header = NULL;
 }
