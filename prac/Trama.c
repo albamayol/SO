@@ -12,7 +12,6 @@ short charsToShort(char char1, char char2) {
 char* anadirClaudators(char *charheader) {
     char *newHeader = NULL;
     asprintf(&newHeader, "[%s]", charheader);
-
     return newHeader;
 }
 
@@ -141,11 +140,24 @@ void setTramaString(Trama trama, int fd) {
 
   //TESTING
   write(1, "resultat construcció string trama: \n", strlen("resultat construcció string trama: \n"));
+
+  //printf("%.256s\n", string);
+  /*char letra = 'K';
   for(int i = 0; i < 256; i++) {
-    printf("%c\n", string[i]);
-  }
-  write(1, string, strlen(string));
-  
+    printf("%d%c\n", i, string[i]);
+    if (string[i] == '\0') {
+      write(1, &letra, sizeof(char));
+    } else {
+      write(1, &string[i], sizeof(char));
+    }
+    
+
+  }*/
+
+  /*for(int i = 0; i < 256; i++) {
+    write(1, &string[i], sizeof(char));
+  }*/
+
   write(fd, string, strlen(string));
 
   free(string);
@@ -165,15 +177,19 @@ Trama TramaCreate (char type, char *header, char *data) {
   strcpy(trama.header, header);
   
   int sizeData = 256 - 3 - trama.header_length;
+
+  //write(1, data, sizeData *sizeof(char));
   trama.data = malloc(sizeof(char) * (sizeData));
   memset(trama.data, 0, sizeData); //Padding
+  //strcpy(trama.data, data); //no redimensiona
+
   int sizeDataString = 0;
   sizeDataString = strlen(data);
   for(int i = 0; i < sizeDataString; i++) {
       trama.data[i] = data[i];
   }
-  //strcpy(trama.data, data); //no redimensiona
 
+  //write(1, trama.data, strlen(trama.data));
   return trama;
 }
 

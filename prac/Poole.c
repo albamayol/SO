@@ -116,9 +116,14 @@ void establishDiscoveryConnection() {
     
     char* aux = NULL;
     aux = createString3Params(dPoole.serverName, dPoole.ipServer, dPoole.puertoServer);
-    write(1, anadirClaudators(aux), strlen(anadirClaudators(aux)));
+    //printar aux
+    //write(1, aux, strlen(aux));
     setTramaString(TramaCreate(0x01, NEW_POOLE, anadirClaudators(aux)), dPoole.fdPooleClient);
     freeString(aux);
+    aux = NULL;
+
+
+    close(dPoole.fdPooleClient);
 }
 
 void waitingForRequests() {
@@ -144,7 +149,7 @@ void waitingForRequests() {
     //TRANSMISIONES POOLE<->BOWMAN
 
 
-
+    
 }
 
 /*
