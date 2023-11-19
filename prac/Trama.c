@@ -154,9 +154,9 @@ void setTramaString(Trama trama, int fd) {
 
   }*/
 
-  /*for(int i = 0; i < 256; i++) {
+  for(int i = 0; i < 256; i++) {
     write(1, &string[i], sizeof(char));
-  }*/
+  }
 
   write(fd, string, strlen(string));
 

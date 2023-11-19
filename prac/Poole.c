@@ -119,7 +119,13 @@ void establishDiscoveryConnection() {
     //printar aux
     //write(1, aux, strlen(aux));
     setTramaString(TramaCreate(0x01, NEW_POOLE, anadirClaudators(aux)), dPoole.fdPooleClient);
+
     freeString(aux);
+    aux = NULL;
+
+
+    
+    close(dPoole.fdPooleClient);
 }
 
 void waitingForRequests() {
