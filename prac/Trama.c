@@ -31,8 +31,7 @@ char* createString3Params(char* param1, char* param2, char* param3) {
 //string -> trama
 Trama setStringTrama(char *string) {
   Trama trama;
-  int j = 0;
-  int i = 3;
+  int i = 0;
 
   // Gestion del Type
   write(1, "TYPE\n", strlen("TYPE\n"));
@@ -52,14 +51,13 @@ Trama setStringTrama(char *string) {
   write(1, "HEADER\n", strlen("HEADER\n"));
   trama.header = (char *)malloc((trama.header_length + 1) * sizeof(char)); 
 
-  for (j = 0; j < trama.header_length; j++) {
-    trama.header[j] = string[i];
-    printf("string: %c\n", string[i]);
-    printf("trama.header: %c\n", trama.header[j]);
-    i++;
+  for (i = 0; i < trama.header_length; i++) {
+    trama.header[i] = string[i + 3];
+    printf("string: %c\n", string[i + 3]);
+    printf("trama.header: %c\n", trama.header[i]);;
   }
 
-  trama.header[i] = '\0';
+  trama.header[i + 3] = '\0';
   write(1, trama.header, strlen(trama.header));
 
   // Gestion del Data
@@ -93,7 +91,7 @@ void setTramaString(Trama trama, int fd) {
 
   //write(1, "HEADER_LEN\n", strlen("HEADER_LEN\n"));
   //printf("%hd\n", trama.header_length);
-  char *header_len = malloc(2 * sizeof(char));
+  char header_len[2] = {0};
   shortToChars(trama.header_length, header_len);
 
   string[1] = header_len[1];
@@ -154,16 +152,16 @@ void setTramaString(Trama trama, int fd) {
     write(1, &string[i], sizeof(char));
   }
 
-  write(fd, string, strlen(string));
+  write(fd, string, 256);
 
   free(string);
   string = NULL;
-  free(header_len);
-  header_len = NULL;
+  
 }
 
 Trama TramaCreate (char type, char *header, char *data) {
   Trama trama;
+
 
   trama.type = type;
 
