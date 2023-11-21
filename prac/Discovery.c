@@ -66,27 +66,11 @@ void conexionPoole(int fd_poole) {
     char *stringTrama = (char *)malloc(sizeof(char)*256);
     read(fd_poole, stringTrama, 256); //read esperando 1a trama
     //convertimos lo leido en trama
-    write(1, stringTrama, sizeof(char)*256);
-    Trama trama = setStringTrama(stringTrama);
-
-    printf("type: %c\n", trama.type);
-    printf("header_length: %hd\n", trama.header_length);
-    printf("header: %s\n", trama.header);
-    
-    int size_data = 256 - 3 - trama.header_length;
-    for(int i = 0; i < size_data; i++) {
-      write(1, &trama.data[i], sizeof(char));
-    }
-    
+    Trama trama = setStringTrama(stringTrama);    
 
     Element element;
     separaDataToElement(trama.data, &element);
     freeTrama(trama);
-
-    printf("nom: %s\n", element.name);
-    printf("ip: %s\n", element.ip);
-    printf("port: %d\n", element.port);
-    printf("num_connections: %d\n", element.num_connections);
     
     //add element as the last one
     LINKEDLIST_goToHead (&dDiscovery.poole_list);
@@ -115,14 +99,10 @@ void conexionBowman(int fd_bowman) {
         sig_func();
     }
     
-    Trama trama = setStringTrama(string);
-    printf("Datos de la trama: %s\n", trama.data);
-
-    //hacemos algo con esta trama?
+    //Trama trama = setStringTrama(string); //hacemos algo con esta trama?
     freeString(string);
-    // Enviar trama con servername, ip y port del Poole
-    Element e = pooleMinConnections(&dDiscovery.poole_list);
-    //TODO si e.num_connections == -1, no hay elementos en la lista, es decir, no hay Poole's conectados aún
+   
+    Element e = pooleMinConnections(&dDiscovery.poole_list); // Enviar trama con servername, ip y port del Poole
     if (e.num_connections == -1) {
         //NO HAY POOLE'S CONECTADOS! NO PODEMOS REDIRIGIR EL BOWMAN A NINGUN POOLE --> ENVIAMOS TRAMA CON_KO!!!
         setTramaString(TramaCreate(0x01, CON_KO, ""), fd_bowman);
