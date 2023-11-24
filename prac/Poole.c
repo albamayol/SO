@@ -93,6 +93,30 @@ void printInfoFile() {
 
 }
 
+void waitingForRequests() {
+    dPoole.fdPooleServer = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (dPoole.fdPooleServer < 0) {
+        perror ("Error al crear el socket de Bowman");
+        close(dPoole.fdPooleServer);
+        sig_func();
+    }
+
+    bzero (&dPoole.poole_addr, sizeof (dPoole.poole_addr));
+    dPoole.poole_addr.sin_family = AF_INET;
+    dPoole.poole_addr.sin_port = htons(atoi(dPoole.puertoServer)); 
+    dPoole.poole_addr.sin_addr.s_addr = inet_addr(dPoole.ipServer);
+
+    if (bind(dPoole.fdPooleServer, (struct sockaddr*)&dPoole.poole_addr, sizeof(dPoole.poole_addr)) < 0) {
+        perror("Error al enlazar el socket de Poole");
+        close(dPoole.fdPooleServer);
+        sig_func();
+    }
+
+    listen(dPoole.fdPooleServer, 20); // Esperar conexiones entrantes de Bowman
+    //TRANSMISIONES POOLE<->BOWMAN
+    
+}
+
 void establishDiscoveryConnection() {
     dPoole.fdPooleClient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dPoole.fdPooleClient < 0) {
@@ -121,37 +145,22 @@ void establishDiscoveryConnection() {
     freeString(aux);
     aux = NULL;
 
-
+    char *stringTrama = (char *)malloc(sizeof(char)*256);
+    read(dPoole.fdPooleClient, stringTrama, 256);
     
+    Trama trama = setStringTrama(stringTrama);    
+
+    if (strcmp(trama.header,"CON_OK") == 0)  {
+        close(dPoole.fdPooleClient);
+        freeTrama(trama);
+        waitingForRequests();
+    } else if (strcmp(trama.header,"CON_KO") == 0) {
+        //PRINT DE QUE NO SE HA PODIDO ESTABLECER LA COMUNICACION CON DISCOVERY
+    }
+    
+    freeTrama(trama);
+
     close(dPoole.fdPooleClient);
-}
-
-void waitingForRequests() {
-    dPoole.fdPooleServer = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (dPoole.fdPooleServer < 0) {
-        perror ("Error al crear el socket de Bowman");
-        close(dPoole.fdPooleServer);
-        sig_func();
-    }
-
-    bzero (&dPoole.poole_addr, sizeof (dPoole.poole_addr));
-    dPoole.poole_addr.sin_family = AF_INET;
-    dPoole.poole_addr.sin_port = htons(atoi(dPoole.puertoServer)); 
-    dPoole.poole_addr.sin_addr.s_addr = inet_addr(dPoole.ipServer);
-
-    if (bind(dPoole.fdPooleServer, (struct sockaddr*)&dPoole.poole_addr, sizeof(dPoole.poole_addr)) < 0) {
-        perror("Error al enlazar el socket de Poole");
-        close(dPoole.fdPooleServer);
-        sig_func();
-    }
-
-    listen(dPoole.fdPooleServer, 20); // Esperar conexiones entrantes de Bowman
-    //TRANSMISIONES POOLE<->BOWMAN
- 
-
- 
-
-    
 }
 
 /*
@@ -185,7 +194,6 @@ int main(int argc, char ** argv) {
             close(fd);
 
             establishDiscoveryConnection();
-            //waitingForRequests();
 
             sig_func();
         }

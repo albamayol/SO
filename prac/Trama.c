@@ -32,19 +32,21 @@ char* createString3Params(char* param1, char* param2, char* param3) {
 Trama setStringTrama(char *string) {
   Trama trama;
   int i = 0;
-
+  
   // Gestion del Type
   trama.type = string[0];
 
   // Gestion del Header Length
   trama.header_length = charsToShort(string[2], string[1]);
-
+  //write(1, &trama.header_length, sizeof(short));
 
   // Gestion del Header
   trama.header = (char *)malloc((trama.header_length + 1) * sizeof(char)); 
+  //write(1, trama.header, strlen(trama.header));
 
   for (i = 0; i < trama.header_length; i++) {
     trama.header[i] = string[i + 3];
+    //write(1, "KEV\n", 4);
   }
   trama.header[i + 3] = '\0';
 
@@ -77,6 +79,7 @@ void setTramaString(Trama trama, int fd) {
   //HEADER
   for (int i = 0; i < trama.header_length; i++) {
     string[offset] = trama.header[i];
+    //write(1, &string[offset], sizeof(char)); //LO HACE BIEN
     ++offset;
   }
 
@@ -90,7 +93,7 @@ void setTramaString(Trama trama, int fd) {
     ++offset;
   }
   
-
+  //write(1, string, 256); //SE ENVIA BIEN
   write(fd, string, 256);
 
   free(string);
@@ -109,6 +112,8 @@ Trama TramaCreate (char type, char *header, char *data) {
   trama.header = malloc(sizeof(char) * (trama.header_length + 1));
   memset(trama.header, 0, (trama.header_length + 1));
   strcpy(trama.header, header);
+
+  //write(1, trama.header, strlen(trama.header)); //ESTO LO HACE BIEN
   
   int sizeData = 256 - 3 - trama.header_length;
   //write(1, data, sizeData *sizeof(char));
@@ -117,8 +122,13 @@ Trama TramaCreate (char type, char *header, char *data) {
   //strcpy(trama.data, data); //no redimensiona
   int sizeDataString = 0;
   sizeDataString = strlen(data);
+
+  //char c = 'K';
   for(int i = 0; i < sizeDataString; i++) {
       trama.data[i] = data[i];
+      /*if (trama.data[i] == '\0') {
+        write(1, &c, sizeof(char));
+      }*/
   }
   //write(1, trama.data, strlen(trama.data));
   return trama;

@@ -81,7 +81,7 @@ void conexionPoole(int fd_poole) {
     freeElement(&element);
 
 
-    setTramaString(TramaCreate(0x01, CON_OK, ""), fd_poole);
+    setTramaString(TramaCreate(0x01, "CON_OK", ""), fd_poole);
 
     
     close(fd_poole);
@@ -98,14 +98,18 @@ void conexionBowman(int fd_bowman) {
         close(fd_bowman);
         sig_func();
     }
+
+    //write(1, string, 256);
     
     //Trama trama = setStringTrama(string); //hacemos algo con esta trama?
     freeString(string);
    
     Element e = pooleMinConnections(&dDiscovery.poole_list); // Enviar trama con servername, ip y port del Poole
     if (e.num_connections == -1) {
+        //write(1, "HOLA\n", 5);
         //NO HAY POOLE'S CONECTADOS! NO PODEMOS REDIRIGIR EL BOWMAN A NINGUN POOLE --> ENVIAMOS TRAMA CON_KO!!!
-        setTramaString(TramaCreate(0x01, CON_KO, ""), fd_bowman);
+        setTramaString(TramaCreate(0x01, "CON_KO", ""), fd_bowman);
+        //write(1, "KO\n", 3);
     } else {
         char* aux = NULL;
         char* portString = NULL;
@@ -115,7 +119,8 @@ void conexionBowman(int fd_bowman) {
         freeElement(&e);
         freeString(portString);
 
-        setTramaString(TramaCreate(0x01, CON_OK, anadirClaudators(aux)), fd_bowman);
+        
+        setTramaString(TramaCreate(0x01, "CON_OK", anadirClaudators(aux)), fd_bowman);
         freeString(aux);
     }
 
@@ -126,7 +131,7 @@ void connect_Poole() {
     socklen_t pAddr = sizeof(dDiscovery.poole_addr);
     int fd_poole = accept(dDiscovery.fdPoole, (struct sockaddr *)&dDiscovery.poole_addr, &pAddr); //fd para interaccionar
     if (fd_poole < 0) { 
-        setTramaString(TramaCreate(0x01, CON_KO, ""), fd_poole);    //TODO REVISAR DONDE VA ESTA TRAMA CON_KO!!!
+        //setTramaString(TramaCreate(0x01, "CON_KO", ""), fd_poole);    //TODO REVISAR DONDE VA ESTA TRAMA CON_KO!!!
         perror("Error al aceptar la conexión de Poole");
         close(fd_poole);
         return;
@@ -143,7 +148,6 @@ void connect_Bowman() {
         close(fd_bowman);
         return;
     }
-
     //el envío de tramas es muy rapido, alomejor no hace falta crear un thread, poco probable que mientras trato una conexion de poole reciba otra de otro poole
     //ademas es mucho gasto recursos
     //cerrar conexion socket!!

@@ -224,8 +224,27 @@ void establishDiscoveryConnection() {
     freeString(aux);
     aux = NULL;
 
+    char *stringTrama = (char *)malloc(sizeof(char)*256);
+    read(dBowman.fdDiscovery, stringTrama, 256);
 
+    write(1, stringTrama, 256);
+    //EL PROBLEMA ESTA AQUI
+
+    Trama trama = setStringTrama(stringTrama);    
+
+    //write(1, trama.header, strlen(trama.header));
+    if (strcmp(trama.header,"CON_OK") == 0)  {
+        //[Kevin&192.168.2.2&8090]
+
+        //Crear un socket para comunicarse con Poole
+
+        close(dBowman.fdDiscovery);
+        freeTrama(trama);
+    } else if (strcmp(trama.header,"CON_KO") == 0) {
+        write(1, "KEV\n", 4);
+    }
     
+    freeTrama(trama);
     close(dBowman.fdDiscovery);
 }
 
