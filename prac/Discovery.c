@@ -4,7 +4,6 @@ Autores:
     Kevin Eljarrat Ohayon --> kevin.eljarrat
 */
 
-#include "Global.h"
 #include "Trama.h"
 
 dataDiscovery dDiscovery;
@@ -63,15 +62,26 @@ void sig_func() {
 }
 
 void conexionPoole(int fd_poole) {
-    char *stringTrama = (char *)malloc(sizeof(char)*256);
-    read(fd_poole, stringTrama, 256); //read esperando 1a trama
-    //convertimos lo leido en trama
-    Trama trama = setStringTrama(stringTrama);    
-
+    Trama trama = readTrama(fd_poole);
     Element element;
+
+    write(1, trama.header, strlen(trama.header));
+    write(1, "\n", 1);
+    write(1, trama.data, strlen(trama.data));
     separaDataToElement(trama.data, &element);
-    freeTrama(trama);
+    freeTrama(&trama);
     
+    write(1, "ELEMENT:\n", strlen("ELEMENT:\n"));
+    write(1, element.name, strlen(element.name));
+    write(1, "\n", 1);
+    write(1, element.ip, strlen(element.ip));
+    write(1, "\n", 1);
+    char *msg = NULL;
+    asprintf(&msg, "port: %d\n", element.port);
+    printF(msg);
+    freeString(msg);
+    //LO HACE BIEN!
+
     //add element as the last one
     LINKEDLIST_goToHead (&dDiscovery.poole_list);
     while(!LINKEDLIST_isAtEnd(dDiscovery.poole_list)) {
@@ -118,7 +128,6 @@ void conexionBowman(int fd_bowman) {
         aux = createString3Params(e.name, e.ip, portString);
         freeElement(&e);
         freeString(portString);
-
         
         setTramaString(TramaCreate(0x01, "CON_OK", anadirClaudators(aux)), fd_bowman);
         freeString(aux);

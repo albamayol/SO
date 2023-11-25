@@ -89,16 +89,10 @@ char* convertIntToString(int num) {
 
 void separaDataToElement(char* data, Element* e) {
     int i = 0, j = 0;
-    char* name = NULL;
-    char* ip = NULL;
-    char* port = NULL;
-    name = (char *)malloc(sizeof(char) * 1);
-    ip = (char *)malloc(sizeof(char) * 1);
-    port = (char *)malloc(sizeof(char) * 1);
-
-
-    i++;    //saltamos 1r '['
-
+    char* name = (char *)malloc(sizeof(char));
+    char* ip = (char *)malloc(sizeof(char));
+    char* port = (char *)malloc(sizeof(char));
+   
     while(data[i] != '&') {
         name[j] = data[i];
        
@@ -107,6 +101,8 @@ void separaDataToElement(char* data, Element* e) {
         i++;
     }
     name[j] = '\0';
+    write(1, "\n", 1);
+    write(1, name, strlen(name));
 
     //saltamos primer '&'
     i++;
@@ -119,26 +115,32 @@ void separaDataToElement(char* data, Element* e) {
         i++;
     }
     ip[j] = '\0';
-
+    write(1, "\n", 1);
+    write(1, ip, strlen(ip));
     //saltamos segundo '&'
     i++;
     j = 0;
 
 
-    while(data[i] != ']') {
+    while(data[i] != '\0') {
         port[j] = data[i];
         j++;
         port = (char *) realloc(port, j + 1);
         i++;
     }
     port[j] = '\0';
-    //estamos en ']'
+    write(1, "\n", 1);
+    write(1, port, strlen(port));
+    write(1, "\n", 1);
 
-    e->name = name;
-    e->ip = ip;
+    e->name = strdup(name);
+    e->ip = strdup(ip);
     e->port = atoi(port);
     e->num_connections = 0;
 
+    freeString(name);
+    freeString(ip);
+    freeString(port);
 }
 
 void freeElement(Element* e) {

@@ -38,25 +38,24 @@ Trama setStringTrama(char *string) {
 
   // Gestion del Header Length
   trama.header_length = charsToShort(string[2], string[1]);
-  //write(1, &trama.header_length, sizeof(short));
 
   // Gestion del Header
   trama.header = (char *)malloc((trama.header_length + 1) * sizeof(char)); 
-  //write(1, trama.header, strlen(trama.header));
 
-  for (i = 0; i < trama.header_length; i++) {
+  for (i = 0; i < trama.header_length-1; i++) {
     trama.header[i] = string[i + 3];
-    //write(1, "KEV\n", 4);
   }
   trama.header[i + 3] = '\0';
 
 
   //DATA
   int dataSize = 256 - 3 - trama.header_length;
-  trama.data = (char *)malloc((dataSize) * sizeof(char)); 
+  trama.data = (char *)malloc((dataSize + 1) * sizeof(char)); 
   for (i = 0; i < dataSize; i++) {
-    trama.data[i] = string[i + 3 + trama.header_length];
+
+    trama.data[i] = string[i + 2 + trama.header_length];
   }
+  trama.data[i] = '\0';
 
   return trama;
 }
@@ -118,7 +117,7 @@ Trama TramaCreate (char type, char *header, char *data) {
   int sizeData = 256 - 3 - trama.header_length;
   //write(1, data, sizeData *sizeof(char));
   trama.data = malloc(sizeof(char) * (sizeData));
-  memset(trama.data, 0, sizeData); //Padding
+  memset(trama.data, '~', sizeData); //Padding
   //strcpy(trama.data, data); //no redimensiona
   int sizeDataString = 0;
   sizeDataString = strlen(data);
@@ -134,9 +133,21 @@ Trama TramaCreate (char type, char *header, char *data) {
   return trama;
 }
 
-void freeTrama(Trama trama) {
-  free(trama.data);
-  free(trama.header);
-  trama.data = NULL;
-  trama.header = NULL;
+Trama readTrama(int fd) {
+  Trama trama;
+  read(fd, &trama.type, sizeof(char));    
+  read(fd, &trama.header_length, sizeof(short));
+  trama.header = malloc(sizeof(char)*(trama.header_length+1));
+  read(fd, trama.header, trama.header_length);
+  trama.header[trama.header_length] = '\0';
+  trama.data = read_until(fd, '~');
+
+  return trama;
+}
+
+void freeTrama(Trama *trama) {
+  free(trama->data);
+  free(trama->header);
+  trama->data = NULL;
+  trama->header = NULL;
 }

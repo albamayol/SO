@@ -4,7 +4,6 @@ Autores:
     Kevin Eljarrat Ohayon --> kevin.eljarrat
 */
 
-#include "Global.h"
 #include "Trama.h"
 
 dataPoole dPoole;
@@ -112,8 +111,13 @@ void waitingForRequests() {
         sig_func();
     }
 
+    write(1, "socket bowman ok!\n", strlen("socket bowman ok!\n"));
     listen(dPoole.fdPooleServer, 20); // Esperar conexiones entrantes de Bowman
+
     //TRANSMISIONES POOLE<->BOWMAN
+    write(1, "leyendo...\n", strlen("leyendo...\n"));
+    readTrama(dPoole.fdPooleServer);    //ERROR AQUI
+    write(1, "leido...\n", strlen("leido...\n"));
     
 }
 
@@ -140,25 +144,22 @@ void establishDiscoveryConnection() {
     
     char* aux = NULL;
     aux = createString3Params(dPoole.serverName, dPoole.ipServer, dPoole.puertoServer);
-    setTramaString(TramaCreate(0x01, NEW_POOLE, anadirClaudators(aux)), dPoole.fdPooleClient);
-
+    setTramaString(TramaCreate(0x01, "NEW_POOLE", aux), dPoole.fdPooleClient);
     freeString(aux);
     aux = NULL;
 
-    char *stringTrama = (char *)malloc(sizeof(char)*256);
-    read(dPoole.fdPooleClient, stringTrama, 256);
-    
-    Trama trama = setStringTrama(stringTrama);    
+    Trama trama = readTrama(dPoole.fdPooleClient);    
 
     if (strcmp(trama.header,"CON_OK") == 0)  {
+        write(1, "OK!!!!\n", strlen("OK!!!!\n"));
         close(dPoole.fdPooleClient);
-        freeTrama(trama);
+        freeTrama(&trama);
         waitingForRequests();
     } else if (strcmp(trama.header,"CON_KO") == 0) {
         //PRINT DE QUE NO SE HA PODIDO ESTABLECER LA COMUNICACION CON DISCOVERY
     }
     
-    freeTrama(trama);
+    freeTrama(&trama);
 
     close(dPoole.fdPooleClient);
 }

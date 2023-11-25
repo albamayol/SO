@@ -9,14 +9,14 @@ Poole.exe: Poole.o Global.o linkedlist.o Trama.o
 Discovery.exe: Discovery.o Global.o linkedlist.o Trama.o
 	gcc Discovery.o Global.o linkedlist.o Trama.o -o Discovery.exe -pthread -Wall -Wextra -g
 
-Trama.o: Trama.c Trama.h
-	gcc -c Trama.c -pthread -Wall -Wextra
-
 linkedlist.o: linkedlist.c linkedlist.h
 	gcc -c linkedlist.c -pthread -Wall -Wextra
 
 Global.o: Global.c Global.h linkedlist.h
 	gcc -c Global.c -pthread -Wall -Wextra
+
+Trama.o: Trama.c Trama.h Global.h
+	gcc -c Trama.c -pthread -Wall -Wextra
 
 Bowman.o: Bowman.c Global.h linkedlist.h Trama.h
 	gcc -c Bowman.c -pthread -Wall -Wextra

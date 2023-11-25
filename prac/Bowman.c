@@ -4,7 +4,6 @@ Autores:
     Kevin Eljarrat Ohayon --> kevin.eljarrat
 */
 
-#include "Global.h"
 #include "Trama.h"
 
 dataBowman dBowman;
@@ -212,39 +211,29 @@ void establishDiscoveryConnection() {
 
     int length = strlen(dBowman.clienteName) + 3;
     aux = (char *) malloc(sizeof(char) * length);
-
     for (int i = 0; i < length; i++) {
         aux[i] = '\0';
     }
 
     strcpy(aux, dBowman.clienteName);
-
     setTramaString(TramaCreate(0x01, NEW_BOWMAN, anadirClaudators(aux)), dBowman.fdDiscovery);
-
     freeString(aux);
     aux = NULL;
 
-    char *stringTrama = (char *)malloc(sizeof(char)*256);
-    read(dBowman.fdDiscovery, stringTrama, 256);
+    Trama trama = readTrama(dBowman.fdDiscovery);
 
-    write(1, stringTrama, 256);
-    //EL PROBLEMA ESTA AQUI
-
-    Trama trama = setStringTrama(stringTrama);    
-
-    //write(1, trama.header, strlen(trama.header));
     if (strcmp(trama.header,"CON_OK") == 0)  {
         //[Kevin&192.168.2.2&8090]
 
         //Crear un socket para comunicarse con Poole
 
         close(dBowman.fdDiscovery);
-        freeTrama(trama);
+        freeTrama(&trama);
     } else if (strcmp(trama.header,"CON_KO") == 0) {
-        write(1, "KEV\n", 4);
+        write(1, "CON_KO\n", strlen("CON_KO\n"));
     }
     
-    freeTrama(trama);
+    freeTrama(&trama);
     close(dBowman.fdDiscovery);
 }
 
