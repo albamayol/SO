@@ -30,25 +30,25 @@ void inicializarDataPoole() {
 */
 void sig_func() {
     if (dPoole.serverName != NULL) {
-        freeString(dPoole.serverName);
+        freeString(&dPoole.serverName);
     }
     if (dPoole.pathServerFile != NULL) {
-        freeString(dPoole.pathServerFile);
+        freeString(&dPoole.pathServerFile);
     }
     if (dPoole.ipDiscovery != NULL) {
-        freeString(dPoole.ipDiscovery);
+        freeString(&dPoole.ipDiscovery);
     }
     if (dPoole.puertoDiscovery != NULL) {
-        freeString(dPoole.puertoDiscovery);
+        freeString(&dPoole.puertoDiscovery);
     }
     if (dPoole.ipServer != NULL) {
-        freeString(dPoole.ipServer);
+        freeString(&dPoole.ipServer);
     }
     if (dPoole.puertoServer != NULL) {
-        freeString(dPoole.puertoServer);
+        freeString(&dPoole.puertoServer);
     }
     if (dPoole.msg != NULL) {
-        freeString(dPoole.msg);
+        freeString(&dPoole.msg);
     }
     exit(EXIT_FAILURE);
 }
@@ -59,38 +59,22 @@ void sig_func() {
 @Retorn: ---
 */
 void printInfoFile() {
-    
-    printF("\nFile read correctly:\n");
-    asprintf(&dPoole.msg, "Server - %s\n", dPoole.serverName);
-    printF(dPoole.msg);
-    free(dPoole.msg);
-    
+    asprintf(&dPoole.msg, "\nFile read correctly:\n"
+    "Server - %s\n"
+    "Server Directory - %s\n"
+    "IP Discovery - %s\n"
+    "Port Server - %s\n"
+    "IP Server - %s\n"
+    "Port Server - %s\n\n",
+    dPoole.serverName, dPoole.pathServerFile, dPoole.ipDiscovery,
+    dPoole.puertoServer, dPoole.ipServer, dPoole.puertoServer);
 
-    asprintf(&dPoole.msg, "Server Directory - %s\n", dPoole.pathServerFile);
-    printF(dPoole.msg);
-    free(dPoole.msg);
-    
-
-    asprintf(&dPoole.msg, "IP Discovery - %s\n", dPoole.ipDiscovery);
-    printF(dPoole.msg);
-    free(dPoole.msg);
-    
-
-    asprintf(&dPoole.msg, "Port Server - %s\n\n", dPoole.puertoServer);
-    printF(dPoole.msg);
-    free(dPoole.msg);
-
-    asprintf(&dPoole.msg, "IP Server - %s\n", dPoole.ipServer);
-    printF(dPoole.msg);
-    free(dPoole.msg);
-
-    asprintf(&dPoole.msg, "Port Server - %s\n\n", dPoole.puertoServer);
-    printF(dPoole.msg);
-    free(dPoole.msg);
-
-    dPoole.msg = NULL;
-
+    if (dPoole.msg != NULL) {
+        printF(dPoole.msg);
+        freeString(&dPoole.msg);
+    }
 }
+
 
 void waitingForRequests() {
     dPoole.fdPooleServer = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -117,6 +101,8 @@ void waitingForRequests() {
     //TRANSMISIONES POOLE<->BOWMAN
     write(1, "leyendo...\n", strlen("leyendo...\n"));
     readTrama(dPoole.fdPooleServer);    //ERROR AQUI
+    //write(1, trama.data, strlen(trama.data));
+
     write(1, "leido...\n", strlen("leido...\n"));
     
 }
@@ -145,8 +131,7 @@ void establishDiscoveryConnection() {
     char* aux = NULL;
     aux = createString3Params(dPoole.serverName, dPoole.ipServer, dPoole.puertoServer);
     setTramaString(TramaCreate(0x01, "NEW_POOLE", aux), dPoole.fdPooleClient);
-    freeString(aux);
-    aux = NULL;
+    freeString(&aux);
 
     Trama trama = readTrama(dPoole.fdPooleClient);    
 

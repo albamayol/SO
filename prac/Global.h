@@ -102,9 +102,9 @@ typedef struct {
 char* read_until(int fd, char delimiter);
 char* read_until_string(char *string, char delimiter);
 void separaDataToElement(char* data, Element* e);
-Element pooleMinConnections(LinkedList * list);
+Element pooleMinConnections(LinkedList list);
 char* convertIntToString(int num);
 void freeElement(Element* e);
-void freeString(char *string);
+void freeString(char **string);
 
 #endif

@@ -31,28 +31,28 @@ void inicializarDataBowman() {
 */
 void sig_func() {
     if(dBowman.upperInput != NULL) {
-        freeString(dBowman.upperInput);
+        freeString(&dBowman.upperInput);
     }
     if(dBowman.msg != NULL) {
-        freeString(dBowman.msg);
+        freeString(&dBowman.msg);
     }
     if(dBowman.input != NULL) {
-        freeString(dBowman.input);
+        freeString(&dBowman.input);
     }
     if(dBowman.clienteName != NULL) {
-        freeString(dBowman.clienteName);
+        freeString(&dBowman.clienteName);
     }
     if(dBowman.clienteNameAux != NULL) {
-        freeString(dBowman.clienteNameAux);
+        freeString(&dBowman.clienteNameAux);
     }
     if(dBowman.pathClienteFile != NULL) {
-        freeString(dBowman.pathClienteFile);
+        freeString(&dBowman.pathClienteFile);
     }
     if(dBowman.ip != NULL) {
-        freeString(dBowman.ip);
+        freeString(&dBowman.ip);
     }
     if(dBowman.puerto != NULL) {
-        freeString(dBowman.puerto);
+        freeString(&dBowman.puerto);
     }
     exit(EXIT_FAILURE);
 }
@@ -143,30 +143,15 @@ char * verifyClientName(char * clienteNameAux) {
 @Retorn: ---
 */
 void printInfoFile() {
+    asprintf(&dBowman.msg, "\nFile read correctly:\nUser - %s\nDirectory - %s\nIP - %s\nPort - %s\n\n",
+    dBowman.clienteName, dBowman.pathClienteFile, dBowman.ip, dBowman.puerto);
     
-    printF("\nFile read correctly:\n");
-    asprintf(&dBowman.msg, "User - %s\n", dBowman.clienteName);
-    printF(dBowman.msg);
-    free(dBowman.msg);
-    
-
-    asprintf(&dBowman.msg, "Directory - %s\n", dBowman.pathClienteFile);
-    printF(dBowman.msg);
-    free(dBowman.msg);
-    
-
-    asprintf(&dBowman.msg, "IP - %s\n", dBowman.ip);
-    printF(dBowman.msg);
-    free(dBowman.msg);
-    
-
-    asprintf(&dBowman.msg, "Port - %s\n\n", dBowman.puerto);
-    printF(dBowman.msg);
-    free(dBowman.msg);
-
-
-    dBowman.msg = NULL;
+    if (dBowman.msg != NULL) {
+        printF(dBowman.msg);
+        freeString(&dBowman.msg);
+    }
 }
+
 
 /*
 @Finalitat: Comprobar las posibles casuisticas con el comando DOWNLOAD
@@ -216,15 +201,13 @@ void establishDiscoveryConnection() {
     }
 
     strcpy(aux, dBowman.clienteName);
-    setTramaString(TramaCreate(0x01, NEW_BOWMAN, anadirClaudators(aux)), dBowman.fdDiscovery);
-    freeString(aux);
-    aux = NULL;
+    setTramaString(TramaCreate(0x01, "NEW_BOWMAN", aux), dBowman.fdDiscovery);
+    freeString(&aux);
 
     Trama trama = readTrama(dBowman.fdDiscovery);
 
     if (strcmp(trama.header,"CON_OK") == 0)  {
-        //[Kevin&192.168.2.2&8090]
-
+        
         //Crear un socket para comunicarse con Poole
 
         close(dBowman.fdDiscovery);
@@ -261,7 +244,7 @@ int main(int argc, char ** argv) {
             dBowman.clienteNameAux = read_until(fd, '\n');
 
             dBowman.clienteName = verifyClientName(dBowman.clienteNameAux);
-            freeString(dBowman.clienteNameAux);
+            freeString(&dBowman.clienteNameAux);
 
             dBowman.pathClienteFile = read_until(fd, '\n');
             dBowman.ip = read_until(fd, '\n');
@@ -269,7 +252,7 @@ int main(int argc, char ** argv) {
             
             asprintf(&dBowman.msg, "\n%s user initialized\n", dBowman.clienteName);
             printF(dBowman.msg);
-            freeString(dBowman.msg);
+            freeString(&dBowman.msg);
 
             printInfoFile();
 
@@ -289,7 +272,7 @@ int main(int argc, char ** argv) {
                         establishDiscoveryConnection();
                         asprintf(&dBowman.msg, "%s connected to HAL 9000 system, welcome music lover!\n", dBowman.clienteName);
                         printF(dBowman.msg);
-                        freeString(dBowman.msg);
+                        freeString(&dBowman.msg);
                         clientConnected = 1;
                     } else {
                         printF("You must establish a connection with the server before making any request\n");
@@ -320,12 +303,11 @@ int main(int argc, char ** argv) {
                     }
                 }
 
-                freeString(dBowman.input);
-                freeString(dBowman.upperInput);
+                freeString(&dBowman.input);
+                freeString(&dBowman.upperInput);
             }
 
             close(fd);
-            dBowman.msg = NULL;
             sig_func();
         }
     }
