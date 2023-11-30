@@ -6,16 +6,23 @@ Autores:
 
 #include "Global.h"
 
-void freeString(char *string) {
-    free(string);
-    string = NULL;
+void freeElement(Element* e) {
+    if (e->name != NULL) {
+        free(e->name);
+        e->name = NULL;
+    }
+
+    if (e->ip != NULL) {
+        free(e->ip);
+        e->ip = NULL;
+    }
 }
 
-void freeElement(Element* e) {
-  free(e->name);
-  free(e->ip);
-  e->name = NULL;
-  e->ip = NULL;
+void freeString(char **string) {
+    if (*string != NULL) {
+        free(*string);
+        *string = NULL;
+    }
 }
 
 char* read_until(int fd, char delimiter) {
@@ -56,7 +63,7 @@ Element pooleMinConnections(LinkedList list) {
         while(!LINKEDLIST_isAtEnd(list)) {
             Element e_aux = LINKEDLIST_get(&list);
             
-            write(1, e_aux.name, strlen(e_aux.name));
+            write(1, e_aux.name, strlen(e_aux.name)); 
             write(1, e_aux.ip, strlen(e_aux.ip));
             
             asprintf(&buffer, "\npuerto: %d conexiones: %d\n",e_aux.port, e_aux.num_connections);
@@ -65,7 +72,6 @@ Element pooleMinConnections(LinkedList list) {
 
 
             if (e_aux.num_connections <= minConnections) {
-                if (e_aux.name )
                 e.name = strdup(e_aux.name);
                 e.ip = strdup(e_aux.ip);
                 e.port = e_aux.port;
@@ -168,21 +174,3 @@ void separaDataToElement(char* data, Element* e) {
 }
 
 
-void freeElement(Element* e) {
-    if (e->name != NULL) {
-        free(e->name);
-        e->name = NULL;
-    }
-
-    if (e->ip != NULL) {
-        free(e->ip);
-        e->ip = NULL;
-    }
-}
-
-void freeString(char **string) {
-    if (*string != NULL) {
-        free(*string);
-        *string = NULL;
-    }
-}

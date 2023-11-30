@@ -50,14 +50,6 @@ Autores:
 
 #define printF(x) write(1, x, strlen(x))
 
-/*
-typedef struct {
-    char type;
-    short header_length; //12
-    char *header;
-    char *data;
-} Trama;
-*/
 
 typedef struct {
     int fdDiscovery;
