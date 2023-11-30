@@ -12,9 +12,7 @@ typedef struct {
 
 #define printF(x) write(1, x, strlen(x))
 
-char* anadirClaudators(char *charheader);
 char* createString3Params(char* param1, char* param2, char* param3);
-Trama setStringTrama(char *string);
 void shortToChars(short valor, char *cadena);
 void setTramaString (Trama trama, int fd);
 Trama readTrama(int fd);

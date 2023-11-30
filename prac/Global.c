@@ -41,19 +41,18 @@ char* read_until(int fd, char delimiter) {
     return msg;
 }
 
-Element pooleMinConnections(LinkedList * list) {
-    Element e ;
-    e.name = NULL;
-    e.ip = NULL;
+Element pooleMinConnections(LinkedList list) {
+    Element e;
+    e.name = NULL, e.ip = NULL;
     e.port = 0;
     e.num_connections = -1;
     
     int minConnections = 0;
 
-    if (!LINKEDLIST_isEmpty(*list)) {
-        LINKEDLIST_goToHead (list);
-        while(!LINKEDLIST_isAtEnd(*list)) {
-            Element e_aux = LINKEDLIST_get(list);
+    if (!LINKEDLIST_isEmpty(list)) {
+        LINKEDLIST_goToHead (&list);
+        while(!LINKEDLIST_isAtEnd(list)) {
+            Element e_aux = LINKEDLIST_get(&list);
             if (e_aux.num_connections <= minConnections) {
                 e.name = strdup(e_aux.name);
                 e.ip = strdup(e_aux.ip);
@@ -61,7 +60,7 @@ Element pooleMinConnections(LinkedList * list) {
                 e.num_connections = e_aux.num_connections;
             }
             freeElement(&e_aux);
-            LINKEDLIST_next(list);
+            LINKEDLIST_next(&list);
         }
         
     } 
@@ -101,13 +100,14 @@ char* convertIntToString(int num) {
 
 void separaDataToElement(char* data, Element* e) {
     int i = 0, j = 0;
-    char* name = (char *)malloc(sizeof(char));
-    char* ip = (char *)malloc(sizeof(char));
-    char* port = (char *)malloc(sizeof(char));
-   
+    char *name = NULL, *ip = NULL, *port = NULL; 
+
+    name = (char *)malloc(sizeof(char));
+    ip = (char *)malloc(sizeof(char));
+    port = (char *)malloc(sizeof(char));
+
     while(data[i] != '&') {
         name[j] = data[i];
-       
         j++;
         name = (char *) realloc(name, j + 1);
         i++;
@@ -150,8 +150,27 @@ void separaDataToElement(char* data, Element* e) {
     e->port = atoi(port);
     e->num_connections = 0;
 
-    freeString(name);
-    freeString(ip);
-    freeString(port);
+    freeString(&name);
+    freeString(&ip);
+    freeString(&port);
 }
 
+
+void freeElement(Element* e) {
+    if (e->name != NULL) {
+        free(e->name);
+        e->name = NULL;
+    }
+
+    if (e->ip != NULL) {
+        free(e->ip);
+        e->ip = NULL;
+    }
+}
+
+void freeString(char **string) {
+    if (*string != NULL) {
+        free(*string);
+        *string = NULL;
+    }
+}
