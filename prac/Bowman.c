@@ -224,6 +224,8 @@ void establishDiscoveryConnection() {
 
     if (strcmp(trama.header,"CON_OK") == 0)  {
         //[Kevin&192.168.2.2&8090]
+        write(1, "CON_OK\n", strlen("CON_OK\n"));
+        write(1, trama.data, strlen(trama.data));
 
         //Crear un socket para comunicarse con Poole
 

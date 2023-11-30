@@ -6,6 +6,18 @@ Autores:
 
 #include "Global.h"
 
+void freeString(char *string) {
+    free(string);
+    string = NULL;
+}
+
+void freeElement(Element* e) {
+  free(e->name);
+  free(e->ip);
+  e->name = NULL;
+  e->ip = NULL;
+}
+
 char* read_until(int fd, char delimiter) {
     char *msg = NULL;
     char current;
@@ -143,14 +155,3 @@ void separaDataToElement(char* data, Element* e) {
     freeString(port);
 }
 
-void freeElement(Element* e) {
-  free(e->name);
-  free(e->ip);
-  e->name = NULL;
-  e->ip = NULL;
-}
-
-void freeString(char *string) {
-    free(string);
-    string = NULL;
-}
