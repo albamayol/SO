@@ -86,14 +86,16 @@ void conexionPoole(int fd_poole) {
     printF(msg);
     freeString(&msg);
 
-    //add element as the last one
-    // Reallocate memory for the array of structs
-    
+    //add element as the last one    
     asprintf(&buffer, "sizeArrayPooles: %d \n", dDiscovery.poole_list_size);
     printF(buffer);
     freeString(&buffer);
     dDiscovery.poole_list = (Element *)realloc(dDiscovery.poole_list, (dDiscovery.poole_list_size + 1) * sizeof(Element));
-    dDiscovery.poole_list[dDiscovery.poole_list_size] = element;
+    
+    dDiscovery.poole_list[dDiscovery.poole_list_size].name = strdup(element.name);
+    dDiscovery.poole_list[dDiscovery.poole_list_size].ip = strdup(element.ip);
+    dDiscovery.poole_list[dDiscovery.poole_list_size].port = element.port;
+    dDiscovery.poole_list[dDiscovery.poole_list_size].num_connections = element.num_connections;
     dDiscovery.poole_list_size++;
 
     freeElement(&element);
