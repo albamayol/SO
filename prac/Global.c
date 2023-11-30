@@ -48,21 +48,19 @@ char* read_until(int fd, char delimiter) {
     return msg;
 }
 
-Element pooleMinConnections(LinkedList list) {
-    //verificar que los elements no sean nulls.
+Element pooleMinConnections(Element *poole_list, int poole_list_size) {
     Element e;
     e.name = NULL, e.ip = NULL;
     e.port = 0;
-    char *buffer = NULL;
     e.num_connections = -1;
-    
-    int minConnections = 0;
 
-    if (!LINKEDLIST_isEmpty(list)) {
-        LINKEDLIST_goToHead (&list);
-        while(!LINKEDLIST_isAtEnd(list)) {
-            Element e_aux = LINKEDLIST_get(&list);
-            
+    int minConnections = INT_MAX;
+    char *buffer = NULL;
+    
+
+    if (poole_list_size != 0) {
+        for (int i = 0; i < poole_list_size; i++) {
+            Element e_aux = poole_list[i];
             write(1, e_aux.name, strlen(e_aux.name)); 
             write(1, e_aux.ip, strlen(e_aux.ip));
             
@@ -70,17 +68,21 @@ Element pooleMinConnections(LinkedList list) {
             printF(buffer);
             freeString(&buffer);
 
-
             if (e_aux.num_connections <= minConnections) {
                 e.name = strdup(e_aux.name);
                 e.ip = strdup(e_aux.ip);
                 e.port = e_aux.port;
                 e.num_connections = e_aux.num_connections;
+                minConnections = e_aux.num_connections;
+                write(1, e.name, strlen(e.name)); 
+                write(1, e.ip, strlen(e.ip));
+            
+                asprintf(&buffer, "\npuerto: %d conexiones: %d minConnections: %d\n",e.port, e.num_connections, minConnections);
+                printF(buffer);
+                freeString(&buffer);
             }
             freeElement(&e_aux);
-            LINKEDLIST_next(&list);
         }
-        
     } 
     return e;
 }

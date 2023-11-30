@@ -18,6 +18,8 @@ void inicializarDataDiscovery() {
 	dDiscovery.portPoole = NULL;
     dDiscovery.ipBowman = NULL; 
     dDiscovery.portBowman = NULL;
+    dDiscovery.poole_list = NULL;
+    dDiscovery.poole_list_size = 0;
 }
 
 /*
@@ -52,8 +54,7 @@ void sig_func() {
         LINKEDLIST_destroy(&dDiscovery.poole_list);
     }*/
 
-    LINKEDLIST_destroy(&dDiscovery.poole_list); //el destroy itera por toda la list haciendo free's de los elementos
-    LINKEDLIST_destroy(&dDiscovery.bowman_list);
+    //TODO LIBERAR EL ARRAY DE POOLES
 
     close(dDiscovery.fdPoole);
     close(dDiscovery.fdBowman);
@@ -67,6 +68,7 @@ void sig_func() {
 void conexionPoole(int fd_poole) {
     Trama trama = readTrama(fd_poole);
     Element element;
+    char *buffer = NULL;
 
     write(1, trama.header, strlen(trama.header));
     write(1, "\n", 1);
@@ -85,13 +87,16 @@ void conexionPoole(int fd_poole) {
     freeString(&msg);
 
     //add element as the last one
-    LINKEDLIST_goToHead (&dDiscovery.poole_list);
-    while(!LINKEDLIST_isAtEnd(dDiscovery.poole_list)) {
-        LINKEDLIST_next(&dDiscovery.poole_list);
-    }
-    LINKEDLIST_add(&dDiscovery.poole_list, element);
-    freeElement(&element);
+    // Reallocate memory for the array of structs
+    
+    asprintf(&buffer, "sizeArrayPooles: %d \n", dDiscovery.poole_list_size);
+    printF(buffer);
+    freeString(&buffer);
+    dDiscovery.poole_list = (Element *)realloc(dDiscovery.poole_list, (dDiscovery.poole_list_size + 1) * sizeof(Element));
+    dDiscovery.poole_list[dDiscovery.poole_list_size] = element;
+    dDiscovery.poole_list_size++;
 
+    freeElement(&element);
 
     setTramaString(TramaCreate(0x01, "CON_OK", ""), fd_poole);
 
@@ -106,7 +111,7 @@ void conexionBowman(int fd_bowman) {
 
     //verificar que guardemos correctamente en la lista.
 
-    Element e = pooleMinConnections(dDiscovery.poole_list); // Enviar trama con servername, ip y port del Poole
+    Element e = pooleMinConnections(dDiscovery.poole_list, dDiscovery.poole_list_size); // Enviar trama con servername, ip y port del Poole
     if (e.num_connections == -1) {
         //NO HAY POOLE'S CONECTADOS! NO PODEMOS REDIRIGIR EL BOWMAN A NINGUN POOLE --> ENVIAMOS TRAMA CON_KO!!!
         setTramaString(TramaCreate(0x01, "CON_KO", ""), fd_bowman);
@@ -237,8 +242,6 @@ int main(int argc, char ** argv) {
         printF("ERROR. Number of arguments is not correct\n");
         exit(EXIT_FAILURE);
     } else {
-        dDiscovery.poole_list = LINKEDLIST_create();
-        dDiscovery.bowman_list = LINKEDLIST_create();
 
         int fd = open(argv[1], O_RDONLY);
         if (fd == -1) {

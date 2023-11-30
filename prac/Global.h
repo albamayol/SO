@@ -46,10 +46,17 @@ Autores:
 #include <netinet/in.h>
 #include <pthread.h>
 #include <arpa/inet.h>
-#include "linkedlist.h"
+#include <limits.h>
+//#include "linkedlist.h"
 
 #define printF(x) write(1, x, strlen(x))
 
+typedef struct {
+	char* name;	
+	char* ip;
+	int port;
+	int num_connections;
+} Element;
 
 typedef struct {
     int fdDiscovery;
@@ -87,14 +94,14 @@ typedef struct {
     char *ipBowman; 
     char *portPoole;
     char *portBowman;
-    LinkedList poole_list;
-    LinkedList bowman_list;
+    Element *poole_list;
+    int poole_list_size;
 } dataDiscovery;
 
 char* read_until(int fd, char delimiter);
 char* read_until_string(char *string, char delimiter);
 void separaDataToElement(char* data, Element* e);
-Element pooleMinConnections(LinkedList list);
+Element pooleMinConnections(Element *poole_list, int poole_list_size);
 char* convertIntToString(int num);
 void freeElement(Element* e);
 void freeString(char **string);
