@@ -20,7 +20,7 @@ char* createString3Params(char* param1, char* param2, char* param3) {
 }
 
 void setTramaString(Trama trama, int fd) {
-  char string[256] = {0}; //COMENTAR 
+  char string[256] = {0}; 
 
   string[0] = trama.type;
   
@@ -76,22 +76,29 @@ Trama TramaCreate (char type, char *header, char *data) {
   return trama;
 }
 
+void inicializarTrama(Trama *trama) {
+  trama->type = ' ';
+  trama->header_length = 0;
+  trama->header = NULL;
+  trama->data = NULL;
+}
+
+
 Trama readTrama(int fd) {
   Trama trama;
-  read(fd, &trama.type, sizeof(char));    
-  read(fd, &trama.header_length, sizeof(short));
-  //write(1, &trama.header_length, sizeof(short));
-  //char *aux = NULL;
   
-  //asprintf(&aux, "tamano header %hd\n", trama.header_length);
-  //freeString(&aux);
-  trama.header = malloc((trama.header_length+1) * sizeof(char)); //AQUI HAY UN PROBLEMA
+  inicializarTrama(&trama);
+
+  read(fd, &trama.type, sizeof(char));    
+  read(fd, &trama.header_length, sizeof(unsigned short));
+
+  trama.header = malloc((trama.header_length+1) * sizeof(char)); 
 
   if (trama.header != NULL) {
     read(fd, trama.header, trama.header_length);
     trama.header[trama.header_length] = '\0'; 
   }
-
+  
   trama.data = read_until(fd, '~');
 
   return trama;

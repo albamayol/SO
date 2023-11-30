@@ -42,9 +42,11 @@ char* read_until(int fd, char delimiter) {
 }
 
 Element pooleMinConnections(LinkedList list) {
+    //verificar que los elements no sean nulls.
     Element e;
     e.name = NULL, e.ip = NULL;
     e.port = 0;
+    char *buffer = NULL;
     e.num_connections = -1;
     
     int minConnections = 0;
@@ -53,7 +55,17 @@ Element pooleMinConnections(LinkedList list) {
         LINKEDLIST_goToHead (&list);
         while(!LINKEDLIST_isAtEnd(list)) {
             Element e_aux = LINKEDLIST_get(&list);
+            
+            write(1, e_aux.name, strlen(e_aux.name));
+            write(1, e_aux.ip, strlen(e_aux.ip));
+            
+            asprintf(&buffer, "\npuerto: %d conexiones: %d\n",e_aux.port, e_aux.num_connections);
+            printF(buffer);
+            freeString(&buffer);
+
+
             if (e_aux.num_connections <= minConnections) {
+                if (e_aux.name )
                 e.name = strdup(e_aux.name);
                 e.ip = strdup(e_aux.ip);
                 e.port = e_aux.port;

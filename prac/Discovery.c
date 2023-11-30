@@ -58,6 +58,9 @@ void sig_func() {
     close(dDiscovery.fdPoole);
     close(dDiscovery.fdBowman);
 
+    //join
+    //hay una manera de solo hacer el join, sino con el detach tambien
+
     exit(EXIT_FAILURE);
 }
 
@@ -100,6 +103,8 @@ void conexionBowman(int fd_bowman) {
     // Lectura de la trama de Bowman conectado
     Trama trama = readTrama(fd_bowman);
     freeTrama(&trama);
+
+    //verificar que guardemos correctamente en la lista.
 
     Element e = pooleMinConnections(dDiscovery.poole_list); // Enviar trama con servername, ip y port del Poole
     if (e.num_connections == -1) {
