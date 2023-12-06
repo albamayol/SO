@@ -25,6 +25,14 @@ void freeString(char **string) {
     }
 }
 
+void freePoolesArray(Element *array, int size) {
+    for (int i = 0; i < size; ++i) {
+        freeElement(&array[i]);
+    }
+    free(array);
+}
+
+
 char* read_until(int fd, char delimiter) {
     char *msg = NULL;
     char current;
@@ -48,6 +56,23 @@ char* read_until(int fd, char delimiter) {
     return msg;
 }
 
+void createDirectory(char* directory) {	
+    char *command = NULL;
+
+    asprintf(&command, "mkdir -p %s", directory);
+    
+    FILE* pipe = popen(command, "r");
+    if (pipe == NULL) {
+        perror("popen");
+        //exit(EXIT_FAILURE);
+    } else {
+        pclose(pipe); // Close the pipe
+    }
+    
+    freeString(&command);
+    
+}
+
 Element pooleMinConnections(Element *poole_list, int poole_list_size) {
     Element e;
     e.name = NULL, e.ip = NULL;
@@ -56,19 +81,17 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
 
     int minConnections = INT_MAX;
     char *buffer = NULL;
-    int j = 0;
     
 
     if (poole_list_size != 0) {
         for (int i = 0; i < poole_list_size; i++) {
             Element e_aux = poole_list[i];
-  
-            //write(1, e_aux.name, strlen(e_aux.name)); 
-            //write(1, e_aux.ip, strlen(e_aux.ip));
+            write(1, e_aux.name, strlen(e_aux.name)); 
+            write(1, e_aux.ip, strlen(e_aux.ip));
             
-            //asprintf(&buffer, "\npuerto: %d conexiones: %d\n",e_aux.port, e_aux.num_connections);
-            //printF(buffer);
-            //freeString(&buffer);
+            asprintf(&buffer, "\npuerto: %d conexiones: %d\n",e_aux.port, e_aux.num_connections);
+            printF(buffer);
+            freeString(&buffer);
 
             if (e_aux.num_connections <= minConnections) {
                 e.name = strdup(e_aux.name);
@@ -76,22 +99,17 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
                 e.port = e_aux.port;
                 e.num_connections = e_aux.num_connections;
                 minConnections = e_aux.num_connections;
-                j = i;
-                //write(1, e.name, strlen(e.name)); 
-                //write(1, e.ip, strlen(e.ip));
+                write(1, e.name, strlen(e.name)); 
+                write(1, e.ip, strlen(e.ip));
             
-                //asprintf(&buffer, "\npuerto: %d conexiones: %d minConnections: %d\n",e.port, e.num_connections, minConnections);
-                //printF(buffer);
-                //freeString(&buffer);
+                asprintf(&buffer, "\npuerto: %d conexiones: %d minConnections: %d\n",e.port, e.num_connections, minConnections);
+                printF(buffer);
+                freeString(&buffer);
             }
             freeElement(&e_aux);
         }
-        poole_list[j].num_connections++;
-
-        asprintf(&buffer, "\n%d conexiones: %s\n", poole_list[j].num_connections, poole_list[j].name);
-        printF(buffer);
-        freeString(&buffer);
     } 
+    
     return e;
 }
 

@@ -54,6 +54,8 @@ void sig_func() {
     if(dBowman.puerto != NULL) {
         freeString(&dBowman.puerto);
     }
+    freeElement(&dBowman.pooleConnected);
+
     exit(EXIT_FAILURE);
 }
 
@@ -143,29 +145,10 @@ char * verifyClientName(char * clienteNameAux) {
 @Retorn: ---
 */
 void printInfoFile() {
-
     printF("\nFile read correctly:\n");
-    asprintf(&dBowman.msg, "User - %s\n", dBowman.clienteName);
+    asprintf(&dBowman.msg, "User - %s\nDirectory - %s\nIP - %s\nPort - %s\n\n", dBowman.clienteName, dBowman.pathClienteFile, dBowman.ip, dBowman.puerto);
     printF(dBowman.msg);
-    free(dBowman.msg);
-
-
-    asprintf(&dBowman.msg, "Directory - %s\n", dBowman.pathClienteFile);
-    printF(dBowman.msg);
-    free(dBowman.msg);
-
-
-    asprintf(&dBowman.msg, "IP - %s\n", dBowman.ip);
-    printF(dBowman.msg);
-    free(dBowman.msg);
-
-
-    asprintf(&dBowman.msg, "Port - %s\n\n", dBowman.puerto);
-    printF(dBowman.msg);
-    free(dBowman.msg);
-
-
-    dBowman.msg = NULL;
+    freeString(&dBowman.msg);
 }
 
 /*
@@ -218,19 +201,17 @@ void establishDiscoveryConnection() {
     strcpy(aux, dBowman.clienteName);
     setTramaString(TramaCreate(0x01, "NEW_BOWMAN", aux), dBowman.fdDiscovery);
     freeString(&aux);
-    aux = NULL;
-
+   
     Trama trama = readTrama(dBowman.fdDiscovery);
 
     if (strcmp(trama.header,"CON_OK") == 0)  {
-        //[Kevin&192.168.2.2&8090]
-        write(1, "CON_OK\n", strlen("CON_OK\n"));
-        write(1, trama.data, strlen(trama.data));
+        separaDataToElement(trama.data, &dBowman.pooleConnected);
+        dBowman.clientConnected = 1;
+        asprintf(&dBowman.msg, "%s connected to HAL 9000 system, welcome music lover!\n", dBowman.clienteName);
+        printF(dBowman.msg);
+        freeString(&dBowman.msg);
 
-        //Crear un socket para comunicarse con Poole
-
-        close(dBowman.fdDiscovery);
-        freeTrama(&trama);
+        //freeElement(&dBowman.pooleConnected); //?????
     } else if (strcmp(trama.header,"CON_KO") == 0) {
         write(1, "CON_KO\n", strlen("CON_KO\n"));
     }
@@ -239,6 +220,42 @@ void establishDiscoveryConnection() {
     close(dBowman.fdDiscovery);
 }
 
+void establishPooleConnection() {
+    dBowman.fdPoole = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (dBowman.fdPoole < 0) {
+        perror ("Error al crear el socket de Poole");
+        close(dBowman.fdPoole);
+        sig_func();
+    }
+
+    bzero (&dBowman.poole_addr, sizeof (dBowman.poole_addr));
+    dBowman.poole_addr.sin_family = AF_INET;
+    dBowman.poole_addr.sin_port = htons(dBowman.pooleConnected.port); 
+    dBowman.poole_addr.sin_addr.s_addr = inet_addr(dBowman.pooleConnected.ip);
+
+    if (connect(dBowman.fdPoole, (struct sockaddr*)&dBowman.poole_addr, sizeof(dBowman.poole_addr)) < 0) {
+        perror("Error al conectar a Poole");
+        close(dBowman.fdPoole);
+        sig_func();
+    }
+}
+
+void requestListSongs() {
+    write(1, "list songs\n", strlen("list songs\n"));
+    setTramaString(TramaCreate(0x02, "LIST_SONGS", "buit"), dBowman.fdPoole);
+    //Trama trama = readTrama(dBowman.fdPoole);
+}
+
+void requestListPlaylists() {
+    write(1, "list play\n", strlen("list play\n"));
+    setTramaString(TramaCreate(0x02, "LIST_PLAYLISTS", "buitplay"), dBowman.fdPoole);
+    //Trama trama = readTrama(dBowman.fdPoole);
+}
+
+void requestLogout() {
+    setTramaString(TramaCreate(0x06, "EXIT", dBowman.clienteName), dBowman.fdPoole);
+    //Trama trama = readTrama(dBowman.fdPoole);
+}
 
 /*
 @Finalitat: Implementar el main del programa.
@@ -246,7 +263,7 @@ void establishDiscoveryConnection() {
 @Retorn: int: Devuelve 0 en caso de que el programa haya finalizado exitosamente.
 */
 int main(int argc, char ** argv) {
-    int clientConnected = 0;
+    dBowman.clientConnected = 0;
     inicializarDataBowman();
 
     signal(SIGINT, sig_func);
@@ -273,37 +290,34 @@ int main(int argc, char ** argv) {
             printF(dBowman.msg);
             freeString(&dBowman.msg);
 
+            //CREAR DIRECTORIO BOWMAN
+            createDirectory(dBowman.clienteName);
+
             printInfoFile();
 
             while (1) {
                 printF("$ ");
-
                 dBowman.input = read_until(0, '\n');
-
                 dBowman.input[strlen(dBowman.input)] = '\0';
-
                 dBowman.upperInput = to_upper(dBowman.input);
-
                 removeExtraSpaces(dBowman.upperInput);
 
-                if (!clientConnected) {
+                if (!dBowman.clientConnected) {
                     if (strcmp(dBowman.upperInput, "CONNECT") == 0) {
                         establishDiscoveryConnection();
-                        asprintf(&dBowman.msg, "%s connected to HAL 9000 system, welcome music lover!\n", dBowman.clienteName);
-                        printF(dBowman.msg);
-                        freeString(&dBowman.msg);
-                        clientConnected = 1;
+                        establishPooleConnection();
                     } else {
                         printF("You must establish a connection with the server before making any request\n");
                     }
-                } else {
+                } else {    //TRANSMISIONES DISCOVERY->BOWMAN
                     if (strcmp(dBowman.upperInput, "LOGOUT") == 0) {
+                        requestLogout();
                         printF("Thanks for using HAL 9000, see you soon, music lover!\n");
                         break;
                     } else if (strcmp(dBowman.upperInput, "LIST SONGS") == 0) {
-                        printF("There are no songs available for download\n");
+                        requestListSongs();
                     } else if (strcmp(dBowman.upperInput, "LIST PLAYLISTS") == 0) {
-                        printF("There are no lists available for download\n");
+                        requestListPlaylists();
                     } else if (strcmp(dBowman.upperInput, "CHECK DOWNLOADS") == 0) {
                         printF("You have no ongoing or finished downloads\n");
                     } else if (strcmp(dBowman.upperInput, "CLEAR DOWNLOADS") == 0) {

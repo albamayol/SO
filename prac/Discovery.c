@@ -54,7 +54,7 @@ void sig_func() {
         LINKEDLIST_destroy(&dDiscovery.poole_list);
     }*/
 
-    //TODO LIBERAR EL ARRAY DE POOLES
+    freePoolesArray(dDiscovery.poole_list, dDiscovery.poole_list_size);
 
     close(dDiscovery.fdPoole);
     close(dDiscovery.fdBowman);
@@ -107,11 +107,8 @@ void conexionPoole(int fd_poole) {
 
 
 void conexionBowman(int fd_bowman) {
-    // Lectura de la trama de Bowman conectado
     Trama trama = readTrama(fd_bowman);
     freeTrama(&trama);
-
-    //verificar que guardemos correctamente en la lista.
 
     Element e = pooleMinConnections(dDiscovery.poole_list, dDiscovery.poole_list_size); // Enviar trama con servername, ip y port del Poole
     if (e.num_connections == -1) {
@@ -182,8 +179,6 @@ void startPooleListener() {
         close(dDiscovery.fdPoole);
         exit (EXIT_FAILURE);
     }
-    
-    
     // We now open the port (20 backlog queue, typical value)
     listen (dDiscovery.fdPoole, 20);
     
@@ -214,7 +209,6 @@ void startBowmanListener() {
         close(dDiscovery.fdBowman);
         sig_func();
     }
-
     // We now open the port (20 backlog queue, typical value)
     listen (dDiscovery.fdBowman, 20);
 

@@ -5,8 +5,7 @@ void shortToChars(short valor, char *cadena) {
   cadena[0] = (char)((valor >> 8) & 0xFF); // Obtener el byte de mayor peso
 }
 
-char* createString3Params(char* param1, char* param2, char* param3) {
-  //dPoole.serverName &dPoole.ipServer &dPoole.puertoServer 
+char* createString3Params(char* param1, char* param2, char* param3) { 
   char *aux = NULL;
   int length = strlen(param1) + strlen(param2) + strlen(param3) + 3 + 1;
   aux = (char *) malloc(sizeof(char) * length);
@@ -56,7 +55,6 @@ Trama TramaCreate (char type, char *header, char *data) {
   Trama trama;
 
   trama.type = type;
-
   trama.header_length = strlen(header);
   
   trama.header = malloc(sizeof(char) * (trama.header_length + 1));
@@ -69,7 +67,7 @@ Trama TramaCreate (char type, char *header, char *data) {
   int sizeDataString = 0;
   sizeDataString = strlen(data);
 
-  for(int i = 0; i < sizeDataString; i++) {
+  for (int i = 0; i < sizeDataString; i++) {
       trama.data[i] = data[i];
   }
 
@@ -107,8 +105,7 @@ Trama readTrama(int fd) {
 void freeTrama(Trama *trama) {
     if (trama->data != NULL) {
         free(trama->data);
-        trama->data = NULL;
-        
+        trama->data = NULL;  
     }
     if (trama->header != NULL) {
         free(trama->header);

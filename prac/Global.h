@@ -60,7 +60,9 @@ typedef struct {
 
 typedef struct {
     int fdDiscovery;
+    int fdPoole;
     struct sockaddr_in discovery_addr;
+    struct sockaddr_in poole_addr;
     char *msg;
     char *input;
     char *upperInput;
@@ -69,6 +71,8 @@ typedef struct {
     char *pathClienteFile;
     char *ip;
     char *puerto;
+    int clientConnected;
+    Element pooleConnected;
 } dataBowman;
 
 typedef struct {
@@ -105,5 +109,7 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size);
 char* convertIntToString(int num);
 void freeElement(Element* e);
 void freeString(char **string);
+void freePoolesArray(Element *array, int size);
+void createDirectory(char* directory);
 
 #endif

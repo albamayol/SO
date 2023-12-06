@@ -59,19 +59,84 @@ void sig_func() {
 @Retorn: ---
 */
 void printInfoFile() {
-    asprintf(&dPoole.msg, "\nFile read correctly:\n"
-    "Server - %s\n"
-    "Server Directory - %s\n"
-    "IP Discovery - %s\n"
-    "Port Server - %s\n"
-    "IP Server - %s\n"
-    "Port Server - %s\n\n",
-    dPoole.serverName, dPoole.pathServerFile, dPoole.ipDiscovery,
-    dPoole.puertoServer, dPoole.ipServer, dPoole.puertoServer);
+    asprintf(&dPoole.msg, "\nFile read correctly:\nServer - %s\nServer Directory - %s\nIP Discovery - %s\nPort Server - %s\nIP Server - %s\nPort Server - %s\n\n", dPoole.serverName, dPoole.pathServerFile, dPoole.ipDiscovery, dPoole.puertoServer, dPoole.ipServer, dPoole.puertoServer);
+    printF(dPoole.msg);
+    freeString(&dPoole.msg);
+}
 
-    if (dPoole.msg != NULL) {
-        printF(dPoole.msg);
-        freeString(&dPoole.msg);
+void sendSongs(int fd_bowman) {
+    printf("%d\n", fd_bowman);
+}
+
+void sendPlaylists(int fd_bowman) {
+    printf("%d\n", fd_bowman);
+}
+
+void requestLogoutBowman(int fd_bowman, int* exit) {
+    *exit = 1;
+    close(fd_bowman); //close bowman's socket
+}
+
+void conexionBowman(int fd_bowman) {
+    //TRANSMISIONES POOLE<->BOWMAN
+    int exit = 0;
+
+    while(!exit) {
+        Trama trama = readTrama(fd_bowman);    
+        write(1, trama.data, strlen(trama.data));
+        //write(1, trama.header, trama.header_length);
+        
+   
+        if (strcmp(trama.header, "EXIT") == 0) {
+            requestLogoutBowman(fd_bowman, &exit);
+            printF("Thanks for using HAL 9000, see you soon, music lover!\n");
+            break;
+        } else if (strcmp(trama.header, "LIST_SONGS") == 0) {
+            sendSongs(fd_bowman);
+        } else if (strcmp(trama.header, "LIST_PLAYLISTS") == 0) {
+            sendPlaylists(fd_bowman);
+        } else if (strcmp(trama.header, "CHECK DOWNLOADS") == 0) {
+            printF("You have no ongoing or finished downloads\n");
+        } else if (strcmp(trama.header, "CLEAR DOWNLOADS") == 0) {
+            printF("No downloads to clear available\n");
+        } /*else if (strstr(trama.header, "DOWNLOAD") != NULL) {  //DOWNLOAD <SONG/PLAYLIST>
+            //comprobar 2 arguments --> 1 espai a la comanda
+            int numSpaces = checkDownloadCommand(dBowman.upperInput);
+            if (numSpaces == 1) {
+                //NUM ARGUMENTS CORRECTE!
+                printF("Download started!\n");
+            } else {
+                printF("Sorry number of arguments is not correct, try again\n");
+            }
+        } */else {
+            printF("Unknown command\n");
+        }
+        freeTrama(&trama);
+    }
+}
+
+static void *thread_function_bowman(void* fd) {
+    intptr_t fd_bowman_value = (intptr_t)fd;
+    int fd_bowman = (int)fd_bowman_value;
+    conexionBowman(fd_bowman);
+
+    //pthread_detach(thread_bowman); //revisar! no se puede hacer! hay otra manera! asi se malgasta memoria
+    return NULL;
+}
+
+
+void connect_Bowman() {
+    socklen_t bAddr = sizeof(dPoole.poole_addr);
+    int fd_bowman = accept(dPoole.fdPooleServer, (struct sockaddr *)&dPoole.poole_addr, &bAddr);
+    if (fd_bowman < 0) {
+        perror("Error al aceptar la conexión de Bowman");
+        close(fd_bowman);
+        return;
+    }
+
+    pthread_t thread_bowman;
+    if (pthread_create(&thread_bowman, NULL, thread_function_bowman, (void *)(intptr_t)fd_bowman) != 0) {
+        perror("Error al crear el thread inicial para Bowman");
     }
 }
 
@@ -95,16 +160,12 @@ void waitingForRequests() {
         sig_func();
     }
 
-    write(1, "socket bowman ok!\n", strlen("socket bowman ok!\n"));
     listen(dPoole.fdPooleServer, 20); // Esperar conexiones entrantes de Bowman
-
-    //TRANSMISIONES POOLE<->BOWMAN
-    write(1, "leyendo...\n", strlen("leyendo...\n"));
-    readTrama(dPoole.fdPooleServer);    //ERROR AQUI
-    //write(1, trama.data, strlen(trama.data));
-
-    write(1, "leido...\n", strlen("leido...\n"));
-    
+    printF("Waiting for connections...\n");
+    //procesamos las peticiones de Bowman's
+    while(1) {
+        connect_Bowman();
+    }    
 }
 
 void establishDiscoveryConnection() {
@@ -136,7 +197,6 @@ void establishDiscoveryConnection() {
     Trama trama = readTrama(dPoole.fdPooleClient);    
 
     if (strcmp(trama.header,"CON_OK") == 0)  {
-        write(1, "OK!!!!\n", strlen("OK!!!!\n"));
         close(dPoole.fdPooleClient);
         freeTrama(&trama);
         waitingForRequests();
@@ -174,9 +234,9 @@ int main(int argc, char ** argv) {
             dPoole.puertoDiscovery = read_until(fd, '\n');
             dPoole.ipServer = read_until(fd, '\n');
             dPoole.puertoServer = read_until(fd, '\n');
-
+            
+            createDirectory(dPoole.serverName); //CREAR DIRECTORIO POOLE
             printInfoFile();
-
             close(fd);
 
             establishDiscoveryConnection();
