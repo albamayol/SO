@@ -107,6 +107,7 @@ char* read_until(int fd, char delimiter);
 char* read_until_string(char *string, char delimiter);
 void separaDataToElement(char* data, Element* e);
 Element pooleMinConnections(Element *poole_list, int poole_list_size);
+int decreaseNumConnections(Element *poole_list, int poole_list_size, char* pooleName);
 char* convertIntToString(int num);
 void freeElement(Element* e);
 void freeString(char **string);
