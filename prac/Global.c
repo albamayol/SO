@@ -57,14 +57,16 @@ char* read_until(int fd, char delimiter) {
 }
 
 char* readNumChars(char *string, int inicio, int num) {
-    char *msg = (char *) malloc (1);
-    int i = 0;
-
-    for (i = 0; inicio + i < inicio + num; i++) {
-        msg[i] = string[inicio + i];
-        msg = (char *) realloc(msg, ++i + 1);
+    char *msg = (char *)malloc(num + 1); 
+    if (msg == NULL) {
+        
+        return NULL;
     }
-    msg[i] = '\0';
+
+    for (int i = 0; i < num; i++) {
+        msg[i] = string[inicio + i];
+    }
+    msg[num] = '\0'; 
 
     return msg;
 }
