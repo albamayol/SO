@@ -64,7 +64,41 @@ void printInfoFile() {
     freeString(&dPoole.msg);
 }
 
-void listSongs(const char *path, char **fileNames) {
+void notifyBowmanLogout(int fd_bowman) {
+    dPoole.fdPooleClient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (dPoole.fdPooleClient < 0) {
+        perror ("Error al crear el socket de Discovery per notificar logout bowman");
+        close(dPoole.fdPooleClient);
+        sig_func();
+    }
+
+    bzero (&dPoole.discovery_addr, sizeof (dPoole.discovery_addr));
+    dPoole.discovery_addr.sin_family = AF_INET;
+    dPoole.discovery_addr.sin_port = htons(atoi(dPoole.puertoDiscovery)); 
+    dPoole.discovery_addr.sin_addr.s_addr = inet_addr(dPoole.ipDiscovery);
+
+    if (connect(dPoole.fdPooleClient, (struct sockaddr*)&dPoole.discovery_addr, sizeof(dPoole.discovery_addr)) < 0) {
+        perror("Error al conectar a Discovery per notificar logout bowman");
+        close(dPoole.fdPooleClient);
+        sig_func();
+    }
+
+    //ENVIAMOS TRAMA LOGOUTBOWMAN
+    setTramaString(TramaCreate(0x06, "BOWMAN_LOGOUT", dPoole.serverName), dPoole.fdPooleClient);
+    Trama trama = readTrama(dPoole.fdPooleClient);
+    if (strcmp(trama.header, "CONOK") == 0) {
+        //Avisamos Bowman OK
+        setTramaString(TramaCreate(0x06, "CONOK", dPoole.serverName), fd_bowman);
+    } else if (strcmp(trama.header, "CONKO") == 0) {
+        //Avisamos Bowman KO
+        setTramaString(TramaCreate(0x06, "CONKO", dPoole.serverName), fd_bowman);
+    }
+
+    freeTrama(&trama);
+    close(dPoole.fdPooleClient);
+}
+
+char *listSongs(const char *path, char **fileNames) {
     struct dirent *entry;
     DIR *dir = opendir(path);
 
@@ -245,10 +279,10 @@ void conexionBowman(int fd_bowman) {
     int exit = 0;
 
     Trama trama = readTrama(fd_bowman);
-
-    asprintf(&dPoole.msg,"\nNew user connected: %s.\n", trama.data);
-    printF(dPoole.msg);
     char *user_name = strdup(trama.data);
+
+    asprintf(&dPoole.msg,"\nNew user connected: %s.\n", user_name);
+    printF(dPoole.msg);
     freeString(&dPoole.msg);
     freeTrama(&trama);
 
@@ -256,9 +290,14 @@ void conexionBowman(int fd_bowman) {
     while(!exit) {
         trama = readTrama(fd_bowman);
 
-        if (strcmp(trama.header, "EXIT") == 0) {
+        if (strcmp(trama.header, "EXIT") == 0) {    //HAY QUE VOLVER A CREAR OTRO SOCKET CON DISCOVERY
+            notifyBowmanLogout(fd_bowman);
             close(fd_bowman); 
-            printF("Thanks for using HAL 9000, see you soon, music lover!\n");
+            
+            asprintf(&dPoole.msg,"\nNew request - %s logged out\n", user_name);
+            printF(dPoole.msg);
+            freeString(&dPoole.msg);
+
             exit = 1;
         } else if (strcmp(trama.header, "LIST_SONGS") == 0) {
             asprintf(&dPoole.msg,"\nNew request - %s requires the list of songs.\nSending song list to %s\n", user_name, user_name);

@@ -54,40 +54,51 @@ void sig_func() {
 
 void conexionPoole(int fd_poole) {
     Trama trama = readTrama(fd_poole);
-    Element element;
-    char *buffer = NULL;
+    if (strcmp(trama.header, "BOWMAN_LOGOUT") == 0) {
+        //LOGOUT --> trama.data contiene el nombre del poole donde ha ocurrido un logout
+        if (decreaseNumConnections(dDiscovery.poole_list, dDiscovery.poole_list_size, trama.data)) {
+            setTramaString(TramaCreate(0x06, "CONOK", ""), fd_poole);   
+        } else {
+            setTramaString(TramaCreate(0x06, "CONKO", ""), fd_poole);
+        }
+        freeTrama(&trama);
 
-    write(1, trama.header, strlen(trama.header));
-    write(1, "\n", 1);
-    write(1, trama.data, strlen(trama.data));
-    separaDataToElement(trama.data, &element);
-    freeTrama(&trama);
-    
-    write(1, "ELEMENT:\n", strlen("ELEMENT:\n"));
-    write(1, element.name, strlen(element.name));
-    write(1, "\n", 1);
-    write(1, element.ip, strlen(element.ip));
-    write(1, "\n", 1);
-    char *msg = NULL;
-    asprintf(&msg, "port: %d\n", element.port);
-    printF(msg);
-    freeString(&msg);
+    } else {
+        Element element;
+        char *buffer = NULL;
 
-    //add element as the last one    
-    asprintf(&buffer, "sizeArrayPooles: %d \n", dDiscovery.poole_list_size);
-    printF(buffer);
-    freeString(&buffer);
-    dDiscovery.poole_list = (Element *)realloc(dDiscovery.poole_list, (dDiscovery.poole_list_size + 1) * sizeof(Element));
-    
-    dDiscovery.poole_list[dDiscovery.poole_list_size].name = strdup(element.name);
-    dDiscovery.poole_list[dDiscovery.poole_list_size].ip = strdup(element.ip);
-    dDiscovery.poole_list[dDiscovery.poole_list_size].port = element.port;
-    dDiscovery.poole_list[dDiscovery.poole_list_size].num_connections = element.num_connections;
-    dDiscovery.poole_list_size++;
+        write(1, trama.header, strlen(trama.header));
+        write(1, "\n", 1);
+        write(1, trama.data, strlen(trama.data));
+        separaDataToElement(trama.data, &element);
+        freeTrama(&trama);
+        
+        write(1, "ELEMENT:\n", strlen("ELEMENT:\n"));
+        write(1, element.name, strlen(element.name));
+        write(1, "\n", 1);
+        write(1, element.ip, strlen(element.ip));
+        write(1, "\n", 1);
+        char *msg = NULL;
+        asprintf(&msg, "port: %d\n", element.port);
+        printF(msg);
+        freeString(&msg);
 
-    freeElement(&element);
+        //add element as the last one    
+        asprintf(&buffer, "sizeArrayPooles: %d \n", dDiscovery.poole_list_size);
+        printF(buffer);
+        freeString(&buffer);
+        dDiscovery.poole_list = (Element *)realloc(dDiscovery.poole_list, (dDiscovery.poole_list_size + 1) * sizeof(Element));
+        
+        dDiscovery.poole_list[dDiscovery.poole_list_size].name = strdup(element.name);
+        dDiscovery.poole_list[dDiscovery.poole_list_size].ip = strdup(element.ip);
+        dDiscovery.poole_list[dDiscovery.poole_list_size].port = element.port;
+        dDiscovery.poole_list[dDiscovery.poole_list_size].num_connections = element.num_connections;
+        dDiscovery.poole_list_size++;
 
-    setTramaString(TramaCreate(0x01, "CON_OK", ""), fd_poole);
+        freeElement(&element);
+
+        setTramaString(TramaCreate(0x01, "CON_OK", ""), fd_poole);        
+    }
 
     close(fd_poole);
 }

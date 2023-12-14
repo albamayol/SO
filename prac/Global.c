@@ -132,6 +132,15 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
     return e;
 }
 
+int decreaseNumConnections(Element *poole_list, int poole_list_size, char* pooleName) {
+    for (int i = 0; i < poole_list_size; i++) {
+        if (strcmp(poole_list[i].e_aux.name, pooleName) == 0) {
+            poole_list[i].num_connections--;
+            return 1;
+        }
+    }
+    return 0; //no se ha encontrado ese poole en discovery
+}
 
 char* read_until_string(char *string, char delimiter) {
     char *msg = NULL;

@@ -255,12 +255,22 @@ void requestListPlaylists() {
     //Trama trama = readTrama(dBowman.fdPoole);
 }
 
-void requestLogout() {
+int requestLogout() {  
+    //HAY QUE VOLVER A CREAR OTRO SOCKET CON DISCOVERY
     setTramaString(TramaCreate(0x06, "EXIT", dBowman.clienteName), dBowman.fdPoole);
-    
-
-    // DUDA, HAY QUE CREAR OTRO SOCKET?
-    setTramaString(TramaCreate(0x06, "EXIT", dBowman.clienteName), dBowman.fdPoole);
+    Trama trama = readTrama(dBowman.fdPoole);
+    if (strcmp(trama.header, "CONOK") == 0) {
+        //OK
+        close(dBowman.fdPoole);
+        freeTrama(&trama);
+        return 1;
+    } else if (strcmp(trama.header, "CONKO")) {
+        //KO
+        printF("Sorry, couldn't logout, try again\n");
+        freeTrama(&trama);
+        return 0;
+    }
+    return 2;
 }
 
 /*
@@ -317,9 +327,10 @@ int main(int argc, char ** argv) {
                     }
                 } else {    //TRANSMISIONES DISCOVERY->BOWMAN
                     if (strcmp(dBowman.upperInput, "LOGOUT") == 0) {
-                        requestLogout();
-                        printF("Thanks for using HAL 9000, see you soon, music lover!\n");
-                        break;
+                        if(requestLogout()) {
+                            printF("Thanks for using HAL 9000, see you soon, music lover!\n");
+                            break;
+                        }
                     } else if (strcmp(dBowman.upperInput, "LIST SONGS") == 0) {
                         requestListSongs();
                     } else if (strcmp(dBowman.upperInput, "LIST PLAYLISTS") == 0) {
