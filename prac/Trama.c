@@ -1,6 +1,18 @@
 #include "Trama.h"
 
-void shortToChars(short valor, char *cadena) { 
+void freeTrama(Trama *trama) {
+    if (trama->data != NULL) {
+        free(trama->data);
+        trama->data = NULL;  
+    }
+    if (trama->header != NULL) {
+        free(trama->header);
+        trama->header = NULL;
+        
+    }
+}
+
+void shortToChars(short valor, char *cadena) {
   cadena[1] = (char)(valor & 0xFF);        // Obtener el byte de menor peso
   cadena[0] = (char)((valor >> 8) & 0xFF); // Obtener el byte de mayor peso
 }
@@ -81,35 +93,28 @@ void inicializarTrama(Trama *trama) {
   trama->data = NULL;
 }
 
-
 Trama readTrama(int fd) {
   Trama trama;
-  
+  char *buffer = NULL;
   inicializarTrama(&trama);
 
   read(fd, &trama.type, sizeof(char));    
   read(fd, &trama.header_length, sizeof(unsigned short));
-
   trama.header = malloc((trama.header_length+1) * sizeof(char)); 
 
   if (trama.header != NULL) {
     read(fd, trama.header, trama.header_length);
     trama.header[trama.header_length] = '\0'; 
-  }
+  } 
+
   
   trama.data = read_until(fd, '~');
+  int sizeData = 256 - 3 - trama.header_length - strlen(trama.data) - 1; //cantidad restantes de '~'
+
+  buffer = (char *) malloc(sizeof(char) * (sizeData));
+  read(fd, buffer, sizeData * sizeof(char));
+
+  freeString(&buffer);
 
   return trama;
-}
-
-void freeTrama(Trama *trama) {
-    if (trama->data != NULL) {
-        free(trama->data);
-        trama->data = NULL;  
-    }
-    if (trama->header != NULL) {
-        free(trama->header);
-        trama->header = NULL;
-        
-    }
 }

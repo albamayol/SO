@@ -64,36 +64,184 @@ void printInfoFile() {
     freeString(&dPoole.msg);
 }
 
+char *listSongs(const char *path, char **fileNames) {
+    struct dirent *entry;
+    DIR *dir = opendir(path);
+    char *numSongsString = NULL;
+
+    if (dir == NULL) {
+        perror("Error al abrir el directorio");
+        return -1;
+    }
+
+    size_t totalLength = 0;
+    int isFirstFile = 1; 
+    char numSongs = 0;
+
+    *fileNames = malloc(1);
+    (*fileNames)[0] = '\0'; 
+
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG) { // Verificar si es un archivo regular
+            size_t fileNameLen = strlen(entry->d_name);
+            *fileNames = realloc(*fileNames, totalLength + fileNameLen + 1); // +1 para el \0
+            
+            if (*fileNames == NULL) {
+                perror("Error en realloc");
+                closedir(dir);
+                return -1;
+            }
+
+            if (!isFirstFile) {
+                strcat(*fileNames, "&"); // Agregar '&' solo si no es el primer archivo
+            } else {
+                isFirstFile = 0; 
+            }
+
+            strcat(*fileNames, entry->d_name);
+            totalLength += fileNameLen + 1; // Longitud del nombre + 1 para '&'
+            numSongs++;
+        }
+    }
+
+    closedir(dir);
+
+    itoa(numSongs, numSongsString, 10);
+
+    return numSongsString;
+}
+
+
 void sendSongs(int fd_bowman) {
-    printf("%d\n", fd_bowman);
+    char *songs = NULL; //ng2&song3&sdnfjasdnfjasndfjnsdfj.....
+    char *numSongs = listSongs(dPoole.serverName, &songs);
+
+    printF(songs);
+
+    //GESTION TAMAÑO LISTA DE CANCIONES
+    int sizeData = strlen(songs);
+
+    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", numSongs), fd_bowman);
+    if (sizeData < 239) { // 256 - Type(1 Byte) - header_length(2 Bytes) - Header(14 Bytes) = 239 Bytes disponibles
+        // Se puede enviar todo en una sola trama!
+        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", readNumChars(songs, sizeData)), fd_bowman);
+    } else {
+        while (sizeData > 239) {
+            songs = readNumChars(songs, 239)
+            setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", readNumChars(songs, 239)), fd_bowman);
+            sizeData -= 239;
+        }
+        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", songs), fd_bowman);
+    }
+    
+    //setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", songs), fd_bowman);
+    freeString(&songs);
+}
+
+void listPlaylists(const char *path, char **fileNames) {
+    struct dirent *entry;
+    DIR *dir = opendir(path);
+
+    if (dir == NULL) {
+        perror("Error al abrir el directorio");
+        return;
+    }
+
+    size_t totalLength = 1; // Inicializar con un byte para el terminador nulo '\0'
+    *fileNames = malloc(1);
+    (*fileNames)[0] = '\0'; 
+
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_DIR && strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+            // Es un directorio y no es "." ni ".."
+            size_t fileNameLen = strlen(entry->d_name);
+            char *subPath = malloc(strlen(path) + fileNameLen + 2); // +2 para / y \0
+            sprintf(subPath, "%s/%s", path, entry->d_name);
+
+            char *subSongs = NULL;
+            //listSongs(subPath, &subSongs);
+
+            size_t newLength = totalLength + fileNameLen + 1; // Longitud del nombre de archivo y el separador '&'
+
+            if (subSongs != NULL) {
+            // Si subSongs no es nulo, agrega su longitud más un carácter para el separador '&'
+            newLength += strlen(subSongs) + 1;
+            }
+
+            char *temp = realloc(*fileNames, newLength);
+            if (temp == NULL) {
+                perror("Error al asignar memoria");
+                free(subPath);
+                freeString(&subSongs);
+                closedir(dir);
+                return;
+            } else {
+                *fileNames = temp;
+
+                if (totalLength > 1) {
+                    strcat(*fileNames, "#");
+                }
+                strcat(*fileNames, entry->d_name);
+
+                if (subSongs != NULL && strlen(subSongs) > 0) {
+                    strcat(*fileNames, "&");
+                    strcat(*fileNames, subSongs);
+                }
+            }
+
+            free(subPath);
+            freeString(&subSongs);
+
+            totalLength = newLength;
+        }
+    }
+
+    closedir(dir);
 }
 
 void sendPlaylists(int fd_bowman) {
-    printf("%d\n", fd_bowman);
-}
+    char *playlists = NULL;
 
-void requestLogoutBowman(int fd_bowman, int* exit) {
-    *exit = 1;
-    close(fd_bowman); //close bowman's socket
+    listPlaylists(dPoole.serverName, &playlists);
+    
+    printF(playlists);
+
+    //GESTIONAR DIMENSION CADENA PLAYLISTS
+
+    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", playlists), fd_bowman);
+    freeString(&playlists);
 }
 
 void conexionBowman(int fd_bowman) {
-    //TRANSMISIONES POOLE<->BOWMAN
     int exit = 0;
 
+    Trama trama = readTrama(fd_bowman);
+
+    asprintf(&dPoole.msg,"\nNew user connected: %s.\n", trama.data);
+    printF(dPoole.msg);
+    char *user_name = strdup(trama.data);
+    freeString(&dPoole.msg);
+    freeTrama(&trama);
+
+    //TRANSMISIONES POOLE-->BOWMAN
     while(!exit) {
-        Trama trama = readTrama(fd_bowman);    
-        write(1, trama.data, strlen(trama.data));
-        //write(1, trama.header, trama.header_length);
-        
-   
+        trama = readTrama(fd_bowman);
+
         if (strcmp(trama.header, "EXIT") == 0) {
-            requestLogoutBowman(fd_bowman, &exit);
+            close(fd_bowman); 
             printF("Thanks for using HAL 9000, see you soon, music lover!\n");
-            break;
+            exit = 1;
         } else if (strcmp(trama.header, "LIST_SONGS") == 0) {
+            asprintf(&dPoole.msg,"\nNew request - %s requires the list of songs.\nSending song list to %s\n", user_name, user_name);
+            printF(dPoole.msg);
+            freeString(&dPoole.msg);
+
             sendSongs(fd_bowman);
         } else if (strcmp(trama.header, "LIST_PLAYLISTS") == 0) {
+            asprintf(&dPoole.msg,"\nNew request - %s requires the list of playlists.\nSending playlist list to %s\n", user_name, user_name);
+            printF(dPoole.msg);
+            freeString(&dPoole.msg);
+
             sendPlaylists(fd_bowman);
         } else if (strcmp(trama.header, "CHECK DOWNLOADS") == 0) {
             printF("You have no ongoing or finished downloads\n");
@@ -111,15 +259,15 @@ void conexionBowman(int fd_bowman) {
         } */else {
             printF("Unknown command\n");
         }
-        freeTrama(&trama);
+        freeTrama(&trama);  
     }
 }
 
 static void *thread_function_bowman(void* fd) {
     intptr_t fd_bowman_value = (intptr_t)fd;
     int fd_bowman = (int)fd_bowman_value;
-    conexionBowman(fd_bowman);
 
+    conexionBowman(fd_bowman);
     //pthread_detach(thread_bowman); //revisar! no se puede hacer! hay otra manera! asi se malgasta memoria
     return NULL;
 }

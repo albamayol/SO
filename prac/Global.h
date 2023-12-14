@@ -48,6 +48,7 @@ Autores:
 #include <arpa/inet.h>
 #include <limits.h>
 //#include "linkedlist.h"
+#include <dirent.h>
 
 #define printF(x) write(1, x, strlen(x))
 

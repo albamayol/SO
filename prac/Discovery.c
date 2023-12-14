@@ -41,26 +41,13 @@ void sig_func() {
         freeString(&dDiscovery.portBowman);
     }
     
-    /*if (!LINKEDLIST_isEmpty (dDiscovery.poole_list)) {
-        Element client;
-
-        LINKEDLIST_goToHead(&dDiscovery.poole_list);
-            
-        while(!LINKEDLIST_isAtEnd(dDiscovery.poole_list)) {
-            client = LINKEDLIST_get(&dDiscovery.poole_list);
-            //kill(client.signalID, SIGINT);
-            LINKEDLIST_next(&dDiscovery.poole_list);
-        }
-        LINKEDLIST_destroy(&dDiscovery.poole_list);
-    }*/
-
     freePoolesArray(dDiscovery.poole_list, dDiscovery.poole_list_size);
 
     close(dDiscovery.fdPoole);
     close(dDiscovery.fdBowman);
 
     //join
-    //hay una manera de solo hacer el join, sino con el detach tambien
+    //hay una manera de solo hacer el join.
 
     exit(EXIT_FAILURE);
 }

@@ -238,23 +238,29 @@ void establishPooleConnection() {
         close(dBowman.fdPoole);
         sig_func();
     }
+
+    // Transmission Bowman->Poole
+    setTramaString(TramaCreate(0x01, "NEW_BOWMAN", dBowman.clienteName), dBowman.fdPoole);
 }
 
 void requestListSongs() {
     write(1, "list songs\n", strlen("list songs\n"));
-    setTramaString(TramaCreate(0x02, "LIST_SONGS", "buit"), dBowman.fdPoole);
+    setTramaString(TramaCreate(0x02, "LIST_SONGS", ""), dBowman.fdPoole);
     //Trama trama = readTrama(dBowman.fdPoole);
 }
 
 void requestListPlaylists() {
     write(1, "list play\n", strlen("list play\n"));
-    setTramaString(TramaCreate(0x02, "LIST_PLAYLISTS", "buitplay"), dBowman.fdPoole);
+    setTramaString(TramaCreate(0x02, "LIST_PLAYLISTS", ""), dBowman.fdPoole);
     //Trama trama = readTrama(dBowman.fdPoole);
 }
 
 void requestLogout() {
     setTramaString(TramaCreate(0x06, "EXIT", dBowman.clienteName), dBowman.fdPoole);
-    //Trama trama = readTrama(dBowman.fdPoole);
+    
+
+    // DUDA, HAY QUE CREAR OTRO SOCKET?
+    setTramaString(TramaCreate(0x06, "EXIT", dBowman.clienteName), dBowman.fdPoole);
 }
 
 /*
