@@ -132,7 +132,7 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
 
 int decreaseNumConnections(Element *poole_list, int poole_list_size, char* pooleName) {
     for (int i = 0; i < poole_list_size; i++) {
-        if (strcmp(poole_list[i].e_aux.name, pooleName) == 0) {
+        if (strcmp(poole_list[i].name, pooleName) == 0) {
             poole_list[i].num_connections--;
             return 1;
         }
