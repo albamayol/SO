@@ -127,7 +127,6 @@ void sendSongs(int fd_bowman) {
         setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", readNumChars(songs, sizeData)), fd_bowman);
     } else {
         while (sizeData > 239) {
-            songs = readNumChars(songs, 239)
             setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", readNumChars(songs, 239)), fd_bowman);
             sizeData -= 239;
         }
