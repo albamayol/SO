@@ -56,12 +56,12 @@ char* read_until(int fd, char delimiter) {
     return msg;
 }
 
-char* readNumChars(char *string, int num) {
+char* readNumChars(char *string, int inicio, int num) {
     char *msg = (char *) malloc (1);
     int i = 0;
 
-    for (i = 0; i < num; i++) {
-        msg[i] = string[i];
+    for (i = 0; inicio + i < inicio + num; i++) {
+        msg[i] = string[inicio + i];
         msg = (char *) realloc(msg, ++i + 1);
     }
     msg[i] = '\0';
@@ -100,8 +100,9 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
     if (poole_list_size != 0) {
         for (int i = 0; i < poole_list_size; i++) {
             Element e_aux = poole_list[i];
-            write(1, e_aux.name, strlen(e_aux.name)); // peta aqui Alex dice que probablemente no tenga \0.
-            write(1, e_aux.ip, strlen(e_aux.ip)); //peta aqui
+            
+            write(1, e_aux.name, strlen(e_aux.name));
+            write(1, e_aux.ip, strlen(e_aux.ip));
             
             asprintf(&buffer, "\npuerto: %d conexiones: %d\n",e_aux.port, e_aux.num_connections);
             printF(buffer);
@@ -121,7 +122,7 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
                 printF(buffer);
                 freeString(&buffer);
             }
-            freeElement(&e_aux);
+            //freeElement(&e_aux); //DUDA
         }
         poole_list[j].num_connections++;
     } 

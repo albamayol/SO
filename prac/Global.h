@@ -112,5 +112,6 @@ void freeElement(Element* e);
 void freeString(char **string);
 void freePoolesArray(Element *array, int size);
 void createDirectory(char* directory);
+char * readNumChars(char *string, int inicio, int num);
 
 #endif

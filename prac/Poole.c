@@ -101,16 +101,15 @@ void notifyBowmanLogout(int fd_bowman) {
 char *listSongs(const char *path, char **fileNames) {
     struct dirent *entry;
     DIR *dir = opendir(path);
-    char *numSongsString = NULL;
 
     if (dir == NULL) {
         perror("Error al abrir el directorio");
-        return -1;
+        return;
     }
 
     size_t totalLength = 0;
     int isFirstFile = 1; 
-    char numSongs = 0;
+    //char numSongs = 0;
 
     *fileNames = malloc(1);
     (*fileNames)[0] = '\0'; 
@@ -123,7 +122,7 @@ char *listSongs(const char *path, char **fileNames) {
             if (*fileNames == NULL) {
                 perror("Error en realloc");
                 closedir(dir);
-                return -1;
+                return;
             }
 
             if (!isFirstFile) {
@@ -134,46 +133,49 @@ char *listSongs(const char *path, char **fileNames) {
 
             strcat(*fileNames, entry->d_name);
             totalLength += fileNameLen + 1; // Longitud del nombre + 1 para '&'
-            numSongs++;
+            //numSongs++;
         }
     }
 
     closedir(dir);
 
-    itoa(numSongs, numSongsString, 10);
-
-    return numSongsString;
+    //return convertIntToString(numSongs);
 }
 
 
 void sendSongs(int fd_bowman) {
-    char *songs = NULL; //ng2&song3&sdnfjasdnfjasndfjnsdfj.....
-    char *numSongs = listSongs(dPoole.serverName, &songs);
+    char *songs = NULL; 
+    //char *numSongsString = listSongs(dPoole.serverName, &songs);
+    listSongs(dPoole.serverName, &songs);
+    int i = 1;
 
     printF(songs);
 
     //GESTION TAMAÑO LISTA DE CANCIONES
     int sizeData = strlen(songs);
 
-    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", numSongs), fd_bowman);
+    //setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", numSongsString), fd_bowman);
     if (sizeData < 239) { // 256 - Type(1 Byte) - header_length(2 Bytes) - Header(14 Bytes) = 239 Bytes disponibles
         // Se puede enviar todo en una sola trama!
-        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", readNumChars(songs, sizeData)), fd_bowman);
+        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", readNumChars(songs, 0, sizeData)), fd_bowman);
     } else {
         while (sizeData > 239) {
-            setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", readNumChars(songs, 239)), fd_bowman);
+            setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", readNumChars(songs, i * 239, 239)), fd_bowman);
             sizeData -= 239;
+            i++;
         }
-        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", songs), fd_bowman);
+        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", readNumChars(songs, i * 239, sizeData)), fd_bowman);
     }
     
-    //setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", songs), fd_bowman);
     freeString(&songs);
+    //freeString(&numSongsString);
 }
 
 void listPlaylists(const char *path, char **fileNames) {
     struct dirent *entry;
     DIR *dir = opendir(path);
+
+    //int numLista = 0;
 
     if (dir == NULL) {
         perror("Error al abrir el directorio");
@@ -192,7 +194,11 @@ void listPlaylists(const char *path, char **fileNames) {
             sprintf(subPath, "%s/%s", path, entry->d_name);
 
             char *subSongs = NULL;
-            //listSongs(subPath, &subSongs);
+            //char *numSongsString = listSongs(subPath, &subSongs);
+            listSongs(subPath, &subSongs);
+
+            //*arrayListsSongs = (int *) realloc (*arrayListsSongs, numLista + 1);
+            //(*arrayListsSongs)[numLista] = atoi(numSongsString);
 
             size_t newLength = totalLength + fileNameLen + 1; // Longitud del nombre de archivo y el separador '&'
 
@@ -226,23 +232,47 @@ void listPlaylists(const char *path, char **fileNames) {
             freeString(&subSongs);
 
             totalLength = newLength;
+            //numLista++;
         }
     }
 
     closedir(dir);
+    //return numLista;
 }
 
 void sendPlaylists(int fd_bowman) {
     char *playlists = NULL;
 
+    //int * arrayListsSongs = NULL;
+    //int numListas = listPlaylists(dPoole.serverName, &playlists, &arrayListsSongs);
     listPlaylists(dPoole.serverName, &playlists);
+    int i = 0;
     
     printF(playlists);
 
     //GESTIONAR DIMENSION CADENA PLAYLISTS
+    int sizeData = strlen(playlists);
 
-    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", playlists), fd_bowman);
+    //[2][5][7][3][6]
+    /*for (int i = 0; i < numListas; i++) {
+        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", convertIntToString(arrayListsSongs[i])), fd_bowman);
+    }*/
+
+    if (sizeData < 239) { // 256 - Type(1 Byte) - header_length(2 Bytes) - Header(14 Bytes) = 239 Bytes disponibles
+        // Se puede enviar todo en una sola trama!
+        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", readNumChars(playlists, 0, sizeData)), fd_bowman);
+    } else {
+        while (sizeData > 239) {
+            setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", readNumChars(playlists, i * 239, 239)), fd_bowman);
+            sizeData -= 239;
+            i++;
+        }
+        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", readNumChars(playlists, i * 239, sizeData)), fd_bowman);
+    }
+
     freeString(&playlists);
+    //free(arrayListsSongs);
+    //arrayListsSongs = NULL;
 }
 
 void conexionBowman(int fd_bowman) {
