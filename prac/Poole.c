@@ -98,7 +98,7 @@ void notifyBowmanLogout(int fd_bowman) {
     close(dPoole.fdPooleClient);
 }
 
-char *listSongs(const char *path, char **fileNames) {
+void listSongs(const char *path, char **fileNames) {
     struct dirent *entry;
     DIR *dir = opendir(path);
 
