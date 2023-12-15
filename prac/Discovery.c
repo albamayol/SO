@@ -48,6 +48,7 @@ void sig_func() {
 
     //join
     //hay una manera de solo hacer el join.
+    //cancel y despues join
 
     exit(EXIT_FAILURE);
 }

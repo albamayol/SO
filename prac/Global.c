@@ -98,24 +98,22 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
     int minConnections = INT_MAX;
     char *buffer = NULL;
     
-
     if (poole_list_size != 0) {
         for (int i = 0; i < poole_list_size; i++) {
-            Element e_aux = poole_list[i];
+
+            write(1, poole_list[i].name, strlen(poole_list[i].name));
+            write(1, poole_list[i].ip, strlen(poole_list[i].ip));
             
-            write(1, e_aux.name, strlen(e_aux.name));
-            write(1, e_aux.ip, strlen(e_aux.ip));
-            
-            asprintf(&buffer, "\npuerto: %d conexiones: %d\n",e_aux.port, e_aux.num_connections);
+            asprintf(&buffer, "\npuerto: %d conexiones: %d\n",poole_list[i].port, poole_list[i].num_connections);
             printF(buffer);
             freeString(&buffer);
 
-            if (e_aux.num_connections <= minConnections) {
-                e.name = strdup(e_aux.name);
-                e.ip = strdup(e_aux.ip);
-                e.port = e_aux.port;
-                e.num_connections = e_aux.num_connections;
-                minConnections = e_aux.num_connections;
+            if (poole_list[i].num_connections <= minConnections) {
+                e.name = strdup(poole_list[i].name);
+                e.ip = strdup(poole_list[i].ip);
+                e.port = poole_list[i].port;
+                e.num_connections = poole_list[i].num_connections;
+                minConnections = poole_list[i].num_connections;
                 write(1, e.name, strlen(e.name));
                 write(1, e.ip, strlen(e.ip));
                 j = i;
@@ -124,7 +122,6 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
                 printF(buffer);
                 freeString(&buffer);
             }
-            //freeElement(&e_aux); //DUDA
         }
         poole_list[j].num_connections++;
     } 
