@@ -329,6 +329,7 @@ void conexionBowman(int fd_bowman) {
         }
         freeTrama(&trama);  
     }
+    freeString(&user_name);
 }
 
 static void *thread_function_bowman(void* fd) {
