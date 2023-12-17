@@ -111,12 +111,14 @@ typedef struct {
     int poole_list_size;
 } dataDiscovery;
 
+void sig_func_Poole();
 char* read_until(int fd, char delimiter);
 char* read_until_string(char *string, char delimiter);
 void cleanThreads(Thread* threads, int numThreads);
 void separaDataToElement(char* data, Element* e);
 Element pooleMinConnections(Element *poole_list, int poole_list_size);
 int decreaseNumConnections(Element *poole_list, int poole_list_size, char* pooleName);
+int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleName);
 char* convertIntToString(int num);
 void freeElement(Element* e);
 void freeString(char **string);

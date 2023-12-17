@@ -8,6 +8,7 @@ Autores:
 
 dataPoole dPoole;
 
+void sig_func();
 /*
 @Finalitat: Inicializar las variables a NULL.
 @Paràmetres: ---
@@ -25,12 +26,50 @@ void inicializarDataPoole() {
     dPoole.threads_array_size = 0;
 }
 
+void openDiscoverySocket() {
+    dPoole.fdPooleClient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (dPoole.fdPooleClient < 0) {
+        perror ("Error al crear el socket de Discovery per notificar logout bowman");
+        close(dPoole.fdPooleClient);
+        sig_func();
+    }
+
+    bzero (&dPoole.discovery_addr, sizeof (dPoole.discovery_addr));
+    dPoole.discovery_addr.sin_family = AF_INET;
+    dPoole.discovery_addr.sin_port = htons(atoi(dPoole.puertoDiscovery)); 
+    dPoole.discovery_addr.sin_addr.s_addr = inet_addr(dPoole.ipDiscovery);
+
+    if (connect(dPoole.fdPooleClient, (struct sockaddr*)&dPoole.discovery_addr, sizeof(dPoole.discovery_addr)) < 0) {
+        perror("Error al conectar a Discovery per notificar logout bowman");
+        close(dPoole.fdPooleClient);
+        sig_func();
+    }
+}
+
+void notifyPooleDisconnected() {
+    openDiscoverySocket();
+    //ENVIAMOS TRAMA LOGOUTBOWMAN
+    setTramaString(TramaCreate(0x06, "POOLE_DISCONNECT", dPoole.serverName), dPoole.fdPooleClient);
+    Trama trama = readTrama(dPoole.fdPooleClient);
+    printF(trama.header);
+    if (strcmp(trama.header, "CONOK") == 0) {
+        //nos desconectamos bien
+        printF("Poole disconnected from Discovery succesfully\n");
+    } else if (strcmp(trama.header, "CONKO") == 0) {
+        printF("Sorry, couldn't disconnect from Discovery\n");
+    }
+
+    freeTrama(&trama);
+    close(dPoole.fdPooleClient);
+}
+
 /*
 @Finalitat: Manejar la recepción de la signal (SIGINT) y liberar los recursos utilizados hasta el momento.
 @Paràmetres: ---
 @Retorn: ---
 */
 void sig_func() {
+    notifyPooleDisconnected();
     if (dPoole.serverName != NULL) {
         freeString(&dPoole.serverName);
     }
@@ -71,24 +110,7 @@ void printInfoFile() {
 }
 
 void notifyBowmanLogout(int fd_bowman) {
-    dPoole.fdPooleClient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (dPoole.fdPooleClient < 0) {
-        perror ("Error al crear el socket de Discovery per notificar logout bowman");
-        close(dPoole.fdPooleClient);
-        sig_func();
-    }
-
-    bzero (&dPoole.discovery_addr, sizeof (dPoole.discovery_addr));
-    dPoole.discovery_addr.sin_family = AF_INET;
-    dPoole.discovery_addr.sin_port = htons(atoi(dPoole.puertoDiscovery)); 
-    dPoole.discovery_addr.sin_addr.s_addr = inet_addr(dPoole.ipDiscovery);
-
-    if (connect(dPoole.fdPooleClient, (struct sockaddr*)&dPoole.discovery_addr, sizeof(dPoole.discovery_addr)) < 0) {
-        perror("Error al conectar a Discovery per notificar logout bowman");
-        close(dPoole.fdPooleClient);
-        sig_func();
-    }
-
+    openDiscoverySocket();
     //ENVIAMOS TRAMA LOGOUTBOWMAN
     setTramaString(TramaCreate(0x06, "BOWMAN_LOGOUT", dPoole.serverName), dPoole.fdPooleClient);
     Trama trama = readTrama(dPoole.fdPooleClient);

@@ -52,6 +52,7 @@ void sig_func() {
 }
 
 void conexionPoole(int fd_poole) {
+    char *buffer = NULL;
     Trama trama = readTrama(fd_poole);
     if (strcmp(trama.header, "BOWMAN_LOGOUT") == 0) {
         //LOGOUT --> trama.data contiene el nombre del poole donde ha ocurrido un logout
@@ -64,9 +65,19 @@ void conexionPoole(int fd_poole) {
         }
         freeTrama(&trama);
 
+    } else if (strcmp(trama.header, "POOLE_DISCONNECT") == 0) {
+        if (erasePooleFromList(&dDiscovery.poole_list, &dDiscovery.poole_list_size, trama.data)) {
+            setTramaString(TramaCreate(0x06, "CONOK", ""), fd_poole);   
+            asprintf(&buffer, "sizeArrayPoolesWhenPooleDisconnects: %d \n", dDiscovery.poole_list_size);
+            printF(buffer);
+            freeString(&buffer);
+        } else {
+            setTramaString(TramaCreate(0x06, "CONKO", ""), fd_poole);
+        }
+        freeTrama(&trama);
     } else {
         Element element;
-        char *buffer = NULL;
+        
 
         write(1, trama.header, strlen(trama.header));
         write(1, "\n", 1);
@@ -95,6 +106,10 @@ void conexionPoole(int fd_poole) {
         dDiscovery.poole_list[dDiscovery.poole_list_size].port = element.port;
         dDiscovery.poole_list[dDiscovery.poole_list_size].num_connections = element.num_connections;
         dDiscovery.poole_list_size++;
+
+        asprintf(&buffer, "sizeArrayPoolesUpdated: %d \n", dDiscovery.poole_list_size);
+        printF(buffer);
+        freeString(&buffer);
 
         freeElement(&element);
 

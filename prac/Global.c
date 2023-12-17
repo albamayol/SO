@@ -79,7 +79,7 @@ char* readNumChars(char *string, int inicio, int num) {
     return msg;
 }
 
-void createDirectory(char* directory) {	
+void createDirectory(char* directory) {
     char *command = NULL;
 
     asprintf(&command, "mkdir -p %s", directory);
@@ -146,6 +146,30 @@ int decreaseNumConnections(Element *poole_list, int poole_list_size, char* poole
         }
     }
     return 0; //no se ha encontrado ese poole en discovery
+}
+
+int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleName) {
+    int flagFound = 0;
+    Element* updatedPooleList = NULL;
+    int updatedPooleListSize = 0;
+
+    for (int i = 0; i < *poole_list_size; i++) {
+        printF(poole_list[i]->name);
+        if (strcmp(poole_list[i]->name, pooleName) != 0) {
+            updatedPooleList = realloc(updatedPooleList, sizeof(Element) * (updatedPooleListSize + 1));
+            updatedPooleList[updatedPooleListSize].name = strdup(poole_list[i]->name);
+            updatedPooleList[updatedPooleListSize].ip = strdup(poole_list[i]->ip);
+            updatedPooleList[updatedPooleListSize].port = poole_list[i]->port;
+            updatedPooleList[updatedPooleListSize].num_connections = poole_list[i]->num_connections;
+            updatedPooleListSize++;
+        } else {
+            flagFound = 1;
+        }
+    }
+    freePoolesArray(*poole_list, *poole_list_size);
+    *poole_list_size = updatedPooleListSize;
+    *poole_list = updatedPooleList;
+    return flagFound; //no se ha encontrado ese poole en discovery
 }
 
 char* read_until_string(char *string, char delimiter) {
