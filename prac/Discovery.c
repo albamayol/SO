@@ -46,8 +46,6 @@ void sig_func() {
     close(dDiscovery.fdPoole);
     close(dDiscovery.fdBowman);
 
-    //join
-    //hay una manera de solo hacer el join.
     //cancel y despues join
 
     exit(EXIT_FAILURE);
@@ -58,6 +56,8 @@ void conexionPoole(int fd_poole) {
     if (strcmp(trama.header, "BOWMAN_LOGOUT") == 0) {
         //LOGOUT --> trama.data contiene el nombre del poole donde ha ocurrido un logout
         if (decreaseNumConnections(dDiscovery.poole_list, dDiscovery.poole_list_size, trama.data)) {
+            printF(trama.header);
+            printF(trama.data);
             setTramaString(TramaCreate(0x06, "CONOK", ""), fd_poole);   
         } else {
             setTramaString(TramaCreate(0x06, "CONKO", ""), fd_poole);

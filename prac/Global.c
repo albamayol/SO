@@ -32,6 +32,14 @@ void freePoolesArray(Element *array, int size) {
     free(array);
 }
 
+void cleanThreads(Thread* threads, int numThreads) {
+    for (int i = 0; i < numThreads; i++) {
+        pthread_cancel(threads[i].thread);
+        pthread_join(threads[i].thread, NULL);
+        freeString(&threads[i].user_name);
+    }
+    free(threads);
+}
 
 char* read_until(int fd, char delimiter) {
     char *msg = NULL;
@@ -131,6 +139,7 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
 
 int decreaseNumConnections(Element *poole_list, int poole_list_size, char* pooleName) {
     for (int i = 0; i < poole_list_size; i++) {
+        printF(poole_list[i].name);
         if (strcmp(poole_list[i].name, pooleName) == 0) {
             poole_list[i].num_connections--;
             return 1;
