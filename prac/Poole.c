@@ -92,8 +92,7 @@ void sig_func() {
         freeString(&dPoole.msg);
     }
 
-    //cancel y despues join
-    cleanThreads(dPoole.threads, dPoole.threads_array_size);
+    cleanThreads(dPoole.threads, dPoole.threads_array_size); //cancel y despues join
 
     exit(EXIT_FAILURE);
 }

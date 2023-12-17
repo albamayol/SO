@@ -47,7 +47,6 @@ Autores:
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <limits.h>
-//#include "linkedlist.h"
 #include <dirent.h>
 
 #define printF(x) write(1, x, strlen(x))
@@ -111,7 +110,6 @@ typedef struct {
     int poole_list_size;
 } dataDiscovery;
 
-void sig_func_Poole();
 char* read_until(int fd, char delimiter);
 char* read_until_string(char *string, char delimiter);
 void cleanThreads(Thread* threads, int numThreads);

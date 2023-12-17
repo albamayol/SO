@@ -78,7 +78,6 @@ void conexionPoole(int fd_poole) {
     } else {
         Element element;
         
-
         write(1, trama.header, strlen(trama.header));
         write(1, "\n", 1);
         write(1, trama.data, strlen(trama.data));
