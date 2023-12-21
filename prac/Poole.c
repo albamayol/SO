@@ -69,7 +69,11 @@ void notifyPooleDisconnected() {
 @Retorn: ---
 */
 void sig_func() {
+    close(dPoole.fdPooleServer);
+    close(dPoole.fdPooleClient);
+
     notifyPooleDisconnected();
+    
     if (dPoole.serverName != NULL) {
         freeString(&dPoole.serverName);
     }
