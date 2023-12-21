@@ -47,7 +47,6 @@ Autores:
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <limits.h>
-//#include "linkedlist.h"
 #include <dirent.h>
 
 #define printF(x) write(1, x, strlen(x))
@@ -104,7 +103,6 @@ typedef struct {
 } dataDiscovery;
 
 char* read_until(int fd, char delimiter);
-char* read_until_string(char *string, char delimiter);
 void separaDataToElement(char* data, Element* e);
 Element pooleMinConnections(Element *poole_list, int poole_list_size);
 int decreaseNumConnections(Element *poole_list, int poole_list_size, char* pooleName);
@@ -113,6 +111,7 @@ void freeElement(Element* e);
 void freeString(char **string);
 void freePoolesArray(Element *array, int size);
 void createDirectory(char* directory);
-char * readNumChars(char *string, int inicio, int num);
+char* readNumChars(char *string, int inicio, int final);
+char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *fina, char delimitadorFinal);
 
 #endif

@@ -43,30 +43,56 @@ char* read_until(int fd, char delimiter) {
             msg = (char *) malloc(1);
         }
 
-        if (current != delimiter) {
+        if (current != delimiter) { 
             msg[i] = current;
             msg = (char *) realloc(msg, ++i + 1);
-        } 
-        else {
+        } else {
             msg[i] = '\0';
             break;
         }
-    }  
+    }
 
     return msg;
 }
 
-char* readNumChars(char *string, int inicio, int num) {
-    char *msg = (char *)malloc(num + 1); 
+char* readNumChars(char *string, int inicio, int final) {
+    char *msg = (char *)malloc(final + 1); 
     if (msg == NULL) {
-        
         return NULL;
     }
 
-    for (int i = 0; i < num; i++) {
+    for (int i = 0; i < final; i++) {
         msg[i] = string[inicio + i];
     }
-    msg[num] = '\0'; 
+
+    msg[final] = '\0';     
+    
+    return msg;
+}
+
+char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *final, char delimitadorFinal) {
+    char *msg = NULL;
+    int i = 0;
+
+    for (i = 0; string[(*inicio) + i] != delimitadorFinal; i++) {
+        if (i == 0) {
+            msg = (char *)malloc(1);
+            if (msg == NULL) {
+                return NULL;
+            }
+        }
+
+        if (string[(*inicio) + i] != delimiter) {
+            msg[i] = string[(*inicio) + i];
+            msg = (char *)realloc(msg, i + 2); 
+        } else {    
+            msg[i] = '\0';
+            *inicio += i + 1;
+            return msg; 
+        }
+    }
+    msg[i] = '\0';
+    *final = delimitadorFinal;
 
     return msg;
 }
@@ -137,28 +163,6 @@ int decreaseNumConnections(Element *poole_list, int poole_list_size, char* poole
         }
     }
     return 0; //no se ha encontrado ese poole en discovery
-}
-
-char* read_until_string(char *string, char delimiter) {
-    char *msg = NULL;
-    int i = 0;
-
-    for (i = 0; i > 0; i++) {
-        if (i == 0) {
-            msg = (char *) malloc(1);
-        }
-
-        if (string[i] != delimiter) {
-            msg[i] = string[i];
-            msg = (char *) realloc(msg, ++i + 1);
-        } 
-        else {
-            msg[i] = '\0';
-            break;
-        }
-    }
-
-    return msg;
 }
 
 char* convertIntToString(int num) {

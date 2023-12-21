@@ -244,15 +244,261 @@ void establishPooleConnection() {
 }
 
 void requestListSongs() {
-    write(1, "list songs\n", strlen("list songs\n"));
     setTramaString(TramaCreate(0x02, "LIST_SONGS", ""), dBowman.fdPoole);
-    //Trama trama = readTrama(dBowman.fdPoole);
+    
+    int valorInicial = 0, numCanciones = 0, i = 0;
+    int *inicio = &valorInicial; 
+
+    char valorFinal = ' ', aux[257];
+    char *final = &valorFinal;
+
+    char *song = NULL;
+    char *songs = NULL;
+
+    char **canciones = NULL;
+    
+    read(dBowman.fdPoole, aux, 256);
+    aux[256] = '\0';
+
+    size_t totalSize = 0; 
+
+    int numTramas = atoi(aux + 17);
+
+    juntarTramasSongs(numTramas);
+
+    while(i < numTramas) {
+        read(dBowman.fdPoole, aux, 256);
+        aux[256] = '\0';
+
+        int dataSize = strlen(aux + 17);
+
+        songs = realloc(songs, totalSize + dataSize + 1);
+        if (songs == NULL) {
+            break;
+        }
+
+        // Copiamos los datos de la trama actual a songs
+        memcpy(songs + totalSize, aux + 17, dataSize);
+        totalSize += dataSize;
+
+        songs[totalSize] = '\0';
+        i++;
+    }
+
+    do {
+        song = readUntilFromIndex(songs, inicio, '&', final, '~');
+
+        canciones = realloc(canciones, (numCanciones + 1) * sizeof(char *));
+        if (canciones == NULL) {
+            break;
+        }
+        canciones[numCanciones] = song;
+        numCanciones++;
+    } while (valorFinal != '~');
+
+    asprintf(&dBowman.msg, "\nThere are %d songs available for download:", numCanciones);
+    printF(dBowman.msg);
+    freeString(&dBowman.msg);
+
+    for (int i = 0; i < numCanciones; i++) {
+        if (i == numCanciones - 1) {
+            asprintf(&dBowman.msg, "\n%d. %s\n\n", i + 1, canciones[i]);
+        } else {
+            asprintf(&dBowman.msg, "\n%d. %s", i + 1, canciones[i]);
+        }
+
+        printF(dBowman.msg);
+        freeString(&dBowman.msg);
+        freeString(&canciones[i]);
+    }
+
+    freeString(canciones);
+    freeString(&songs);
+}
+
+char *juntarTramas(int numTramas) {
+    int i = 0;
+    char aux[257];
+    char *playlists = NULL;
+    size_t totalSize = 0; 
+
+    while(i < numTramas) {
+        read(dBowman.fdPoole, aux, 256);
+        aux[256] = '\0';
+
+        int dataSize = strlen(aux + 17);
+
+        playlists = realloc(playlists, totalSize + dataSize + 1);
+        if (playlists == NULL) {
+            break;
+        }
+
+        // Copiamos los datos de la trama actual a songs
+        memcpy(playlists + totalSize, aux + 17, dataSize);
+        totalSize += dataSize;
+
+        playlists[totalSize] = '\0';
+        i++;
+    }
+
+    size_t len = strlen(playlists);
+    playlists = realloc(playlists, len + 2);
+    if (playlists != NULL) {
+        playlists[len] = '#';
+        playlists[len + 1] = '\0';
+    }
+    return playlists;
+}
+
+char ***procesarTramas(char *playlists, int **numCancionesPorLista, int numCanciones, int *numListas) {
+    int valorInicial = 0, inicialValor = 0, i = 0, totalCanciones = 0;
+
+    int *inicioPlaylist = &valorInicial; 
+    int *inicioSong = &inicialValor; 
+
+    char valorFinal = ' ';
+    char *final = &valorFinal;
+
+    char ***listas = NULL;
+
+    char *playlist = NULL;
+    char *song = NULL;
+
+    do {
+        playlist = readUntilFromIndex(playlists, inicioPlaylist, '#', final, '~');
+        //list1&song1&song2&song3\0
+
+        size_t len = strlen(playlist);
+        playlist = realloc(playlist, len + 2);
+        if (playlist == NULL) {
+            break;
+        }
+
+        playlist[len] = '#';
+        playlist[len + 1] = '\0';
+
+        //list1&song1&song2&song3#
+
+        //listN&song1&song2~#
+
+        *inicioSong = 0; 
+        i = 0;
+        valorFinal = ' ';
+        do {    
+            song = readUntilFromIndex(playlist, inicioSong, '&', final, '#');
+            if (i == 0) {
+                // Primero, reservamos memoria para almacenar una nueva lista
+                listas = realloc(listas, (*numListas + 1) * sizeof(char **));
+                if (listas == NULL) {
+                    break;
+                }
+                // Luego, reservamos memoria para el nombre de la lista (el primer elemento de la lista)
+                listas[*numListas] = malloc(sizeof(char *));
+                if (listas[*numListas] == NULL) {
+                    break;
+                } 
+                // Guardamos el nombre de la lista
+                listas[*numListas][0] = strdup(song); 
+                if (listas[*numListas][0] == NULL) {
+                    free(listas[*numListas]);
+                    break;
+                }
+            } else {
+                // Realocamos memoria para un nuevo elemento en la lista, en este caso para la nueva canción
+                listas[*numListas] = realloc(listas[*numListas], (i + 1) * sizeof(char *));
+                if (listas[*numListas] == NULL) {
+                    break;
+                }
+
+                // Guardamos la nueva canción
+                listas[*numListas][i] = strdup(song);
+                if (listas[*numListas][i] == NULL) {
+                    for (int k = 0; k < i; k++) {
+                        free(listas[*numListas][k]);
+                    }
+                    free(listas[*numListas]);
+                    break;
+                }
+
+                (*numCancionesPorLista)[*numListas]++; 
+            }
+            i++;
+        } while (valorFinal != '#');
+        totalCanciones += (*numCancionesPorLista)[*numListas];
+        (*numListas)++;
+
+        (*numCancionesPorLista) = realloc((*numCancionesPorLista), (*numListas + 1) * sizeof(int));
+        (*numCancionesPorLista)[(*numListas)] = 0;
+        if (*numCancionesPorLista == NULL) {
+            break;
+        }
+    } while (totalCanciones < numCanciones);
+
+    freeString(&playlist);
+    freeString(&song);
+
+    return listas;
+}
+
+void printarPlaylists(int numListas, char ***listas, int *numCancionesPorLista) {
+    asprintf(&dBowman.msg, "\nThere are %d lists available for download:", numListas);
+    printF(dBowman.msg);
+    freeString(&dBowman.msg);
+
+    for (int i = 0; i < numListas; i++) {
+        asprintf(&dBowman.msg, "\n%d. %s", i + 1, listas[i][0]);
+        printF(dBowman.msg);
+        freeString(&dBowman.msg);
+        
+        for (int j = 1; j <= numCancionesPorLista[i]; j++) {
+            asprintf(&dBowman.msg, "\n   %c. %s", 'a' + j - 1, listas[i][j]);
+            printF(dBowman.msg);
+            freeString(&dBowman.msg);
+            free(listas[i][j]);
+        }
+
+        free(listas[i]); 
+    }
+    printF("\n\n");
+
+    free(listas); 
+    free(numCancionesPorLista);
 }
 
 void requestListPlaylists() {
-    write(1, "list play\n", strlen("list play\n"));
     setTramaString(TramaCreate(0x02, "LIST_PLAYLISTS", ""), dBowman.fdPoole);
-    //Trama trama = readTrama(dBowman.fdPoole);
+
+    // GESTIONAR LA RECEPCION DE PLAYLISTS  
+    int numListas = 0;
+    int *pnumListas = &numListas;
+    
+    int *numCancionesPorLista = malloc(sizeof(int)); 
+
+    *numCancionesPorLista = 0;
+    
+    char aux[257];
+
+    char *playlists = NULL;
+    char ***listas = NULL;
+    
+    // Lectura cantidad de tramas
+    read(dBowman.fdPoole, aux, 256);
+    aux[256] = '\0';
+    int numTramas = atoi(aux + 17);
+
+    // Lectura cantidad de canciones
+    read(dBowman.fdPoole, aux, 256);
+    aux[256] = '\0';
+    int numCanciones = 0;
+    numCanciones = atoi(aux + 17);
+
+    playlists = juntarTramas(numTramas);
+
+    listas = procesarTramas(playlists, &numCancionesPorLista, numCanciones, pnumListas);
+
+    printarPlaylists(numListas, listas, numCancionesPorLista);
+
+    freeString(&playlists);
 }
 
 int requestLogout() {  

@@ -77,7 +77,7 @@ Trama TramaCreate (char type, char *header, char *data) {
   trama.data = malloc(sizeof(char) * (sizeData));
   memset(trama.data, '~', sizeData); //Padding
   int sizeDataString = 0;
-  sizeDataString = strlen(data);
+  sizeDataString = strlen(data); 
 
   for (int i = 0; i < sizeDataString; i++) {
       trama.data[i] = data[i];
@@ -107,14 +107,14 @@ Trama readTrama(int fd) {
     trama.header[trama.header_length] = '\0'; 
   } 
 
-  
   trama.data = read_until(fd, '~');
-  int sizeData = 256 - 3 - trama.header_length - strlen(trama.data) - 1; //cantidad restantes de '~'
+
+  size_t sizeData = 256 - 3 - trama.header_length - strlen(trama.data) - 1; // '~' restantes para leer la trama completa(256 Bytes)
 
   buffer = (char *) malloc(sizeof(char) * (sizeData));
   read(fd, buffer, sizeData * sizeof(char));
 
   freeString(&buffer);
-
+  
   return trama;
 }
