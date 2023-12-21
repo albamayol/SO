@@ -115,6 +115,7 @@ char* read_until_string(char *string, char delimiter);
 void cleanThreads(Thread* threads, int numThreads);
 void separaDataToElement(char* data, Element* e);
 Element pooleMinConnections(Element *poole_list, int poole_list_size);
+void printListPooles(Element *poole_list, int poole_list_size);
 int decreaseNumConnections(Element *poole_list, int poole_list_size, char* pooleName);
 int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleName);
 char* convertIntToString(int num);

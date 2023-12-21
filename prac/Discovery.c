@@ -66,6 +66,7 @@ void conexionPoole(int fd_poole) {
         freeTrama(&trama);
 
     } else if (strcmp(trama.header, "POOLE_DISCONNECT") == 0) {
+        printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
         if (erasePooleFromList(&dDiscovery.poole_list, &dDiscovery.poole_list_size, trama.data)) {
             setTramaString(TramaCreate(0x06, "CONOK", ""), fd_poole);   
             asprintf(&buffer, "sizeArrayPoolesWhenPooleDisconnects: %d \n", dDiscovery.poole_list_size);
@@ -112,6 +113,8 @@ void conexionPoole(int fd_poole) {
 
         freeElement(&element);
 
+        printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
+
         setTramaString(TramaCreate(0x01, "CON_OK", ""), fd_poole);        
     }
 
@@ -138,6 +141,7 @@ void conexionBowman(int fd_bowman) {
         
         setTramaString(TramaCreate(0x01, "CON_OK", aux), fd_bowman);
         freeString(&aux);
+        printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
     }
 
     close(fd_bowman);

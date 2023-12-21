@@ -137,6 +137,17 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
     return e;
 }
 
+void printListPooles(Element *poole_list, int poole_list_size) {
+    char* buffer = NULL;
+    if (poole_list_size != 0) {
+        for (int i = 0; i < poole_list_size; i++) {
+            asprintf(&buffer, "\nLISTA ACTUAL DE POOLES:\nnombre: %s\nip: %s\npuerto: %d\nconexiones: %d\n",poole_list[i].name, poole_list[i].ip, poole_list[i].port, poole_list[i].num_connections);
+            printF(buffer);
+            freeString(&buffer);
+        }
+    } 
+}
+
 int decreaseNumConnections(Element *poole_list, int poole_list_size, char* pooleName) {
     for (int i = 0; i < poole_list_size; i++) {
         printF(poole_list[i].name);
