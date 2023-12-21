@@ -8,6 +8,7 @@ Autores:
 
 dataPoole dPoole;
 
+void sig_func();
 /*
 @Finalitat: Inicializar las variables a NULL.
 @Paràmetres: ---
@@ -21,6 +22,45 @@ void inicializarDataPoole() {
     dPoole.ipServer = NULL; 
     dPoole.puertoServer = NULL;
     dPoole.msg = NULL;
+    dPoole.threads = NULL;
+    dPoole.threads_array_size = 0;
+}
+
+void openDiscoverySocket() {
+    dPoole.fdPooleClient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (dPoole.fdPooleClient < 0) {
+        perror ("Error al crear el socket de Discovery per notificar logout bowman");
+        close(dPoole.fdPooleClient);
+        sig_func();
+    }
+
+    bzero (&dPoole.discovery_addr, sizeof (dPoole.discovery_addr));
+    dPoole.discovery_addr.sin_family = AF_INET;
+    dPoole.discovery_addr.sin_port = htons(atoi(dPoole.puertoDiscovery)); 
+    dPoole.discovery_addr.sin_addr.s_addr = inet_addr(dPoole.ipDiscovery);
+
+    if (connect(dPoole.fdPooleClient, (struct sockaddr*)&dPoole.discovery_addr, sizeof(dPoole.discovery_addr)) < 0) {
+        perror("Error al conectar a Discovery per notificar logout bowman");
+        close(dPoole.fdPooleClient);
+        sig_func();
+    }
+}
+
+void notifyPooleDisconnected() {
+    openDiscoverySocket();
+    //ENVIAMOS TRAMA LOGOUTBOWMAN
+    setTramaString(TramaCreate(0x06, "POOLE_DISCONNECT", dPoole.serverName), dPoole.fdPooleClient);
+    Trama trama = readTrama(dPoole.fdPooleClient);
+    printF(trama.header);
+    if (strcmp(trama.header, "CONOK") == 0) {
+        //nos desconectamos bien
+        printF("Poole disconnected from Discovery succesfully\n");
+    } else if (strcmp(trama.header, "CONKO") == 0) {
+        printF("Sorry, couldn't disconnect from Discovery\n");
+    }
+
+    freeTrama(&trama);
+    close(dPoole.fdPooleClient);
 }
 
 /*
@@ -29,6 +69,11 @@ void inicializarDataPoole() {
 @Retorn: ---
 */
 void sig_func() {
+    close(dPoole.fdPooleServer);
+    close(dPoole.fdPooleClient);
+
+    notifyPooleDisconnected();
+    
     if (dPoole.serverName != NULL) {
         freeString(&dPoole.serverName);
     }
@@ -50,6 +95,9 @@ void sig_func() {
     if (dPoole.msg != NULL) {
         freeString(&dPoole.msg);
     }
+
+    cleanThreads(dPoole.threads, dPoole.threads_array_size); //cancel y despues join
+
     exit(EXIT_FAILURE);
 }
 
@@ -65,27 +113,11 @@ void printInfoFile() {
 }
 
 void notifyBowmanLogout(int fd_bowman) {
-    dPoole.fdPooleClient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (dPoole.fdPooleClient < 0) {
-        perror ("Error al crear el socket de Discovery per notificar logout bowman");
-        close(dPoole.fdPooleClient);
-        sig_func();
-    }
-
-    bzero (&dPoole.discovery_addr, sizeof (dPoole.discovery_addr));
-    dPoole.discovery_addr.sin_family = AF_INET;
-    dPoole.discovery_addr.sin_port = htons(atoi(dPoole.puertoDiscovery)); 
-    dPoole.discovery_addr.sin_addr.s_addr = inet_addr(dPoole.ipDiscovery);
-
-    if (connect(dPoole.fdPooleClient, (struct sockaddr*)&dPoole.discovery_addr, sizeof(dPoole.discovery_addr)) < 0) {
-        perror("Error al conectar a Discovery per notificar logout bowman");
-        close(dPoole.fdPooleClient);
-        sig_func();
-    }
-
+    openDiscoverySocket();
     //ENVIAMOS TRAMA LOGOUTBOWMAN
     setTramaString(TramaCreate(0x06, "BOWMAN_LOGOUT", dPoole.serverName), dPoole.fdPooleClient);
     Trama trama = readTrama(dPoole.fdPooleClient);
+    printF(trama.header);
     if (strcmp(trama.header, "CONOK") == 0) {
         //Avisamos Bowman OK
         setTramaString(TramaCreate(0x06, "CONOK", dPoole.serverName), fd_bowman);
@@ -309,42 +341,42 @@ void sendPlaylists(int fd_bowman) {
     freeString(&playlists);
 }
 
-void conexionBowman(int fd_bowman) {
+void conexionBowman(Thread* mythread) {
     int exit = 0;
 
-    Trama trama = readTrama(fd_bowman);
-    char *user_name = strdup(trama.data);
+    Trama trama = readTrama(mythread->fd);
+    mythread->user_name = strdup(trama.data);
 
-    asprintf(&dPoole.msg,"\nNew user connected: %s.\n", user_name);
+    asprintf(&dPoole.msg,"\nNew user connected: %s.\n", mythread->user_name);
     printF(dPoole.msg);
     freeString(&dPoole.msg);
     freeTrama(&trama);
 
     //TRANSMISIONES POOLE-->BOWMAN
     while(!exit) {
-        trama = readTrama(fd_bowman);
+        trama = readTrama(mythread->fd);
 
         if (strcmp(trama.header, "EXIT") == 0) {    //HAY QUE VOLVER A CREAR OTRO SOCKET CON DISCOVERY
-            notifyBowmanLogout(fd_bowman);
-            close(fd_bowman); 
+            notifyBowmanLogout(mythread->fd);
+            close(mythread->fd); 
             
-            asprintf(&dPoole.msg,"\nNew request - %s logged out\n", user_name);
+            asprintf(&dPoole.msg,"\nNew request - %s logged out\n", mythread->user_name);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
 
             exit = 1;
         } else if (strcmp(trama.header, "LIST_SONGS") == 0) {
-            asprintf(&dPoole.msg,"\nNew request - %s requires the list of songs.\nSending song list to %s\n", user_name, user_name);
+            asprintf(&dPoole.msg,"\nNew request - %s requires the list of songs.\nSending song list to %s\n", mythread->user_name, mythread->user_name);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
 
-            sendSongs(fd_bowman);
+            sendSongs(mythread->fd);
         } else if (strcmp(trama.header, "LIST_PLAYLISTS") == 0) {
-            asprintf(&dPoole.msg,"\nNew request - %s requires the list of playlists.\nSending playlist list to %s\n", user_name, user_name);
+            asprintf(&dPoole.msg,"\nNew request - %s requires the list of playlists.\nSending playlist list to %s\n", mythread->user_name, mythread->user_name);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
 
-            sendPlaylists(fd_bowman);
+            sendPlaylists(mythread->fd);
         } else if (strcmp(trama.header, "CHECK DOWNLOADS") == 0) {
             printF("You have no ongoing or finished downloads\n");
         } else if (strcmp(trama.header, "CLEAR DOWNLOADS") == 0) {
@@ -361,16 +393,17 @@ void conexionBowman(int fd_bowman) {
         } */else {
             printF("Unknown command\n");
         }
+        printF("freedTrama\n");
         freeTrama(&trama);  
     }
+    freeTrama(&trama);  
+    freeString(&mythread->user_name);
 }
 
-static void *thread_function_bowman(void* fd) {
-    intptr_t fd_bowman_value = (intptr_t)fd;
-    int fd_bowman = (int)fd_bowman_value;
+static void *thread_function_bowman(void* thread) {
+    Thread* mythread = (Thread*) thread;
 
-    conexionBowman(fd_bowman);
-    //pthread_detach(thread_bowman); //revisar! no se puede hacer! hay otra manera! asi se malgasta memoria
+    conexionBowman(mythread);
     return NULL;
 }
 
@@ -384,10 +417,14 @@ void connect_Bowman() {
         return;
     }
 
-    pthread_t thread_bowman;
-    if (pthread_create(&thread_bowman, NULL, thread_function_bowman, (void *)(intptr_t)fd_bowman) != 0) {
+    dPoole.threads = realloc(dPoole.threads, sizeof(Thread) * (dPoole.threads_array_size + 1)); //alojamos una posición
+    dPoole.threads[dPoole.threads_array_size].fd = fd_bowman;
+
+    if (pthread_create(&dPoole.threads[dPoole.threads_array_size].thread, NULL, thread_function_bowman, (void *)&dPoole.threads[dPoole.threads_array_size]) != 0) {
         perror("Error al crear el thread inicial para Bowman");
     }
+    dPoole.threads_array_size++;
+    //printF(dPoole.threads_array_size);
 }
 
 

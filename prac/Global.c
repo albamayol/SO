@@ -32,6 +32,14 @@ void freePoolesArray(Element *array, int size) {
     free(array);
 }
 
+void cleanThreads(Thread* threads, int numThreads) {
+    for (int i = 0; i < numThreads; i++) {
+        pthread_cancel(threads[i].thread);
+        pthread_join(threads[i].thread, NULL);
+        freeString(&threads[i].user_name);
+    }
+    free(threads);
+}
 
 char* read_until(int fd, char delimiter) {
     char *msg = NULL;
@@ -97,7 +105,7 @@ char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *final,
     return msg;
 }
 
-void createDirectory(char* directory) {	
+void createDirectory(char* directory) {
     char *command = NULL;
 
     asprintf(&command, "mkdir -p %s", directory);
@@ -155,14 +163,72 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
     return e;
 }
 
+void printListPooles(Element *poole_list, int poole_list_size) {
+    char* buffer = NULL;
+    if (poole_list_size != 0) {
+        for (int i = 0; i < poole_list_size; i++) {
+            asprintf(&buffer, "\nLISTA ACTUAL DE POOLES:\nnombre: %s\nip: %s\npuerto: %d\nconexiones: %d\n",poole_list[i].name, poole_list[i].ip, poole_list[i].port, poole_list[i].num_connections);
+            printF(buffer);
+            freeString(&buffer);
+        }
+    } 
+}
+
 int decreaseNumConnections(Element *poole_list, int poole_list_size, char* pooleName) {
     for (int i = 0; i < poole_list_size; i++) {
+        printF(poole_list[i].name);
         if (strcmp(poole_list[i].name, pooleName) == 0) {
             poole_list[i].num_connections--;
             return 1;
         }
     }
     return 0; //no se ha encontrado ese poole en discovery
+}
+
+int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleName) {
+    int flagFound = 0;
+    Element* updatedPooleList = NULL;
+    int updatedPooleListSize = 0;
+
+    for (int i = 0; i < *poole_list_size; i++) {
+        printF(poole_list[i]->name);
+        if (strcmp(poole_list[i]->name, pooleName) != 0) {
+            updatedPooleList = realloc(updatedPooleList, sizeof(Element) * (updatedPooleListSize + 1));
+            updatedPooleList[updatedPooleListSize].name = strdup(poole_list[i]->name);
+            updatedPooleList[updatedPooleListSize].ip = strdup(poole_list[i]->ip);
+            updatedPooleList[updatedPooleListSize].port = poole_list[i]->port;
+            updatedPooleList[updatedPooleListSize].num_connections = poole_list[i]->num_connections;
+            updatedPooleListSize++;
+        } else {
+            flagFound = 1;
+        }
+    }
+    freePoolesArray(*poole_list, *poole_list_size);
+    *poole_list_size = updatedPooleListSize;
+    *poole_list = updatedPooleList;
+    return flagFound; //no se ha encontrado ese poole en discovery
+}
+
+char* read_until_string(char *string, char delimiter) {
+    char *msg = NULL;
+    int i = 0;
+
+    for (i = 0; i > 0; i++) {
+        if (i == 0) {
+            msg = (char *) malloc(1);
+        }
+
+        if (string[i] != delimiter) {
+            msg[i] = string[i];
+            msg = (char *) realloc(msg, ++i + 1);
+        } 
+        else {
+            msg[i] = '\0';
+            break;
+        }
+    }
+
+    return msg;
 }
 
 char* convertIntToString(int num) {

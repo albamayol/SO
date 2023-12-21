@@ -23,7 +23,11 @@ void inicializarDataBowman() {
     dBowman.ip = NULL;
     dBowman.puerto = NULL;
 }
-
+/*if(dBowman.clientConnected) {   //Si bowman està connectat a poole
+        if(!requestLogout()) {
+            printF("Couldn't detach from Poole connection\n");
+        }
+    }*/
 /*
 @Finalitat: Manejar la recepción de la signal (SIGINT) y liberar los recursos utilizados hasta el momento.
 @Paràmetres: ---
@@ -505,6 +509,7 @@ int requestLogout() {
     //HAY QUE VOLVER A CREAR OTRO SOCKET CON DISCOVERY
     setTramaString(TramaCreate(0x06, "EXIT", dBowman.clienteName), dBowman.fdPoole);
     Trama trama = readTrama(dBowman.fdPoole);
+    printF(trama.header);
     if (strcmp(trama.header, "CONOK") == 0) {
         //OK
         close(dBowman.fdPoole);
@@ -602,7 +607,6 @@ int main(int argc, char ** argv) {
                 freeString(&dBowman.input);
                 freeString(&dBowman.upperInput);
             }
-
             close(fd);
             dBowman.msg = NULL;
             sig_func();
