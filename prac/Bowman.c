@@ -489,7 +489,7 @@ void requestListPlaylists() {
 
     playlists = juntarTramasPlaylists(numTramas);
 
-    listas = procesarTramasPlaylists(playlists, &numCancionesPorLista, numCanciones, &numTramas);
+    listas = procesarTramasPlaylists(playlists, &numCancionesPorLista, numCanciones, &numListas);
 
     printarPlaylists(numListas, listas, numCancionesPorLista);
 
