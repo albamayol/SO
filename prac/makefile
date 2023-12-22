@@ -9,7 +9,7 @@ Poole.exe: Poole.o Global.o Trama.o
 Discovery.exe: Discovery.o Global.o Trama.o
 	gcc Discovery.o Global.o Trama.o -o Discovery.exe -pthread -Wall -Wextra -ggdb
 
-Global.o: Global.c Global.h 
+Global.o: Global.c Global.h semaphores_v2.h
 	gcc -c Global.c -pthread -Wall -Wextra -ggdb
 
 Trama.o: Trama.c Trama.h Global.h

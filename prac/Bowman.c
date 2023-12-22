@@ -214,8 +214,6 @@ void establishDiscoveryConnection() {
         asprintf(&dBowman.msg, "%s connected to HAL 9000 system, welcome music lover!\n", dBowman.clienteName);
         printF(dBowman.msg);
         freeString(&dBowman.msg);
-
-        //freeElement(&dBowman.pooleConnected); //?????
     } else if (strcmp(trama.header,"CON_KO") == 0) {
         write(1, "CON_KO\n", strlen("CON_KO\n"));
     }
@@ -267,8 +265,6 @@ void requestListSongs() {
     size_t totalSize = 0; 
 
     int numTramas = atoi(aux + 17);
-
-    juntarTramasSongs(numTramas);
 
     while(i < numTramas) {
         read(dBowman.fdPoole, aux, 256);
