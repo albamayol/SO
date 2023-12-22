@@ -134,7 +134,6 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
     
     if (poole_list_size != 0) {
         for (int i = 0; i < poole_list_size; i++) {
-
             write(1, poole_list[i].name, strlen(poole_list[i].name));
             write(1, poole_list[i].ip, strlen(poole_list[i].ip));
             
@@ -191,13 +190,13 @@ int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleNa
     int updatedPooleListSize = 0;
 
     for (int i = 0; i < *poole_list_size; i++) {
-        printF(poole_list[i]->name);
-        if (strcmp(poole_list[i]->name, pooleName) != 0) {
+        printF((*poole_list)[i].name);
+        if (strcmp((*poole_list)[i].name, pooleName) != 0) {
             updatedPooleList = realloc(updatedPooleList, sizeof(Element) * (updatedPooleListSize + 1));
-            updatedPooleList[updatedPooleListSize].name = strdup(poole_list[i]->name);
-            updatedPooleList[updatedPooleListSize].ip = strdup(poole_list[i]->ip);
-            updatedPooleList[updatedPooleListSize].port = poole_list[i]->port;
-            updatedPooleList[updatedPooleListSize].num_connections = poole_list[i]->num_connections;
+            updatedPooleList[updatedPooleListSize].name = strdup((*poole_list)[i].name);
+            updatedPooleList[updatedPooleListSize].ip = strdup((*poole_list)[i].ip);
+            updatedPooleList[updatedPooleListSize].port = (*poole_list)[i].port;
+            updatedPooleList[updatedPooleListSize].num_connections = (*poole_list)[i].num_connections;
             updatedPooleListSize++;
         } else {
             flagFound = 1;
