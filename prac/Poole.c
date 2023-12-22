@@ -164,27 +164,18 @@ void listSongs(const char *path, char **fileNames, int *totalSongs) {
 
             strcat(*fileNames, entry->d_name);
             totalLength += fileNameLen + 1; // Longitud del nombre + 1 para '&'
-            *totalSongs += 1;
+            (*totalSongs) += 1;
         }
     }
 
     closedir(dir);
 }
 
-void sendSongs(int fd_bowman) {
-    char *songs = NULL; 
-    char *song = NULL;
-    int numCanciones = 0;
-    int *totalSongs = &numCanciones;
-
-    listSongs(dPoole.serverName, &songs, totalSongs);
+void enviarTramas(int fd_bowman, char *cadena) {
     int i = 0;
+    char *trama = NULL;
 
-    printF(songs);
-
-    //GESTION SIZE SONGS
-
-    size_t sizeData = strlen(songs);
+    size_t sizeData = strlen(cadena);
 
     // Primero de todo enviamos una trama con el numero total de tramas que procesará Bowman.
     size_t aux = sizeData;
@@ -193,34 +184,49 @@ void sendSongs(int fd_bowman) {
         aux -= 239; 
         i++;
     }
-    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", convertIntToString(i + 1)), fd_bowman);
+    char *numTramas = convertIntToString(i + 1);
+    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", numTramas), fd_bowman);
+    freeString(&numTramas);
 
     if (sizeData < 239) { // 256 - Type(1 Byte) - header_length(2 Bytes) - Header(14 Bytes) = 239 Bytes disponibles
-        song = readNumChars(songs, 0, sizeData);
-        asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, song);
+        trama = readNumChars(cadena, 0, sizeData);
+        asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
         printF(dPoole.msg);
         freeString(&dPoole.msg);
-        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", song), fd_bowman);
+        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", trama), fd_bowman);
     } else {
         i = 0;
         while (sizeData > 239) {
-            song = readNumChars(songs, i * 239, 239);
-            asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, song);
+            trama = readNumChars(cadena, i * 239, 239);
+            asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
-            setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", song), fd_bowman);
+            setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", trama), fd_bowman);
             sizeData -= 239; 
             i++;
-            freeString(&song);
+            freeString(&trama);
         }
-        song = readNumChars(songs, i * 239, sizeData);
-        asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, song);
+        trama = readNumChars(cadena, i * 239, sizeData);
+        asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
         printF(dPoole.msg);
         freeString(&dPoole.msg);
-        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", song), fd_bowman);
+        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", trama), fd_bowman);
     }
     
-    freeString(&song);
+    freeString(&trama);
+}
+
+void sendSongs(int fd_bowman) {
+    char *songs = NULL; 
+
+    int totalSongs = 0;
+
+    listSongs(dPoole.serverName, &songs, &totalSongs);
+
+    printF(songs);
+
+    enviarTramas(fd_bowman, songs);
+
     freeString(&songs);
 }
 
@@ -288,56 +294,19 @@ void listPlaylists(const char *path, char **fileNames, int *totalSongs) {
 
 void sendPlaylists(int fd_bowman) {
     char *playlists = NULL;
-    char *playlist = NULL;
 
-    int numCanciones = 0;
-    int *totalSongs = &numCanciones;
+    int totalSongs = 0;
 
-    listPlaylists(dPoole.serverName, &playlists, totalSongs);
-    int i = 0;
+    listPlaylists(dPoole.serverName, &playlists, &totalSongs);
 
     printF(playlists);
 
-    //GESTION SIZE PLAYLISTS
+    char *cantidadCanciones = convertIntToString(totalSongs);
+    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", cantidadCanciones), fd_bowman);
+    freeString(&cantidadCanciones);
 
-    size_t sizeData = strlen(playlists);
+    enviarTramas(fd_bowman, playlists);
 
-    // Primero de todo enviamos una trama con el numero total de tramas que procesará Bowman.
-    size_t aux = sizeData;
-
-    while (aux > 239) {
-        aux -= 239; 
-        i++;
-    }
-    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", convertIntToString(i + 1)), fd_bowman);
-    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", convertIntToString(numCanciones)), fd_bowman);
-
-    if (sizeData < 239) { // 256 - Type(1 Byte) - header_length(2 Bytes) - Header(14 Bytes) = 239 Bytes disponibles
-        playlist = readNumChars(playlists, 0, sizeData);
-        asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, playlist);
-        printF(dPoole.msg);
-        freeString(&dPoole.msg);
-        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", playlist), fd_bowman);
-    } else {
-        i = 0;
-        while (sizeData > 239) {
-            playlist = readNumChars(playlists, i * 239, 239);
-            asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, playlist);
-            printF(dPoole.msg);
-            freeString(&dPoole.msg);
-            setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", playlist), fd_bowman);
-            sizeData -= 239; 
-            i++;
-            freeString(&playlist);
-        }
-        playlist = readNumChars(playlists, i * 239, sizeData);
-        asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, playlist);
-        printF(dPoole.msg);
-        freeString(&dPoole.msg);
-        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", playlist), fd_bowman);
-    }
-    
-    freeString(&playlist);
     freeString(&playlists);
 }
 
