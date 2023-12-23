@@ -40,7 +40,7 @@ void cleanThreads(Thread* threads, int numThreads) {
             close(threads[i].fd); 
             //freeString(&threads[i].user_name);
             freeString(&(threads[i].user_name));
-        }
+        }                
     }
     free(threads);
 }
