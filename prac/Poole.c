@@ -325,14 +325,13 @@ void conexionBowman(Thread* mythread) {
     while(!exit) {
         trama = readTrama(mythread->fd);
 
-        if (strcmp(trama.header, "EXIT") == 0) {    //HAY QUE VOLVER A CREAR OTRO SOCKET CON DISCOVERY
+        if (strcmp(trama.header, "EXIT") == 0) {    
             notifyBowmanLogout(mythread->fd);
-            close(mythread->fd); 
+            cleanThread(mythread);
             
             asprintf(&dPoole.msg,"\nNew request - %s logged out\n", mythread->user_name);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
-
             exit = 1;
         } else if (strcmp(trama.header, "LIST_SONGS") == 0) {
             asprintf(&dPoole.msg,"\nNew request - %s requires the list of songs.\nSending song list to %s\n", mythread->user_name, mythread->user_name);
