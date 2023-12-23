@@ -319,6 +319,15 @@ void conexionBowman(Thread* mythread) {
     asprintf(&dPoole.msg,"\nNew user connected: %s.\n", mythread->user_name);
     printF(dPoole.msg);
     freeString(&dPoole.msg);
+
+    // Transmisión Poole->Bowman para informar del estado de la conexion.
+    if (strcmp(trama.header, "NEW_BOWMAN") == 0) {
+        setTramaString(TramaCreate(0x01, "CON_OK", ""), mythread->fd);
+    } else {
+        setTramaString(TramaCreate(0x01, "CON_KO", ""), mythread->fd);
+        cleanThread(mythread);
+    }
+    
     freeTrama(&trama);
 
     //TRANSMISIONES POOLE-->BOWMAN

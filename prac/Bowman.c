@@ -244,7 +244,19 @@ void establishPooleConnection() {
 
     // Transmission Bowman->Poole
     setTramaString(TramaCreate(0x01, "NEW_BOWMAN", dBowman.clienteName), dBowman.fdPoole);
-    dBowman.bowmanConnected = 1;
+    //dBowman.bowmanConnected = 1;
+
+    // Recepción Poole->Bowman para comprobar el estado de la conexion.
+    Trama trama = readTrama(dBowman.fdPoole);
+    char *header = strdup(trama.header);
+
+    if (strcmp(header, "CON_OK") == 0) {
+        dBowman.bowmanConnected = 1;
+    } else if (strcmp(header, "CON_KO") == 0) {
+        close(dBowman.fdPoole);
+    }
+
+    freeTrama(&trama);
 }
 
 void juntarTramasSongs(int numTramas, char **songs) {

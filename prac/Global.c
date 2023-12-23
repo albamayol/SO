@@ -38,7 +38,6 @@ void cleanThreads(Thread* threads, int numThreads) {
             pthread_cancel(threads[i].thread);
             pthread_join(threads[i].thread, NULL);
             close(threads[i].fd); 
-            //freeString(&threads[i].user_name);
             freeString(&(threads[i].user_name));
         }                
     }
