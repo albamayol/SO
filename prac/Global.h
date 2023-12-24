@@ -28,7 +28,7 @@ Autores:
 #include <arpa/inet.h>
 #include <limits.h>
 #include <dirent.h>
-#include "semaphore_v2.h"
+//#include "semaphore_v2.h"
 
 #define printF(x) write(1, x, strlen(x))
 
@@ -58,7 +58,7 @@ typedef struct {
     char *pathClienteFile;
     char *ip;
     char *puerto;
-    int clientConnected;
+    int bowmanConnected;
     Element pooleConnected;
 } dataBowman;
 
@@ -95,6 +95,7 @@ typedef struct {
 char* read_until(int fd, char delimiter);
 char* read_until_string(char *string, char delimiter);
 void cleanThreads(Thread* threads, int numThreads);
+void cleanThread(Thread* thread);
 void separaDataToElement(char* data, Element* e);
 Element pooleMinConnections(Element *poole_list, int poole_list_size);
 void printListPooles(Element *poole_list, int poole_list_size);

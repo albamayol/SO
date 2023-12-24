@@ -319,20 +319,28 @@ void conexionBowman(Thread* mythread) {
     asprintf(&dPoole.msg,"\nNew user connected: %s.\n", mythread->user_name);
     printF(dPoole.msg);
     freeString(&dPoole.msg);
+
+    // Transmisión Poole->Bowman para informar del estado de la conexion.
+    if (strcmp(trama.header, "NEW_BOWMAN") == 0) {
+        setTramaString(TramaCreate(0x01, "CON_OK", ""), mythread->fd);
+    } else {
+        setTramaString(TramaCreate(0x01, "CON_KO", ""), mythread->fd);
+        cleanThread(mythread);
+    }
+    
     freeTrama(&trama);
 
     //TRANSMISIONES POOLE-->BOWMAN
     while(!exit) {
         trama = readTrama(mythread->fd);
 
-        if (strcmp(trama.header, "EXIT") == 0) {    //HAY QUE VOLVER A CREAR OTRO SOCKET CON DISCOVERY
+        if (strcmp(trama.header, "EXIT") == 0) {    
             notifyBowmanLogout(mythread->fd);
-            close(mythread->fd); 
+            cleanThread(mythread);
             
             asprintf(&dPoole.msg,"\nNew request - %s logged out\n", mythread->user_name);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
-
             exit = 1;
         } else if (strcmp(trama.header, "LIST_SONGS") == 0) {
             asprintf(&dPoole.msg,"\nNew request - %s requires the list of songs.\nSending song list to %s\n", mythread->user_name, mythread->user_name);

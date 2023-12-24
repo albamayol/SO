@@ -8,6 +8,7 @@ Autores:
 
 dataBowman dBowman;
 
+int requestLogout();
 /*
 @Finalitat: Inicializar las variables a NULL.
 @Paràmetres: ---
@@ -22,18 +23,19 @@ void inicializarDataBowman() {
     dBowman.pathClienteFile = NULL;
     dBowman.ip = NULL;
     dBowman.puerto = NULL;
+    dBowman.bowmanConnected = 0;
 }
-/*if(dBowman.clientConnected) {   //Si bowman està connectat a poole
-        if(!requestLogout()) {
-            printF("Couldn't detach from Poole connection\n");
-        }
-    }*/
 /*
 @Finalitat: Manejar la recepción de la signal (SIGINT) y liberar los recursos utilizados hasta el momento.
 @Paràmetres: ---
 @Retorn: ---
 */
 void sig_func() {
+    if(dBowman.bowmanConnected) {   //Si bowman està connectat a poole
+        if (requestLogout()) {
+            printF("Thanks for using HAL 9000, see you soon, music lover!\n");
+        } 
+    }
     if(dBowman.upperInput != NULL) {
         freeString(&dBowman.upperInput);
     }
@@ -210,7 +212,6 @@ void establishDiscoveryConnection() {
 
     if (strcmp(trama.header,"CON_OK") == 0)  {
         separaDataToElement(trama.data, &dBowman.pooleConnected);
-        dBowman.clientConnected = 1;
         asprintf(&dBowman.msg, "%s connected to HAL 9000 system, welcome music lover!\n", dBowman.clienteName);
         printF(dBowman.msg);
         freeString(&dBowman.msg);
@@ -243,6 +244,19 @@ void establishPooleConnection() {
 
     // Transmission Bowman->Poole
     setTramaString(TramaCreate(0x01, "NEW_BOWMAN", dBowman.clienteName), dBowman.fdPoole);
+    //dBowman.bowmanConnected = 1;
+
+    // Recepción Poole->Bowman para comprobar el estado de la conexion.
+    Trama trama = readTrama(dBowman.fdPoole);
+    char *header = strdup(trama.header);
+
+    if (strcmp(header, "CON_OK") == 0) {
+        dBowman.bowmanConnected = 1;
+    } else if (strcmp(header, "CON_KO") == 0) {
+        close(dBowman.fdPoole);
+    }
+
+    freeTrama(&trama);
 }
 
 void juntarTramasSongs(int numTramas, char **songs) {
@@ -498,13 +512,14 @@ int requestLogout() {
     //HAY QUE VOLVER A CREAR OTRO SOCKET CON DISCOVERY
     setTramaString(TramaCreate(0x06, "EXIT", dBowman.clienteName), dBowman.fdPoole);
     Trama trama = readTrama(dBowman.fdPoole);
-    printF(trama.header);
     if (strcmp(trama.header, "CONOK") == 0) {
+        printF(trama.header);
         //OK
         close(dBowman.fdPoole);
         freeTrama(&trama);
         return 1;
     } else if (strcmp(trama.header, "CONKO")) {
+        printF(trama.header);
         //KO
         printF("Sorry, couldn't logout, try again\n");
         freeTrama(&trama);
@@ -519,7 +534,6 @@ int requestLogout() {
 @Retorn: int: Devuelve 0 en caso de que el programa haya finalizado exitosamente.
 */
 int main(int argc, char ** argv) {
-    dBowman.clientConnected = 0;
     inicializarDataBowman();
 
     signal(SIGINT, sig_func);
@@ -558,7 +572,7 @@ int main(int argc, char ** argv) {
                 dBowman.upperInput = to_upper(dBowman.input);
                 removeExtraSpaces(dBowman.upperInput);
 
-                if (!dBowman.clientConnected) {
+                if (!dBowman.bowmanConnected) {
                     if (strcmp(dBowman.upperInput, "CONNECT") == 0) {
                         establishDiscoveryConnection();
                         establishPooleConnection();
@@ -567,10 +581,7 @@ int main(int argc, char ** argv) {
                     }
                 } else {    //TRANSMISIONES DISCOVERY->BOWMAN
                     if (strcmp(dBowman.upperInput, "LOGOUT") == 0) {
-                        if(requestLogout()) {
-                            printF("Thanks for using HAL 9000, see you soon, music lover!\n");
-                            break;
-                        }
+                        sig_func();
                     } else if (strcmp(dBowman.upperInput, "LIST SONGS") == 0) {
                         requestListSongs();
                     } else if (strcmp(dBowman.upperInput, "LIST PLAYLISTS") == 0) {

@@ -16,7 +16,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 //#define __USE_SVID
-#define __USE_XOPEN
+//#define __USE_XOPEN
 
 #include <sys/types.h>
 #include <sys/ipc.h>

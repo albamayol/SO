@@ -34,11 +34,23 @@ void freePoolesArray(Element *array, int size) {
 
 void cleanThreads(Thread* threads, int numThreads) {
     for (int i = 0; i < numThreads; i++) {
-        pthread_cancel(threads[i].thread);
-        pthread_join(threads[i].thread, NULL);
-        freeString(&threads[i].user_name);
+        if (threads[i].user_name != NULL) { // SI TENEMOS TIEMPO CAMBIAR
+            pthread_cancel(threads[i].thread);
+            pthread_join(threads[i].thread, NULL);
+            close(threads[i].fd); 
+            freeString(&(threads[i].user_name));
+        }                
     }
     free(threads);
+}
+
+void cleanThread(Thread *thread) {
+    pthread_cancel((*thread).thread);
+    pthread_join((*thread).thread, NULL);
+    close((*thread).fd); 
+    //free((*thread).user_name);
+    //(*thread).user_name = NULL;
+    freeString(&(thread->user_name));
 }
 
 char* read_until(int fd, char delimiter) {
