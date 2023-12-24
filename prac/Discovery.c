@@ -67,7 +67,12 @@ void conexionPoole(int fd_poole) {
 
     } else if (strcmp(trama.header, "POOLE_DISCONNECT") == 0) {
         printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
-        if (erasePooleFromList(&dDiscovery.poole_list, &dDiscovery.poole_list_size, trama.data)) {
+
+        pthread_mutex_lock(&dDiscovery.mutexList);  //LOCK
+        int erasePooleResult = erasePooleFromList(&dDiscovery.poole_list, &dDiscovery.poole_list_size, trama.data)
+        pthread_mutex_unlock(&dDiscovery.mutexList);    //UNLOCK
+
+        if (erasePooleResult) {
             setTramaString(TramaCreate(0x06, "CONOK", ""), fd_poole);   
             asprintf(&buffer, "sizeArrayPoolesWhenPooleDisconnects: %d \n", dDiscovery.poole_list_size);
             printF(buffer);
@@ -99,6 +104,9 @@ void conexionPoole(int fd_poole) {
         asprintf(&buffer, "sizeArrayPooles: %d \n", dDiscovery.poole_list_size);
         printF(buffer);
         freeString(&buffer);
+
+        //lock
+        pthread_mutex_lock(&dDiscovery.mutexList);
         dDiscovery.poole_list = (Element *)realloc(dDiscovery.poole_list, (dDiscovery.poole_list_size + 1) * sizeof(Element));
         
         dDiscovery.poole_list[dDiscovery.poole_list_size].name = strdup(element.name);
@@ -106,6 +114,8 @@ void conexionPoole(int fd_poole) {
         dDiscovery.poole_list[dDiscovery.poole_list_size].port = element.port;
         dDiscovery.poole_list[dDiscovery.poole_list_size].num_connections = element.num_connections;
         dDiscovery.poole_list_size++;
+        pthread_mutex_unlock(&dDiscovery.mutexList);
+        //unlock
 
         asprintf(&buffer, "sizeArrayPoolesUpdated: %d \n", dDiscovery.poole_list_size);
         printF(buffer);
@@ -115,7 +125,7 @@ void conexionPoole(int fd_poole) {
 
         printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
 
-        setTramaString(TramaCreate(0x01, "CON_OK", ""), fd_poole);        
+        setTramaString(TramaCreate(0x01, "CON_OK", ""), fd_poole);    
     }
 
     close(fd_poole);
@@ -126,7 +136,13 @@ void conexionBowman(int fd_bowman) {
     Trama trama = readTrama(fd_bowman);
     freeTrama(&trama);
 
+    /*SE PUEDE DAR EL CASO QUE UN POOLE SE ESTE CONECTANDO/DESCONECTANDO (MODIFICAN LA LISTA) Y QUE A SU VEZ SE CONECTE UN BOWMAN(PIDA LA INFO DEL POOLE CON MINIMO DE CONEXIONES)*/
+    //lock
+    pthread_mutex_lock(&dDiscovery.mutexList);
     Element e = pooleMinConnections(dDiscovery.poole_list, dDiscovery.poole_list_size); // Enviar trama con servername, ip y port del Poole
+    //unlock
+    pthread_mutex_unlock(&dDiscovery.mutexList);
+
     if (e.num_connections == -1) {
         //NO HAY POOLE'S CONECTADOS! NO PODEMOS REDIRIGIR EL BOWMAN A NINGUN POOLE --> ENVIAMOS TRAMA CON_KO!!!
         setTramaString(TramaCreate(0x01, "CON_KO", ""), fd_bowman);
