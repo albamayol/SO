@@ -28,6 +28,7 @@ void inicializarDataDiscovery() {
 @Retorn: ---
 */
 void sig_func() {
+    pthread_mutex_destroy(&dDiscovery.mutexList);
     if (dDiscovery.ipPoole != NULL) {
         freeString(&dDiscovery.ipPoole);
     }
@@ -292,10 +293,6 @@ int main(int argc, char ** argv) {
             startPooleListener();
 
             sig_func();
-
-            //join, buscar la manera de matar el hilo para liberar recuersos.
-
-            //en los casos en los cuales no finalize signals podemos utilizar return null.
         }
     }
     return 0;
