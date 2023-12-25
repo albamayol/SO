@@ -93,7 +93,7 @@ typedef struct {
 
 char* read_until(int fd, char delimiter);
 char* read_until_string(char *string, char delimiter);
-void cleanThreads(Thread* threads, int numThreads);
+void cleanThreads(Thread** threads, int numThreads);
 void cleanThread(Thread* thread);
 void separaDataToElement(char* data, Element* e);
 Element pooleMinConnections(Element *poole_list, int poole_list_size);

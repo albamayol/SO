@@ -255,7 +255,7 @@ void establishPooleConnection() {
     } else if (strcmp(header, "CON_KO") == 0) {
         close(dBowman.fdPoole);
     }
-
+    freeString(&header);
     freeTrama(&trama);
 }
 
@@ -321,6 +321,18 @@ void printarSongs(int numCanciones, char ***canciones) {
     }
 }
 
+void checkPooleConnection(size_t bytesLeidos) {
+    // Comprobación si Poole ha cerrado conexión
+    if (bytesLeidos <= 0) {
+        dBowman.bowmanConnected = 0;
+        close(dBowman.fdPoole);
+        asprintf(&dBowman.msg, "\n¡Alert: %s disconnected because the server connection has ended!\n", dBowman.clienteName);
+        printF(dBowman.msg);
+        freeString(&dBowman.msg);
+        sig_func();
+    }
+}
+
 void requestListSongs() {
     setTramaString(TramaCreate(0x02, "LIST_SONGS", ""), dBowman.fdPoole);
     
@@ -330,8 +342,11 @@ void requestListSongs() {
     // Gestion recepción songs
 
     // Lectura cantidad de tramas que recibiremos
-    read(dBowman.fdPoole, aux, 256);
+    size_t bytesLeidos = read(dBowman.fdPoole, aux, 256);
     aux[256] = '\0';
+
+    checkPooleConnection(bytesLeidos);
+
     int numTramas = atoi(aux + 17);
 
     juntarTramasSongs(numTramas, &songs);
@@ -490,8 +505,11 @@ void requestListPlaylists() {
     char aux[257], *playlists = NULL, ***listas = NULL;
 
     // Lectura cantidad de canciones
-    read(dBowman.fdPoole, aux, 256);
+    size_t bytesLeidos = read(dBowman.fdPoole, aux, 256);
     aux[256] = '\0';
+
+    checkPooleConnection(bytesLeidos);
+
     int numCanciones = atoi(aux + 17);
     
     // Lectura cantidad de tramas que recibiremos
@@ -526,6 +544,23 @@ int requestLogout() {
         return 0;
     }
     return 2;
+}
+
+int songOrPlaylist(char *string) {
+    int length = strlen(string);
+    int indicePunto = length - 4; 
+
+    // song1.mp3
+    if (strcmp(&string[indicePunto], ".MP3") == 0) {
+        return 1;
+    } else {
+        if (strchr(string, '.') != NULL) {
+            // No es un .mp3, es otra extension
+            return 2;
+        }
+        // Es una playlist
+        return 0;
+    }
 }
 
 /*
@@ -595,7 +630,20 @@ int main(int argc, char ** argv) {
                         int numSpaces = checkDownloadCommand(dBowman.upperInput);
                         if (numSpaces == 1) {
                             //NUM ARGUMENTS CORRECTE!
-                            printF("Download started!\n");
+                            printF(dBowman.upperInput);
+                            int typeFile = songOrPlaylist(dBowman.upperInput);
+
+                            if (typeFile == 1) {
+                                // Es una cancion
+                                //requestDownloadSong(dBowman.input);
+                                printF("Download started!\n");
+                            } else if (typeFile == 0) {
+                                // Es una playlists
+                                //requestDownloadPlaylist(dBowman.input);
+                                printF("Download started!\n");
+                            } else {
+                                printF("ERROR: The song file extension is not valid.");
+                            }
                         } else {
                             printF("Sorry number of arguments is not correct, try again\n");
                         }

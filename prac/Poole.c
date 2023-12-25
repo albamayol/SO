@@ -95,8 +95,7 @@ void sig_func() {
     if (dPoole.msg != NULL) {
         freeString(&dPoole.msg);
     }
-
-    cleanThreads(dPoole.threads, dPoole.threads_array_size); //cancel y despues join
+    cleanThreads(&dPoole.threads, dPoole.threads_array_size); //cancel y despues join
 
     exit(EXIT_FAILURE);
 }
@@ -336,12 +335,12 @@ void conexionBowman(Thread* mythread) {
 
         if (strcmp(trama.header, "EXIT") == 0) {    
             notifyBowmanLogout(mythread->fd);
-            cleanThread(mythread);
             
             asprintf(&dPoole.msg,"\nNew request - %s logged out\n", mythread->user_name);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
             exit = 1;
+            cleanThread(mythread);
         } else if (strcmp(trama.header, "LIST_SONGS") == 0) {
             asprintf(&dPoole.msg,"\nNew request - %s requires the list of songs.\nSending song list to %s\n", mythread->user_name, mythread->user_name);
             printF(dPoole.msg);
@@ -378,7 +377,7 @@ void conexionBowman(Thread* mythread) {
 }
 
 static void *thread_function_bowman(void* thread) {
-    Thread* mythread = (Thread*) thread;
+    Thread *mythread = (Thread*) thread;
 
     conexionBowman(mythread);
     return NULL;
