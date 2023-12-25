@@ -324,7 +324,9 @@ void conexionBowman(Thread* mythread) {
         setTramaString(TramaCreate(0x01, "CON_OK", ""), mythread->fd);
     } else {
         setTramaString(TramaCreate(0x01, "CON_KO", ""), mythread->fd);
+        close(mythread->fd);
         cleanThread(mythread);
+        //salir de la función??
     }
     
     freeTrama(&trama);
@@ -400,7 +402,6 @@ void connect_Bowman() {
         perror("Error al crear el thread inicial para Bowman");
     }
     dPoole.threads_array_size++;
-    //printF(dPoole.threads_array_size);
 }
 
 

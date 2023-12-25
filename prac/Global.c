@@ -49,8 +49,7 @@ void cleanThread(Thread *thread) {
     pthread_cancel((*thread).thread);
     pthread_join((*thread).thread, NULL);
     close((*thread).fd); 
-    free((*thread).user_name);
-    (*thread).user_name = NULL;
+    freeString(&(thread->user_name));
 }
 
 char* read_until(int fd, char delimiter) {

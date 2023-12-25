@@ -88,6 +88,7 @@ typedef struct {
     char *portPoole;
     char *portBowman;
     Element *poole_list;
+    pthread_mutex_t mutexList;
     int poole_list_size;
 } dataDiscovery;
 
