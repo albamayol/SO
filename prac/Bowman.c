@@ -252,7 +252,7 @@ void establishPooleConnection() {
     } else if (strcmp(trama.header, "CON_KO") == 0) {
         close(dBowman.fdPoole);
     }
-    freeString(&header);
+
     freeTrama(&trama);
 }
 
