@@ -297,7 +297,6 @@ char ***procesarTramasPlaylists(char *playlists, int **numCancionesPorLista, int
         if (playlist == NULL) {
             break;
         }
-
         playlist[len] = '#';
         playlist[len + 1] = '\0';
 
@@ -308,7 +307,7 @@ char ***procesarTramasPlaylists(char *playlists, int **numCancionesPorLista, int
             song = readUntilFromIndex(playlist, &inicioSong, '&', &valorFinal, '#');
             if (i == 0) {
                 // Primero, reservamos memoria para almacenar una nueva lista
-                listas = realloc(listas, (*numListas + 1) * sizeof(char **));
+                listas = realloc(listas, ((*numListas) + 1) * sizeof(char **));
                 if (listas == NULL) {
                     break;
                 }
@@ -316,10 +315,11 @@ char ***procesarTramasPlaylists(char *playlists, int **numCancionesPorLista, int
                 listas[*numListas] = malloc(sizeof(char *));
                 if (listas[*numListas] == NULL) {
                     break;
-                } 
+                }
+                printF(song);
                 // Guardamos el nombre de la lista
-                listas[*numListas][0] = strdup(song); 
-                if (listas[*numListas][0] == NULL) {
+                listas[*numListas][i] = strdup(song); 
+                if (listas[*numListas][i] == NULL) {
                     free(listas[*numListas]);
                     break;
                 }
@@ -353,9 +353,8 @@ char ***procesarTramasPlaylists(char *playlists, int **numCancionesPorLista, int
         if (*numCancionesPorLista == NULL) {
             break;
         }
+        freeString(&playlist);
     } while (totalCanciones < numCanciones);
-
-    freeString(&playlist);
 
     return listas;
 }
@@ -369,6 +368,8 @@ void printarPlaylists(int numListas, char ***listas, int *numCancionesPorLista) 
         asprintf(&dBowman.msg, "\n%d. %s", i + 1, listas[i][0]);
         printF(dBowman.msg);
         freeString(&dBowman.msg);
+
+        free(listas[i][0]);
         
         for (int j = 1; j <= numCancionesPorLista[i]; j++) {
             asprintf(&dBowman.msg, "\n   %c. %s", 'a' + j - 1, listas[i][j]);
@@ -400,10 +401,11 @@ void requestListPlaylists() {
     checkPooleConnection(bytesLeidos);
 
     int numCanciones = atoi(aux + 17);
-    
+
     // Lectura cantidad de tramas que recibiremos
     read(dBowman.fdPoole, aux, 256);
     aux[256] = '\0';
+
     int numTramas = atoi(aux + 17);
 
     playlists = juntarTramasPlaylists(numTramas);
@@ -412,44 +414,66 @@ void requestListPlaylists() {
 
     printarPlaylists(numListas, listas, numCancionesPorLista);
 
-    freeString(&playlists);
+    //freeString(&playlists);
+    free(playlists);
 }
 
 int requestLogout() {  
     //HAY QUE VOLVER A CREAR OTRO SOCKET CON DISCOVERY
     setTramaString(TramaCreate(0x06, "EXIT", dBowman.clienteName), dBowman.fdPoole);
-    Trama trama = readTrama(dBowman.fdPoole);
-    if (strcmp(trama.header, "CONOK") == 0) {
-        printF(trama.header);
+
+    //Trama trama = readTrama(dBowman.fdPoole);
+    char aux[257];
+
+    size_t bytesLeidos = read(dBowman.fdPoole, aux, 256);
+    aux[256] = '\0';
+
+    //dBowman.bowmanConnected = 0;
+    if (bytesLeidos <= 0) {
+        close(dBowman.fdPoole);
+        asprintf(&dBowman.msg, "\n¡Alert: %s disconnected because the server connection has ended!\n", dBowman.clienteName);
+        printF(dBowman.msg);
+        freeString(&dBowman.msg);
+        return 1;
+    }
+
+    char header[6]; //CONOK o CONKO
+    int indiceInicio = 3;
+    int longitudHeader = 8 - 3; 
+
+    // Usamos strncpy para copiar la subcadena desde aux a subcadena
+    strncpy(header, aux + indiceInicio, longitudHeader);
+    header[longitudHeader] = '\0';
+
+    if (strcmp(header, "CONOK") == 0) {
+        printF(header);
         //OK
         close(dBowman.fdPoole);
-        freeTrama(&trama);
+        //freeTrama(&trama);
         return 1;
-    } else if (strcmp(trama.header, "CONKO")) {
-        printF(trama.header);
+    } else if (strcmp(header, "CONKO")) {
+        printF(header);
         //KO
         printF("Sorry, couldn't logout, try again\n");
-        freeTrama(&trama);
+        //freeTrama(&trama);
         return 0;
     }
     return 2;
 }
 
-int songOrPlaylist(char *string) {
-    int length = strlen(string);
-    int indicePunto = length - 4; 
+void requestDownloadSong(char *song) {
+    setTramaString(TramaCreate(0x03, "DOWNLOAD_SONG", song), dBowman.fdPoole);
 
-    // song1.mp3
-    if (strcmp(&string[indicePunto], ".MP3") == 0) {
-        return 1;
-    } else {
-        if (strchr(string, '.') != NULL) {
-            // No es un .mp3, es otra extension
-            return 2;
-        }
-        // Es una playlist
-        return 0;
-    }
+    // GUARDAR CANCION
+    char aux[257];
+    //Trama trama = readTrama(dBowman.fdPoole);
+    size_t bytesLeidos = read(dBowman.fdPoole, aux, 256);
+    aux[256] = '\0';
+    
+    checkPooleConnection(bytesLeidos);
+
+    printF(aux);
+
 }
 
 /*
@@ -523,11 +547,9 @@ int main(int argc, char ** argv) {
                             int typeFile = songOrPlaylist(dBowman.upperInput);
 
                             if (typeFile == 1) {
-                                // Es una cancion
-                                //requestDownloadSong(dBowman.input);
+                                requestDownloadSong(dBowman.input);
                                 printF("Download started!\n");
                             } else if (typeFile == 0) {
-                                // Es una playlists
                                 //requestDownloadPlaylist(dBowman.input);
                                 printF("Download started!\n");
                             } else {

@@ -113,5 +113,8 @@ void freePoolesArray(Element *array, int size);
 void createDirectory(char* directory);
 char* readNumChars(char *string, int inicio, int final);
 char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *fina, char delimitadorFinal);
+int songOrPlaylist(char *string);
+void removeExtraSpaces(char *comanda);
+char * to_upper(char * str);
 
 #endif
