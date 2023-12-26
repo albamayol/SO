@@ -216,6 +216,23 @@ void checkDownload(char *downloadPtr) {
     }
 }
 
+int songOrPlaylist(char *string) {
+    int length = strlen(string);
+    int indicePunto = length - 4; 
+
+    // song1.mp3
+    if (strcmp(&string[indicePunto], ".MP3") == 0) {
+        return 1;
+    } else {
+        if (strchr(string, '.') != NULL) {
+            // No es un .mp3, es otra extension
+            return 2;
+        }
+        // Es una playlist
+        return 0;
+    }
+}
+
 void createDirectory(char* directory) {
     char *command = NULL;
 
@@ -406,62 +423,7 @@ void separaDataToElement(char* data, Element* e) {
     freeString(&port);
 }
 
-int songOrPlaylist(char *string) {
-    int length = strlen(string);
-    int indicePunto = length - 4; 
 
-    // song1.mp3
-    if (strcmp(&string[indicePunto], ".MP3") == 0) {
-        return 1;
-    } else {
-        if (strchr(string, '.') != NULL) {
-            // No es un .mp3, es otra extension
-            return 2;
-        }
-        // Es una playlist
-        return 0;
-    }
-}
 
-/*
-@Finalitat: Eliminar espacios en blanco adicionales
-@Paràmetres: char*: str, comanda recibida
-@Retorn: ---
-*/
-void removeExtraSpaces(char *comanda) { 
-    int espacios = 0, j = 0;
-
-    for (size_t i = 0; i < strlen(comanda); i++) {
-        if (comanda[i] == ' ') {
-            espacios++;
-        } else {
-            espacios = 0;
-        }
-
-        if (espacios <= 1) {
-            comanda[j] = comanda[i];
-            j++;
-        }
-    }
-    comanda[j] = '\0';
-}
-
-/*
-@Finalitat: Convertir una string a todo mayusculas.
-@Paràmetres: char*: str, comando a modificar.
-@Retorn: char* con el comando introducido por el usuario pasado a mayusculas.
-*/
-char * to_upper(char * str) {
-	int length = strlen(str) + 1 ;
-    char * result = (char *) malloc(length * sizeof(char));
-    // inits a '\0'
-	memset(result,0, length);
-
-    for (int i = 0; i < length; i++){
-        result[i] = toupper(str[i]);
-    }
-
-    return result;
-}
 
 
