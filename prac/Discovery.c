@@ -47,8 +47,6 @@ void sig_func() {
     close(dDiscovery.fdPoole);
     close(dDiscovery.fdBowman);
 
-    //cancel y despues join
-
     exit(EXIT_FAILURE);
 }
 
@@ -70,7 +68,7 @@ void conexionPoole(int fd_poole) {
         printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
 
         pthread_mutex_lock(&dDiscovery.mutexList);  //LOCK
-        int erasePooleResult = erasePooleFromList(&dDiscovery.poole_list, &dDiscovery.poole_list_size, trama.data)
+        int erasePooleResult = erasePooleFromList(&dDiscovery.poole_list, &dDiscovery.poole_list_size, trama.data);
         pthread_mutex_unlock(&dDiscovery.mutexList);    //UNLOCK
 
         if (erasePooleResult) {

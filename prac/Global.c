@@ -116,6 +116,106 @@ char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *final,
     return msg;
 }
 
+
+/*
+@Finalitat: Eliminar espacios en blanco adicionales
+@Paràmetres: char*: str, comanda recibida
+@Retorn: ---
+*/
+void removeExtraSpaces(char *comanda) { 
+    int espacios = 0, j = 0;
+
+    for (size_t i = 0; i < strlen(comanda); i++) {
+        if (comanda[i] == ' ') {
+            espacios++;
+        } else {
+            espacios = 0;
+        }
+
+        if (espacios <= 1) {
+            comanda[j] = comanda[i];
+            j++;
+        }
+    }
+    comanda[j] = '\0';
+}
+
+/*
+@Finalitat: Convertir una string a todo mayusculas.
+@Paràmetres: char*: str, comando a modificar.
+@Retorn: char* con el comando introducido por el usuario pasado a mayusculas.
+*/
+char * to_upper(char * str) {
+	int length = strlen(str) + 1 ;
+    char * result = (char *) malloc(length * sizeof(char));
+    // inits a '\0'
+	memset(result,0, length);
+
+    for (int i = 0; i < length; i++){
+        result[i] = toupper(str[i]);
+    }
+
+    return result;
+}
+
+/*
+@Finalitat: Devuelve el número de espacios que hay en una string, en este caso le pasamos una comanda
+@Paràmetres: char*: str, string a contar.
+@Retorn: int --> número de espacios de la string
+*/
+int checkDownloadCommand(char * input) {
+    int length = strlen(input) + 1 ;
+    int numSpaces = 0;
+    int i = 0;
+
+    for (i = 0; i < length; i++) {
+        if (input[i] == ' ') {
+            numSpaces++;
+        }
+    }
+    return numSpaces;
+}
+
+/*
+@Finalitat: Limpiar los posibles & que pueda contener la string.
+@Paràmetres: char*: clienteNameAux, string con el nombre del cliente leido del configBowman.txt.
+@Retorn: char* con el nombre del usuario limpio de &.
+*/
+char * verifyClientName(char * clienteNameAux) {
+    char *clienteName = (char *) malloc (sizeof(char));
+
+    size_t j = 1, i;
+
+    for (i = 0; i < strlen(clienteNameAux); i++) {
+        if (clienteNameAux[i] != '&') {
+            clienteName[j - 1] = clienteNameAux[i];
+            j++;
+            clienteName = (char *) realloc (clienteName, j * sizeof(char));
+        }        
+    } 
+    clienteName[j - 1] = '\0';
+    return clienteName;
+}
+
+/*
+@Finalitat: Comprobar las posibles casuisticas con el comando DOWNLOAD
+@Paràmetres: char*: downloadPtr, puntero al primer caracter, es decir a la 'D'
+@Retorn: ---
+*/
+void checkDownload(char *downloadPtr) {
+    char *mp3Ptr = strstr(downloadPtr + 10, ".MP3");
+    if (mp3Ptr != NULL) {
+        char nextChar = mp3Ptr[4];
+        if (nextChar == '\0') {
+            printF("Download started!\n");
+        } else {
+            printF("Please specify a single .mp3 file\n");
+        }
+    } else {
+        printF("Please specify an .mp3 file\n");
+    }
+}
+
 void createDirectory(char* directory) {
     char *command = NULL;
 

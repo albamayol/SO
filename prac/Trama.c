@@ -19,7 +19,7 @@ void shortToChars(short valor, char *cadena) {
 
 char* createString3Params(char* param1, char* param2, char* param3) { 
   char *aux = NULL;
-  int length = strlen(param1) + strlen(param2) + strlen(param3) + 3 + 1;
+  int length = strlen(param1) + strlen(param2) + strlen(param3) + 2 + 1;
   aux = (char *) malloc(sizeof(char) * length);
   memset(aux, 0, length);
   strcpy(aux, param1);

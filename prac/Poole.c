@@ -238,7 +238,7 @@ void listPlaylists(const char *path, char **fileNames, int *totalSongs) {
         return;
     }
 
-    size_t totalLength = 1; // Inicializar con un byte para el terminador nulo '\0'
+    size_t totalLength = 1; // Inicializar con un byte para '\0'
     *fileNames = malloc(1);
     (*fileNames)[0] = '\0'; 
 
@@ -256,8 +256,8 @@ void listPlaylists(const char *path, char **fileNames, int *totalSongs) {
             size_t newLength = totalLength + fileNameLen + 1; // Longitud del nombre de archivo y el separador '&'
 
             if (subSongs != NULL) {
-            // Si subSongs no es nulo, agrega su longitud más un carácter para el separador '&'
-            newLength += strlen(subSongs) + 1;
+                // Si subSongs no es nulo, agrega su longitud más un carácter para el separador '&'
+                newLength += strlen(subSongs) + 1;
             }
 
             char *temp = realloc(*fileNames, newLength);
@@ -293,11 +293,9 @@ void listPlaylists(const char *path, char **fileNames, int *totalSongs) {
 
 void sendPlaylists(int fd_bowman) {
     char *playlists = NULL;
-
     int totalSongs = 0;
 
     listPlaylists(dPoole.serverName, &playlists, &totalSongs);
-
     printF(playlists);
 
     char *cantidadCanciones = convertIntToString(totalSongs);
@@ -305,7 +303,6 @@ void sendPlaylists(int fd_bowman) {
     freeString(&cantidadCanciones);
 
     enviarTramas(fd_bowman, playlists);
-
     freeString(&playlists);
 }
 

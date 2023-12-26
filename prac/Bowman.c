@@ -66,114 +66,15 @@ void sig_func() {
 }
 
 /*
-@Finalitat: Eliminar espacios en blanco adicionales
-@Paràmetres: char*: str, comanda recibida
-@Retorn: ---
-*/
-void removeExtraSpaces(char *comanda) { 
-    int espacios = 0, j = 0;
-
-    for (size_t i = 0; i < strlen(comanda); i++) {
-        if (comanda[i] == ' ') {
-            espacios++;
-        } else {
-            espacios = 0;
-        }
-
-        if (espacios <= 1) {
-            comanda[j] = comanda[i];
-            j++;
-        }
-    }
-    comanda[j] = '\0';
-}
-
-/*
-@Finalitat: Convertir una string a todo mayusculas.
-@Paràmetres: char*: str, comando a modificar.
-@Retorn: char* con el comando introducido por el usuario pasado a mayusculas.
-*/
-char * to_upper(char * str) {
-	int length = strlen(str) + 1 ;
-    char * result = (char *) malloc(length * sizeof(char));
-    // inits a '\0'
-	memset(result,0, length);
-
-    for (int i = 0; i < length; i++){
-        result[i] = toupper(str[i]);
-    }
-
-    return result;
-}
-
-/*
-@Finalitat: Devuelve el número de espacios que hay en una string, en este caso le pasamos una comanda
-@Paràmetres: char*: str, string a contar.
-@Retorn: int --> número de espacios de la string
-*/
-int checkDownloadCommand(char * input) {
-    int length = strlen(input) + 1 ;
-    int numSpaces = 0;
-    int i = 0;
-
-    for (i = 0; i < length; i++) {
-        if (input[i] == ' ') {
-            numSpaces++;
-        }
-    }
-    return numSpaces;
-}
-
-/*
-@Finalitat: Limpiar los posibles & que pueda contener la string.
-@Paràmetres: char*: clienteNameAux, string con el nombre del cliente leido del configBowman.txt.
-@Retorn: char* con el nombre del usuario limpio de &.
-*/
-char * verifyClientName(char * clienteNameAux) {
-    char *clienteName = (char *) malloc (sizeof(char));
-
-    size_t j = 1, i;
-
-    for (i = 0; i < strlen(clienteNameAux); i++) {
-        if (clienteNameAux[i] != '&') {
-            clienteName[j - 1] = clienteNameAux[i];
-            j++;
-            clienteName = (char *) realloc (clienteName, j * sizeof(char));
-        }        
-    } 
-    clienteName[j - 1] = '\0';
-    return clienteName;
-}
-
-/*
 @Finalitat: Printa la información leída de configBowman
 @Paràmetres: ---
 @Retorn: ---
 */
-void printInfoFile() {
+void printInfoFileBowman() {
     printF("\nFile read correctly:\n");
     asprintf(&dBowman.msg, "User - %s\nDirectory - %s\nIP - %s\nPort - %s\n\n", dBowman.clienteName, dBowman.pathClienteFile, dBowman.ip, dBowman.puerto);
     printF(dBowman.msg);
     freeString(&dBowman.msg);
-}
-
-/*
-@Finalitat: Comprobar las posibles casuisticas con el comando DOWNLOAD
-@Paràmetres: char*: downloadPtr, puntero al primer caracter, es decir a la 'D'
-@Retorn: ---
-*/
-void checkDownload(char *downloadPtr) {
-    char *mp3Ptr = strstr(downloadPtr + 10, ".MP3");
-    if (mp3Ptr != NULL) {
-        char nextChar = mp3Ptr[4];
-        if (nextChar == '\0') {
-            printF("Download started!\n");
-        } else {
-            printF("Please specify a single .mp3 file\n");
-        }
-    } else {
-        printF("Please specify an .mp3 file\n");
-    }
 }
 
 void establishDiscoveryConnection() {
@@ -331,12 +232,10 @@ void checkPooleConnection(size_t bytesLeidos) {
 }
 
 void requestListSongs() {
-    setTramaString(TramaCreate(0x02, "LIST_SONGS", ""), dBowman.fdPoole);
-    
     int numCanciones = 0;
     char aux[257], *songs = NULL, **canciones = NULL;
-    
-    // Gestion recepción songs
+
+    setTramaString(TramaCreate(0x02, "LIST_SONGS", ""), dBowman.fdPoole);
 
     // Lectura cantidad de tramas que recibiremos
     size_t bytesLeidos = read(dBowman.fdPoole, aux, 256);
@@ -345,11 +244,8 @@ void requestListSongs() {
     checkPooleConnection(bytesLeidos);
 
     int numTramas = atoi(aux + 17);
-
     juntarTramasSongs(numTramas, &songs);
-
     numCanciones = procesarTramasSongs(&canciones, songs);
-
     printarSongs(numCanciones, &canciones);
 
     free(canciones);
@@ -391,7 +287,6 @@ char *juntarTramasPlaylists(int numTramas) {
 
 char ***procesarTramasPlaylists(char *playlists, int **numCancionesPorLista, int numCanciones, int *numListas) {
     int i = 0, totalCanciones = 0, inicioPlaylist = 0, inicioSong = 0;
-
     char valorFinal = ' ', ***listas = NULL, *playlist = NULL, *song = NULL;
 
     do {
@@ -491,15 +386,12 @@ void printarPlaylists(int numListas, char ***listas, int *numCancionesPorLista) 
 }
 
 void requestListPlaylists() {
-    setTramaString(TramaCreate(0x02, "LIST_PLAYLISTS", ""), dBowman.fdPoole);
-
-    // Gestión recepción playlists
-
+    char aux[257], *playlists = NULL, ***listas = NULL;
     int numListas = 0;
     int *numCancionesPorLista = malloc(sizeof(int)); 
     *numCancionesPorLista = 0;
-    
-    char aux[257], *playlists = NULL, ***listas = NULL;
+
+    setTramaString(TramaCreate(0x02, "LIST_PLAYLISTS", ""), dBowman.fdPoole);
 
     // Lectura cantidad de canciones
     size_t bytesLeidos = read(dBowman.fdPoole, aux, 256);
@@ -595,7 +487,7 @@ int main(int argc, char ** argv) {
             //CREAR DIRECTORIO BOWMAN
             createDirectory(dBowman.clienteName);
 
-            printInfoFile();
+            printInfoFileBowman();
 
             while (1) {
                 printF("$ ");
