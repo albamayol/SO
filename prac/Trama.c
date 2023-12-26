@@ -19,7 +19,7 @@ void shortToChars(short valor, char *cadena) {
 
 char* createString3Params(char* param1, char* param2, char* param3) { 
   char *aux = NULL;
-  int length = strlen(param1) + strlen(param2) + strlen(param3) + 3 + 1;
+  int length = strlen(param1) + strlen(param2) + strlen(param3) + 2 + 1; 
   aux = (char *) malloc(sizeof(char) * length);
   memset(aux, 0, length);
   strcpy(aux, param1);
@@ -27,6 +27,21 @@ char* createString3Params(char* param1, char* param2, char* param3) {
   strcat(aux, param2);
   strcat(aux, "&");
   strcat(aux, param3); 
+  return aux;
+}
+
+char* createString4Params(char* param1, char* param2, char* param3, char *param4) { 
+  char *aux = NULL;
+  int length = strlen(param1) + strlen(param2) + strlen(param3) + strlen(param4) + 3 + 1; 
+  aux = (char *) malloc(sizeof(char) * length);
+  memset(aux, 0, length);
+  strcpy(aux, param1);
+  strcat(aux, "&"); 
+  strcat(aux, param2);
+  strcat(aux, "&");
+  strcat(aux, param3); 
+  strcat(aux, "&");
+  strcat(aux, param4); 
   return aux;
 }
 
@@ -98,7 +113,8 @@ Trama readTrama(int fd) {
   char *buffer = NULL;
   inicializarTrama(&trama);
 
-  read(fd, &trama.type, sizeof(char));    
+  read(fd, &trama.type, sizeof(char));  
+
   read(fd, &trama.header_length, sizeof(unsigned short));
   trama.header = malloc((trama.header_length+1) * sizeof(char)); 
 
