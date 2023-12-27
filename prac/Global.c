@@ -55,19 +55,25 @@ void cleanThreadPoole(ThreadPoole *thread) {
     }
 }
 
-/*void cleanThreadBowman(ThreadBowman *thread) {
-    pthread_cancel(thread->descargas->thread);
-    pthread_join(thread->descargas->thread, NULL);
-    
-}*/
+void cleanAllTheThreadsBowman() {
+    for (int i = 0; i < numDescargas; i++) {
+        pthread_cancel((*descargas)[i].thread);
+        pthread_join((*descargas)[i].thread, NULL);
+        freeString(&(*descargas)[i].song.md5sum);
+        freeString(&(*descargas)[i].song.nombre);
+        freeString(&(*descargas)[i].nombreDescargaComando);
+    }
+}
+//eliminar los ficheros
 
-void cleanTheadsBowman(ThreadBowman **threads) {
-    for (int i = 0; i < (*threads)->numDescargas; i++) {
-        if ((*threads)->descargas[i].porcentaje) {
-            pthread_cancel((*threads)->descargas[i].thread);
-            pthread_join((*threads)->descargas[i].thread, NULL);
-            freeString(&(*threads)->descargas[i].song.md5sum);
-            freeString(&(*threads)->descargas[i].song.nombre);
+void cleanTheadsBowman(DescargaBowman **descargas, int numDescargas) {
+    for (int i = 0; i < numDescargas; i++) {
+        if ((*descargas)[i].porcentaje == 100.00) { 
+            pthread_cancel((*descargas)[i].thread);
+            pthread_join((*descargas)[i].thread, NULL);
+            freeString(&(*descargas)[i].song.md5sum);
+            freeString(&(*descargas)[i].song.nombre);
+            freeString(&(*descargas)[i].nombreDescargaComando);
         }
     }
 }

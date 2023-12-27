@@ -52,20 +52,22 @@ typedef struct {
     pthread_t thread;	
     Song song;
     float porcentaje; //(bytesDescargados/tamaño) * 100. ej: 1020/1024 * 100
-} Descarga;
+    char *nombreDescargaComando;
+} DescargaBowman;
+
+typedef struct {
+    pthread_t thread;	
+    char *nombreDescargaComando;
+    int fd_bowman;
+} DescargaPoole;
 
 typedef struct {
 	pthread_t thread;	
 	char* user_name;
     int fd;
-    Descarga *descargas;
+    DescargaPoole *descargas;
+    int numDescargas; // Num total de descargas por parte de un Bowman
 } ThreadPoole;
-
-typedef struct {
-    Descarga *descargas;
-    int numDescargas;
-    char *nombreDescargaComando;
-} ThreadBowman;
 
 typedef struct {
     int fdDiscovery;
@@ -82,8 +84,8 @@ typedef struct {
     char *puerto;
     int bowmanConnected;
     Element pooleConnected;
-    ThreadBowman *threads;
-    int threads_array_size;
+    DescargaBowman *descargas;
+    int numDescargas;
 } dataBowman;
 
 typedef struct {

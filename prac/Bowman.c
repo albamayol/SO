@@ -481,23 +481,22 @@ void downloadSong(char *song) {
 }
 
 static void *thread_function_download_song(void* thread) {
-    ThreadBowman *mythread = (ThreadBowman*) thread;
+    DescargaBowman *mythread = (DescargaBowman*) thread;
 
     downloadSong(mythread->nombreDescargaComando);
     return NULL;
 }
 
-void requestDownloadSong(char *song) {
-    dBowman.threads = realloc(dBowman.threads, sizeof(ThreadBowman) * (dBowman.threads_array_size + 1)); 
-    dBowman.threads[dBowman.threads_array_size].descargas = realloc(dBowman.threads[dBowman.threads_array_size].descargas, sizeof(Descarga) * (dBowman.threads[dBowman.threads_array_size].numDescargas + 1)); 
-    dBowman.threads[dBowman.threads_array_size].nombreDescargaComando = strdup(song);
+void threadDownloadSong(char *song) {
+    dBowman.descargas = realloc(dBowman.descargas, sizeof(DescargaBowman) * (dBowman.numDescargas + 1)); 
+    
+    dBowman.descargas[dBowman.numDescargas].nombreDescargaComando = strdup(song);
 
-    if (pthread_create(&dBowman.threads[dBowman.threads_array_size].descargas[dBowman.threads->numDescargas].thread, NULL, thread_function_download_song, (void *)&dBowman.threads[dBowman.threads_array_size]) != 0) {
+    if (pthread_create(&dBowman.descargas[dBowman.numDescargas].thread, NULL, thread_function_download_song, (void *)&dBowman.descargas[dBowman.numDescargas]) != 0) {
         perror("Error al crear el thread para la descarga");
     }
 
-    dBowman.threads_array_size++;
-    dBowman.threads->numDescargas++;
+    dBowman.numDescargas++;
     freeString(&song);
 }
 
@@ -578,7 +577,7 @@ int main(int argc, char ** argv) {
                             }
 
                             if (typeFile == 1) {
-                                requestDownloadSong(nombreArchivo);
+                                threadDownloadSong(nombreArchivo);
                                 printF("Download started!\n");
                             } else if (typeFile == 0) {
                                 //requestDownloadPlaylist(nombreArchivo);

@@ -452,6 +452,15 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id) {
     close(fd);
 }
 
+int returnThreadIndex(int fdBowman) {
+    for (int i = 0; i < dPoole.threads_array_size; i++) {
+        if (dPoole.threads[i].fd == fdBowman) {
+            return i;
+        }
+    }
+    return 0;
+}
+
 void sendSong(char *song, int fd_bowman) {
     int fileSize = 0;
 
@@ -474,11 +483,33 @@ void sendSong(char *song, int fd_bowman) {
             // Enviar los datos del fichero
             enviarDatosSong(fd_bowman, dPoole.serverName, song, convertIntToString(randomID));
         }
-    
+    }
+}
+
+static void *thread_function_send_song(void* thread) {
+    DescargaPoole *mythread = (DescargaPoole*) thread;
+
+    sendSong(mythread->nombreDescargaComando, mythread->fd_bowman);
+    return NULL;
+}
+
+void threadSendSong(char *song, int fd_bowman) {
+    int index = returnThreadIndex(fd_bowman);
+    if (!index) {
+        perror("El thread no existe.\n");
+        return;
     }
 
-    // Crear thread 
-    // Cuando haya terminada liberar el thread.
+    dPoole.threads[index].descargas = realloc(dPoole.threads[index].descargas, sizeof(DescargaPoole) * (dPoole.threads[index].numDescargas + 1)); 
+    
+    dPoole.threads[index].descargas[dPoole.threads[index].numDescargas].nombreDescargaComando = strdup(song);
+
+    if (pthread_create(&dPoole.threads[index].descargas[dPoole.threads[index].numDescargas].thread, NULL, thread_function_send_song, (void *)&dPoole.threads[index].descargas[dPoole.threads[index].numDescargas]) != 0) {
+        perror("Error al crear el thread para la descarga");
+    }
+
+    dPoole.threads[index].numDescargas++;
+    freeString(&song);
 }
 
 /*void sendPlaylist(char *playlist) {
@@ -546,7 +577,7 @@ void conexionBowman(ThreadPoole* mythread) {
             freeString(&upperInput);
 
             if (typeFile == 1) {
-                sendSong(trama.data, mythread->fd);
+                threadSendSong(trama.data, mythread->fd);
             } else {
                 //sendPlaylist(trama.data);
             }
