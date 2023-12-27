@@ -489,8 +489,6 @@ void sendSong(char *song, int fd_bowman) {
 }*/
 
 void conexionBowman(ThreadPoole* mythread) {
-    int exit = 0;
-
     Trama trama = readTrama(mythread->fd);
     mythread->user_name = strdup(trama.data);
 
