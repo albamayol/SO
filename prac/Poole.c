@@ -431,15 +431,11 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id) {
 
     // Leer el archivo y enviar los datos
     while ((bytesLeidos = read(fd, buffer, 244 - longitudId - 1)) > 0) {
-        
         strcat(data, buffer); 
-        
-
         setTramaString(TramaCreate(0x04, "FILE_DATA", data), fd_bowman);
 
         strcpy(data, id);
         strcat(data, "&");
-
         bytesLeidos = 0;
     }
     strcat(data, buffer); 
@@ -584,7 +580,6 @@ void conexionBowman(ThreadPoole* mythread) {
         } else {
             printF("Unknown command\n");
         }
-        printF("freedTrama\n");
         freeTrama(&trama);  
     }
     freeTrama(&trama);  
@@ -593,7 +588,6 @@ void conexionBowman(ThreadPoole* mythread) {
 
 static void *thread_function_bowman(void* thread) {
     ThreadPoole *mythread = (ThreadPoole*) thread;
-
     conexionBowman(mythread);
     return NULL;
 }

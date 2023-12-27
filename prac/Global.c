@@ -35,6 +35,13 @@ void freePoolesArray(Element *array, int size) {
 void cleanThreadsPoole(ThreadPoole** threads, int numThreads) {
     for (int i = 0; i < numThreads; i++) {
         if ((*threads)[i].user_name != NULL) { // SI TENEMOS TIEMPO CAMBIAR
+            for (int j = 0; j < (*threads)[i].numDescargas; j++) {
+                pthread_cancel((*threads)[i].descargas[j].thread);
+                pthread_join((*threads)[i].descargas[j].thread, NULL);
+                close((*threads)[i].descargas[j].fd_bowman); 
+                free((*threads)[i].descargas[j].nombreDescargaComando);
+                (*threads)[i].descargas[j].nombreDescargaComando = NULL;
+            }
             pthread_cancel((*threads)[i].thread);
             pthread_join((*threads)[i].thread, NULL);
             close((*threads)[i].fd); 
@@ -46,16 +53,21 @@ void cleanThreadsPoole(ThreadPoole** threads, int numThreads) {
 }
 
 void cleanThreadPoole(ThreadPoole *thread) {
+    for (int i = 0; j < (*thread).numDescargas; j++) {
+        pthread_cancel((*thread).descargas[j].thread);
+        pthread_join((*thread).descargas[j].thread, NULL);
+        close((*thread).descargas[j].fd_bowman); 
+        free((*thread).descargas[j].nombreDescargaComando);
+        (*thread).descargas[j].nombreDescargaComando = NULL;
+    }
     pthread_cancel((*thread).thread);
     pthread_join((*thread).thread, NULL);
     close((*thread).fd); 
     freeString(&(thread->user_name));
-    if ((*thread).descargas != NULL) {
-
-    }
+    
 }
 
-void cleanAllTheThreadsBowman() {
+void cleanAllTheThreadsBowman(DescargaBowman **descargas, int numDescargas) {
     for (int i = 0; i < numDescargas; i++) {
         pthread_cancel((*descargas)[i].thread);
         pthread_join((*descargas)[i].thread, NULL);
@@ -66,7 +78,7 @@ void cleanAllTheThreadsBowman() {
 }
 //eliminar los ficheros
 
-void cleanTheadsBowman(DescargaBowman **descargas, int numDescargas) {
+void cleanThreadsBowman(DescargaBowman **descargas, int numDescargas) {
     for (int i = 0; i < numDescargas; i++) {
         if ((*descargas)[i].porcentaje == 100.00) { 
             pthread_cancel((*descargas)[i].thread);

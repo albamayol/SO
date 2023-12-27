@@ -419,7 +419,6 @@ void requestListPlaylists() {
 }
 
 int requestLogout() {  
-    //HAY QUE VOLVER A CREAR OTRO SOCKET CON DISCOVERY
     setTramaString(TramaCreate(0x06, "EXIT", dBowman.clienteName), dBowman.fdPoole);
 
     //Trama trama = readTrama(dBowman.fdPoole);

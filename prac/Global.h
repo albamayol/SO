@@ -122,6 +122,8 @@ char* read_until(int fd, char delimiter);
 char* read_until_string(char *string, char delimiter);
 void cleanThreadsPoole(ThreadPoole** threads, int numThreads);
 void cleanThreadPoole(ThreadPoole* thread);
+void cleanThreadsBowman(DescargaBowman **descargas, int numDescargas);
+void cleanAllTheThreadsBowman(DescargaBowman **descargas, int numDescargas);
 void removeExtraSpaces(char *comanda);
 char * to_upper(char * str);
 int checkDownloadCommand(char * input);
