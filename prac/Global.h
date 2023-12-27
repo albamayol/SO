@@ -28,6 +28,7 @@ Autores:
 #include <arpa/inet.h>
 #include <limits.h>
 #include <dirent.h>
+#include <sys/stat.h>
 //#include "semaphore_v2.h"
 
 #define printF(x) write(1, x, strlen(x))
@@ -40,10 +41,31 @@ typedef struct {
 } Element;
 
 typedef struct {
+    int id;
+    char *md5sum;
+    char *nombre;
+    size_t tamaño;
+    size_t bytesDescargados;
+} Song;
+
+typedef struct {
+    pthread_t thread;	
+    Song song;
+    float porcentaje; //(bytesDescargados/tamaño) * 100. ej: 1020/1024 * 100
+} Descarga;
+
+typedef struct {
 	pthread_t thread;	
 	char* user_name;
     int fd;
-} Thread;
+    Descarga *descargas;
+} ThreadPoole;
+
+typedef struct {
+    Descarga *descargas;
+    int numDescargas;
+    char *nombreDescargaComando;
+} ThreadBowman;
 
 typedef struct {
     int fdDiscovery;
@@ -60,6 +82,8 @@ typedef struct {
     char *puerto;
     int bowmanConnected;
     Element pooleConnected;
+    ThreadBowman *threads;
+    int threads_array_size;
 } dataBowman;
 
 typedef struct {
@@ -74,7 +98,7 @@ typedef struct {
     char *ipServer; 
     char *puertoServer;
     char *msg;
-    Thread *threads;
+    ThreadPoole *threads;
     int threads_array_size;
 } dataPoole;
 
@@ -94,8 +118,8 @@ typedef struct {
 
 char* read_until(int fd, char delimiter);
 char* read_until_string(char *string, char delimiter);
-void cleanThreads(Thread** threads, int numThreads);
-void cleanThread(Thread* thread);
+void cleanThreadsPoole(ThreadPoole** threads, int numThreads);
+void cleanThreadPoole(ThreadPoole* thread);
 void removeExtraSpaces(char *comanda);
 char * to_upper(char * str);
 int checkDownloadCommand(char * input);

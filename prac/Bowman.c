@@ -461,7 +461,7 @@ int requestLogout() {
     return 2;
 }
 
-void requestDownloadSong(char *song) {
+void downloadSong(char *song) {
     setTramaString(TramaCreate(0x03, "DOWNLOAD_SONG", song), dBowman.fdPoole);
 
     // GUARDAR CANCION
@@ -469,11 +469,36 @@ void requestDownloadSong(char *song) {
     //Trama trama = readTrama(dBowman.fdPoole);
     size_t bytesLeidos = read(dBowman.fdPoole, aux, 256);
     aux[256] = '\0';
-    
+
+    //char *dataSong = aux + 11;
+
+    //saveDataSong(dataSong, );
+
     checkPooleConnection(bytesLeidos);
 
     printF(aux);
 
+}
+
+static void *thread_function_download_song(void* thread) {
+    ThreadBowman *mythread = (ThreadBowman*) thread;
+
+    downloadSong(mythread->nombreDescargaComando);
+    return NULL;
+}
+
+void requestDownloadSong(char *song) {
+    dBowman.threads = realloc(dBowman.threads, sizeof(ThreadBowman) * (dBowman.threads_array_size + 1)); 
+    dBowman.threads[dBowman.threads_array_size].descargas = realloc(dBowman.threads[dBowman.threads_array_size].descargas, sizeof(Descarga) * (dBowman.threads[dBowman.threads_array_size].numDescargas + 1)); 
+    dBowman.threads[dBowman.threads_array_size].nombreDescargaComando = strdup(song);
+
+    if (pthread_create(&dBowman.threads[dBowman.threads_array_size].descargas[dBowman.threads->numDescargas].thread, NULL, thread_function_download_song, (void *)&dBowman.threads[dBowman.threads_array_size]) != 0) {
+        perror("Error al crear el thread para la descarga");
+    }
+
+    dBowman.threads_array_size++;
+    dBowman.threads->numDescargas++;
+    freeString(&song);
 }
 
 /*
@@ -546,15 +571,22 @@ int main(int argc, char ** argv) {
                             printF(dBowman.upperInput);
                             int typeFile = songOrPlaylist(dBowman.upperInput);
 
+                            char *nombreArchivo = strchr(dBowman.input, ' '); // Encuentra el primer espacio
+                            if (nombreArchivo != NULL) {
+                                // Mueve el puntero un carácter más adelante para omitir el espacio
+                                nombreArchivo++;
+                            }
+
                             if (typeFile == 1) {
-                                requestDownloadSong(dBowman.input);
+                                requestDownloadSong(nombreArchivo);
                                 printF("Download started!\n");
                             } else if (typeFile == 0) {
-                                //requestDownloadPlaylist(dBowman.input);
+                                //requestDownloadPlaylist(nombreArchivo);
                                 printF("Download started!\n");
                             } else {
                                 printF("ERROR: The song file extension is not valid.");
                             }
+                            freeString(&nombreArchivo);
                         } else {
                             printF("Sorry number of arguments is not correct, try again\n");
                         }

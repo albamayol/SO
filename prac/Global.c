@@ -32,7 +32,7 @@ void freePoolesArray(Element *array, int size) {
     free(array);
 }
 
-void cleanThreads(Thread** threads, int numThreads) {
+void cleanThreadsPoole(ThreadPoole** threads, int numThreads) {
     for (int i = 0; i < numThreads; i++) {
         if ((*threads)[i].user_name != NULL) { // SI TENEMOS TIEMPO CAMBIAR
             pthread_cancel((*threads)[i].thread);
@@ -45,11 +45,31 @@ void cleanThreads(Thread** threads, int numThreads) {
     free(*threads);
 }
 
-void cleanThread(Thread *thread) {
+void cleanThreadPoole(ThreadPoole *thread) {
     pthread_cancel((*thread).thread);
     pthread_join((*thread).thread, NULL);
     close((*thread).fd); 
     freeString(&(thread->user_name));
+    if ((*thread).descargas != NULL) {
+
+    }
+}
+
+/*void cleanThreadBowman(ThreadBowman *thread) {
+    pthread_cancel(thread->descargas->thread);
+    pthread_join(thread->descargas->thread, NULL);
+    
+}*/
+
+void cleanTheadsBowman(ThreadBowman **threads) {
+    for (int i = 0; i < (*threads)->numDescargas; i++) {
+        if ((*threads)->descargas[i].porcentaje) {
+            pthread_cancel((*threads)->descargas[i].thread);
+            pthread_join((*threads)->descargas[i].thread, NULL);
+            freeString(&(*threads)->descargas[i].song.md5sum);
+            freeString(&(*threads)->descargas[i].song.nombre);
+        }
+    }
 }
 
 char* read_until(int fd, char delimiter) {
@@ -422,46 +442,3 @@ int songOrPlaylist(char *string) {
         return 0;
     }
 }
-
-/*
-@Finalitat: Eliminar espacios en blanco adicionales
-@Paràmetres: char*: str, comanda recibida
-@Retorn: ---
-*/
-void removeExtraSpaces(char *comanda) { 
-    int espacios = 0, j = 0;
-
-    for (size_t i = 0; i < strlen(comanda); i++) {
-        if (comanda[i] == ' ') {
-            espacios++;
-        } else {
-            espacios = 0;
-        }
-
-        if (espacios <= 1) {
-            comanda[j] = comanda[i];
-            j++;
-        }
-    }
-    comanda[j] = '\0';
-}
-
-/*
-@Finalitat: Convertir una string a todo mayusculas.
-@Paràmetres: char*: str, comando a modificar.
-@Retorn: char* con el comando introducido por el usuario pasado a mayusculas.
-*/
-char * to_upper(char * str) {
-	int length = strlen(str) + 1 ;
-    char * result = (char *) malloc(length * sizeof(char));
-    // inits a '\0'
-	memset(result,0, length);
-
-    for (int i = 0; i < length; i++){
-        result[i] = toupper(str[i]);
-    }
-
-    return result;
-}
-
-
