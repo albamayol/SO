@@ -236,6 +236,23 @@ void checkDownload(char *downloadPtr) {
     }
 }
 
+int songOrPlaylist(char *string) {
+    int length = strlen(string);
+    int indicePunto = length - 4; 
+
+    // song1.mp3
+    if (strcmp(&string[indicePunto], ".MP3") == 0) {
+        return 1;
+    } else {
+        if (strchr(string, '.') != NULL) {
+            // No es un .mp3, es otra extension
+            return 2;
+        }
+        // Es una playlist
+        return 0;
+    }
+}
+
 void createDirectory(char* directory) {
     char *command = NULL;
 
@@ -426,19 +443,7 @@ void separaDataToElement(char* data, Element* e) {
     freeString(&port);
 }
 
-int songOrPlaylist(char *string) {
-    int length = strlen(string);
-    int indicePunto = length - 4; 
 
-    // song1.mp3
-    if (strcmp(&string[indicePunto], ".MP3") == 0) {
-        return 1;
-    } else {
-        if (strchr(string, '.') != NULL) {
-            // No es un .mp3, es otra extension
-            return 2;
-        }
-        // Es una playlist
-        return 0;
-    }
-}
+
+
+

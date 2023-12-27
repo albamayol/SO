@@ -125,6 +125,7 @@ char * to_upper(char * str);
 int checkDownloadCommand(char * input);
 char * verifyClientName(char * clienteNameAux);
 void checkDownload(char *downloadPtr);
+int songOrPlaylist(char *string);
 void separaDataToElement(char* data, Element* e);
 Element pooleMinConnections(Element *poole_list, int poole_list_size);
 void printListPooles(Element *poole_list, int poole_list_size);
@@ -137,8 +138,6 @@ void freePoolesArray(Element *array, int size);
 void createDirectory(char* directory);
 char* readNumChars(char *string, int inicio, int final);
 char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *fina, char delimitadorFinal);
-int songOrPlaylist(char *string);
-void removeExtraSpaces(char *comanda);
-char * to_upper(char * str);
+
 
 #endif

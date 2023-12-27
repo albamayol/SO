@@ -504,14 +504,15 @@ void conexionBowman(ThreadPoole* mythread) {
     } else {
         setTramaString(TramaCreate(0x01, "CON_KO", ""), mythread->fd);
         close(mythread->fd);
-        cleanThreadPoole(mythread);
-        //salir de la función??
+
+        freeTrama(&trama);
+        cleanThreadPoole(mythread); //con el join ya salimos de la funcion de thread osea salimos de aqui
     }
     
     freeTrama(&trama);
 
     //TRANSMISIONES POOLE-->BOWMAN
-    while(!exit) {
+    while(1) {
         trama = readTrama(mythread->fd);
 
         if (strcmp(trama.header, "EXIT") == 0) {    
@@ -520,8 +521,9 @@ void conexionBowman(ThreadPoole* mythread) {
             asprintf(&dPoole.msg,"\nNew request - %s logged out\n", mythread->user_name);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
-            exit = 1;
-            cleanThreadPoole(mythread);
+
+            freeTrama(&trama);
+            cleanThreadPoole(mythread); //clean thread hace cancel y join -> CANCEL + JOIN espera a que acabe la ejecución del thread y nos saca de la thread function
         } else if (strcmp(trama.header, "LIST_SONGS") == 0) {
             asprintf(&dPoole.msg,"\nNew request - %s requires the list of songs.\nSending song list to %s\n", mythread->user_name, mythread->user_name);
             printF(dPoole.msg);
