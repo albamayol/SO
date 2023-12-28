@@ -19,7 +19,7 @@ void shortToChars(short valor, char *cadena) {
 
 char* createString3Params(char* param1, char* param2, char* param3) { 
   char *aux = NULL;
-  int length = strlen(param1) + strlen(param2) + strlen(param3) + 2 + 1; 
+  size_t length = strlen(param1) + strlen(param2) + strlen(param3) + 2 + 1; 
   aux = (char *) malloc(sizeof(char) * length);
   memset(aux, 0, length);
   strcpy(aux, param1);
@@ -32,7 +32,7 @@ char* createString3Params(char* param1, char* param2, char* param3) {
 
 char* createString4Params(char* param1, char* param2, char* param3, char *param4) { 
   char *aux = NULL;
-  int length = strlen(param1) + strlen(param2) + strlen(param3) + strlen(param4) + 3 + 1; 
+  size_t length = strlen(param1) + strlen(param2) + strlen(param3) + strlen(param4) + 3 + 1; 
   aux = (char *) malloc(sizeof(char) * length);
   memset(aux, 0, length);
   strcpy(aux, param1);
@@ -91,10 +91,10 @@ Trama TramaCreate (char type, char *header, char *data) {
   int sizeData = 256 - 3 - trama.header_length;
   trama.data = malloc(sizeof(char) * (sizeData));
   memset(trama.data, '~', sizeData); //Padding
-  int sizeDataString = 0;
+  size_t sizeDataString = 0;
   sizeDataString = strlen(data); 
 
-  for (int i = 0; i < sizeDataString; i++) {
+  for (size_t i = 0; i < sizeDataString; i++) {
       trama.data[i] = data[i];
   }
 

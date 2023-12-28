@@ -306,63 +306,24 @@ void sendListPlaylists(int fd_bowman) {
     freeString(&playlists);
 }
 
-int searchSong(char *song, int *fileSize) {
-    DIR *dir;
-    struct dirent *entry;
+int searchSong(char *pathSong, int *fileSize) {
     struct stat st;
     int found = 0;
 
-    dir = opendir(dPoole.serverName); 
-    if (dir != NULL) {
-        while ((entry = readdir(dir)) != NULL) {
-            if (entry->d_type == DT_REG && strcmp(entry->d_name, ".DS_Store") != 0) { 
-
-                //size_t nameLength = strlen(entry->d_name);
-
-                // Creamos una cadena temporal para almacenar el nombre del archivo sin los residuos
-                /*char *fileName = malloc((nameLength + 1) * sizeof(char));
-                strncpy(fileName, entry->d_name, nameLength);
-                fileName[nameLength] = '\0';*/
-
-
-                if (strcmp("Cafe_Malibú_-_Sech,_Mora,_Saiko.mp3", song) == 0) { // PROBLEMA
-                    found = 1;
-
-                    if (stat("Cafe_Malibú_-_Sech,_Mora,_Saiko.mp3", &st) == -1) {
-                        perror("Error al obtener el tamaño del archivo");
-                        *fileSize = 0;
-                    } else {
-                        *fileSize = st.st_size;
-                    }
-                    //freeString(&fileName);
-                    break;
-                }
-                //freeString(&fileName);
-            }
-        }
-        closedir(dir);
+    if (stat(pathSong, &st) == 0) {
+        found = 1;
+        *fileSize = st.st_size;
     } else {
-        perror("Error al abrir el directorio");
+        perror("Error al obtener el tamaño del archivo");
+        *fileSize = 0;
     }
     return found;
 }
 
-char * resultMd5sumComand(char *directoryPath, char* filename) {
-	//const int bufferSize = 256;
-	//char command[bufferSize];
-
-    DIR *dir = opendir(directoryPath);
-    if (dir == NULL) {
-        perror("opendir");
-        return NULL;
-    }
-    
+char * resultMd5sumComand(char *pathName) {
     char *command = NULL;
 
-
-    asprintf(&command, "md5sum %s", filename);
-    // Create the command string
-    //snprintf(command, bufferSize, "md5sum %s", filename);
+    asprintf(&command, "md5sum %s", pathName);
 
     FILE* pipe = popen(command, "r");
     if (pipe == NULL) {
@@ -378,7 +339,7 @@ char * resultMd5sumComand(char *directoryPath, char* filename) {
         return NULL;
     }
 
-    int bytesRead = read(fileno(pipe), buffer, 32 - 1);
+    ssize_t bytesRead = read(fileno(pipe), buffer, 32 - 1);
     if (bytesRead == -1) {
         perror("read");
         free(buffer);
@@ -394,7 +355,6 @@ char * resultMd5sumComand(char *directoryPath, char* filename) {
 
     // Close the pipe
     pclose(pipe);
-    closedir(dir);
     freeString(&command);
 
     return buffer;
@@ -406,18 +366,19 @@ int getRandomID() {
 }
 
 void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id) {
+    size_t len = strlen(directoryPath) + strlen(song) + 2;
 
-    DIR *dir = opendir(directoryPath);
-    if (dir == NULL) {
-        perror("opendir");
-        return;
-    }
+    char *path = malloc(len);
 
-    int fd = open(song, O_RDONLY);
-    if (fd == -1) {
-        perror("Error al abrir el archivo");
-        return;
-    }
+    snprintf(path, len, "%s/%s", directoryPath, song);
+
+    int fd_file = open(path, O_RDONLY, 0644);
+    if (fd_file == -1) {
+        perror("Error al crear el archivo");
+        exit(EXIT_FAILURE);
+    } 
+
+    freeString(&path);
 
     size_t longitudId = strlen(id);
 
@@ -427,43 +388,36 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id) {
     strcpy(data, id);
     strcat(data, "&"); 
     
-    size_t bytesLeidos = 0;
-
-    // Leer el archivo y enviar los datos
-    while ((bytesLeidos = read(fd, buffer, 244 - longitudId - 1)) > 0) {
+    ssize_t bytesLeidos = 0;
+    
+    // Leer del archivo y enviar los datos
+    while ((bytesLeidos = read(fd_file, buffer, 244 - longitudId - 1)) > 0) {
         strcat(data, buffer); 
         setTramaString(TramaCreate(0x04, "FILE_DATA", data), fd_bowman);
 
         strcpy(data, id);
         strcat(data, "&");
-        bytesLeidos = 0;
     }
-    strcat(data, buffer); 
-    setTramaString(TramaCreate(0x04, "FILE_DATA", data), fd_bowman);
-    //sdfjasdjsdfsj\0\0sfdsd----------------------- = 256
 
     free(data);
     free(buffer);
 
-    close(fd);
-}
-
-int returnThreadIndex(int fdBowman) {
-    for (int i = 0; i < dPoole.threads_array_size; i++) {
-        if (dPoole.threads[i].fd == fdBowman) {
-            return i;
-        }
-    }
-    return 0;
+    close(fd_file);
 }
 
 void sendSong(char *song, int fd_bowman) {
     int fileSize = 0;
 
-    // Si se encuentra el archivo 'song' devolvera su tamaño
-    if (searchSong(song, &fileSize)) {
+    size_t len = strlen(dPoole.serverName) + strlen(song) + 2;
+
+    char *pathSong = malloc(strlen(dPoole.serverName) + strlen(song) + 2);
+
+    snprintf(pathSong, len, "%s/%s", dPoole.serverName, song);
+
+    // Si se encuentra el archivo 'song' devolvera su tamaño por referencia
+    if (searchSong(pathSong, &fileSize)) {
         // Calcular el MD5SUM
-        char *md5sum = resultMd5sumComand(dPoole.serverName, song);
+        char *md5sum = resultMd5sumComand(pathSong);
 
         if (md5sum != NULL) {
             // Calcular el numero random
@@ -485,26 +439,31 @@ void sendSong(char *song, int fd_bowman) {
 static void *thread_function_send_song(void* thread) {
     DescargaPoole *mythread = (DescargaPoole*) thread;
 
+    asprintf(&dPoole.msg,"\nfile descriptor: %d.\n", mythread->fd_bowman);
+    printF(dPoole.msg);
+    freeString(&dPoole.msg);
+
     sendSong(mythread->nombreDescargaComando, mythread->fd_bowman);
     return NULL;
 }
 
-void threadSendSong(char *song, int fd_bowman) {
-    int index = returnThreadIndex(fd_bowman);
-    if (!index) {
-        perror("El thread no existe.\n");
-        return;
-    }
+void threadSendSong(char *song, ThreadPoole *thread) {
+    asprintf(&dPoole.msg,"\nNum descargas: %d.\n", (*thread).numDescargas);
+    printF(dPoole.msg);
+    freeString(&dPoole.msg);
 
-    dPoole.threads[index].descargas = realloc(dPoole.threads[index].descargas, sizeof(DescargaPoole) * (dPoole.threads[index].numDescargas + 1)); 
+    thread->numDescargas = 0;
+
+    thread->descargas = realloc(thread->descargas, sizeof(DescargaPoole) * (thread->numDescargas + 1)); 
     
-    dPoole.threads[index].descargas[dPoole.threads[index].numDescargas].nombreDescargaComando = strdup(song);
+    thread->descargas[thread->numDescargas].nombreDescargaComando = strdup(song);
+    thread->descargas[thread->numDescargas].fd_bowman = thread->fd; // PUEDE QUE NO NECESITEMOS FD DEL STRUCT DESCARGAPOOLE
 
-    if (pthread_create(&dPoole.threads[index].descargas[dPoole.threads[index].numDescargas].thread, NULL, thread_function_send_song, (void *)&dPoole.threads[index].descargas[dPoole.threads[index].numDescargas]) != 0) {
+    if (pthread_create(&thread->descargas[thread->numDescargas].thread, NULL, thread_function_send_song, (void *)&thread->descargas[thread->numDescargas]) != 0) {
         perror("Error al crear el thread para la descarga");
     }
 
-    dPoole.threads[index].numDescargas++;
+    (*thread).numDescargas++;
     freeString(&song);
 }
 
@@ -573,7 +532,9 @@ void conexionBowman(ThreadPoole* mythread) {
             freeString(&upperInput);
 
             if (typeFile == 1) {
-                threadSendSong(trama.data, mythread->fd);
+                char *aux = strdup(trama.data);
+                printF(aux);
+                threadSendSong(aux, mythread);
             } else {
                 //sendPlaylist(trama.data);
             }

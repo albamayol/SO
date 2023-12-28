@@ -44,8 +44,8 @@ typedef struct {
     int id;
     char *md5sum;
     char *nombre;
-    size_t tamaño;
-    size_t bytesDescargados;
+    size_t size;
+    ssize_t bytesDescargados;
 } Song;
 
 typedef struct {
@@ -119,7 +119,6 @@ typedef struct {
 } dataDiscovery;
 
 char* read_until(int fd, char delimiter);
-char* read_until_string(char *string, char delimiter);
 void cleanThreadsPoole(ThreadPoole** threads, int numThreads);
 void cleanThreadPoole(ThreadPoole* thread);
 void cleanThreadsBowman(DescargaBowman **descargas, int numDescargas);
@@ -141,7 +140,7 @@ void freeString(char **string);
 void freePoolesArray(Element *array, int size);
 void createDirectory(char* directory);
 char* readNumChars(char *string, int inicio, int final);
-char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *fina, char delimitadorFinal);
+char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *final, char delimitadorFinal);
 
 
 #endif

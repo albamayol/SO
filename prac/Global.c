@@ -52,8 +52,8 @@ void cleanThreadsPoole(ThreadPoole** threads, int numThreads) {
     free(*threads);
 }
 
-void cleanThreadPoole(ThreadPoole *thread) {
-    for (int i = 0; j < (*thread).numDescargas; j++) {
+void cleanThreadPoole(ThreadPoole *thread) { 
+    for (int j = 0; j < (*thread).numDescargas; j++) {
         pthread_cancel((*thread).descargas[j].thread);
         pthread_join((*thread).descargas[j].thread, NULL);
         close((*thread).descargas[j].fd_bowman); 
@@ -76,7 +76,6 @@ void cleanAllTheThreadsBowman(DescargaBowman **descargas, int numDescargas) {
         freeString(&(*descargas)[i].nombreDescargaComando);
     }
 }
-//eliminar los ficheros
 
 void cleanThreadsBowman(DescargaBowman **descargas, int numDescargas) {
     for (int i = 0; i < numDescargas; i++) {
@@ -184,12 +183,12 @@ void removeExtraSpaces(char *comanda) {
 @Retorn: char* con el comando introducido por el usuario pasado a mayusculas.
 */
 char * to_upper(char * str) {
-	int length = strlen(str) + 1 ;
+	size_t length = strlen(str) + 1;
     char * result = (char *) malloc(length * sizeof(char));
     // inits a '\0'
 	memset(result,0, length);
 
-    for (int i = 0; i < length; i++){
+    for (size_t i = 0; i < length; i++){
         result[i] = toupper(str[i]);
     }
 
@@ -202,9 +201,9 @@ char * to_upper(char * str) {
 @Retorn: int --> número de espacios de la string
 */
 int checkDownloadCommand(char * input) {
-    int length = strlen(input) + 1 ;
+    size_t length = strlen(input) + 1;
     int numSpaces = 0;
-    int i = 0;
+    size_t i = 0;
 
     for (i = 0; i < length; i++) {
         if (input[i] == ' ') {
@@ -255,7 +254,7 @@ void checkDownload(char *downloadPtr) {
 }
 
 int songOrPlaylist(char *string) {
-    int length = strlen(string);
+    size_t length = strlen(string);
     int indicePunto = length - 4; 
 
     // song1.mp3
@@ -372,28 +371,6 @@ int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleNa
     *poole_list_size = updatedPooleListSize;
     *poole_list = updatedPooleList;
     return flagFound; //no se ha encontrado ese poole en discovery
-}
-
-char* read_until_string(char *string, char delimiter) {
-    char *msg = NULL;
-    int i = 0;
-
-    for (i = 0; i > 0; i++) {
-        if (i == 0) {
-            msg = (char *) malloc(1);
-        }
-
-        if (string[i] != delimiter) {
-            msg[i] = string[i];
-            msg = (char *) realloc(msg, ++i + 1);
-        } 
-        else {
-            msg[i] = '\0';
-            break;
-        }
-    }
-
-    return msg;
 }
 
 char* convertIntToString(int num) {
