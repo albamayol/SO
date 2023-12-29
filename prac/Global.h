@@ -44,6 +44,7 @@ typedef struct {
     int id;
     char *md5sum;
     char *nombre;
+    char *playlist;
     size_t size;
     size_t bytesDescargados; //strlen(dataFile);
 } Song;

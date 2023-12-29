@@ -394,6 +394,8 @@ void sendSong(char *song, int fd_bowman) {
                 freeString(&dPoole.msg);
             }
         }
+    } else {
+        // mensaje la cancion no existe.
     }
 }
 

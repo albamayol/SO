@@ -531,7 +531,8 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread) {
             perror("Error al leer desde el file descriptor de Poole");
             break;
         }
-        getIdData(buffer, &id, &dataFile);
+        
+        getIdData(buffer + 12, &id, &dataFile);
         //printF(dataFile);
         if (write(fd_file, dataFile, bytesLeidos) == -1) { // Escribir lo leído en el archivo
             perror("Error al escribir en el archivo");
@@ -605,6 +606,7 @@ void threadDownloadSong(char *song) {
     dBowman.descargas[dBowman.numDescargas].nombreDescargaComando = strdup(song);
     dBowman.descargas[dBowman.numDescargas].porcentaje = 0.00; 
     dBowman.descargas[dBowman.numDescargas].song.bytesDescargados = 0; 
+    dBowman.descargas[dBowman.numDescargas].song.playlist = NULL;
     dBowman.numDescargas++;
 
     if (pthread_create(&dBowman.descargas[dBowman.numDescargas - 1].thread, NULL, thread_function_download_song, (void *)&dBowman.descargas[dBowman.numDescargas - 1]) != 0) {
