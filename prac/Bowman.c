@@ -566,7 +566,7 @@ void downloadSong(DescargaBowman *mythread) {
     char aux[257], valorFinal = ' ';
     int inicio = 0, i = 1;
 
-    setTramaString(TramaCreate(0x03, "DOWNLOAD_SONG", mythread->nombreDescargaComando), dBowman.fdPoole);
+    printF("Download started!\n");
     ssize_t bytesLeidos = read(dBowman.fdPoole, aux, 256);
     aux[256] = '\0';
 
@@ -606,7 +606,7 @@ void threadDownloadSong(char *song) {
     dBowman.descargas[dBowman.numDescargas].nombreDescargaComando = strdup(song);
     dBowman.descargas[dBowman.numDescargas].porcentaje = 0.00; 
     dBowman.descargas[dBowman.numDescargas].song.bytesDescargados = 0; 
-    dBowman.descargas[dBowman.numDescargas].song.playlist = NULL;
+    dBowman.descargas[dBowman.numDescargas].song.pathSong = NULL;
     dBowman.numDescargas++;
 
     if (pthread_create(&dBowman.descargas[dBowman.numDescargas - 1].thread, NULL, thread_function_download_song, (void *)&dBowman.descargas[dBowman.numDescargas - 1]) != 0) {
@@ -615,6 +615,32 @@ void threadDownloadSong(char *song) {
     }
 
     freeString(&song);
+}
+
+void requestDownloadSong(char* nombreArchivoCopia) {
+    setTramaString(TramaCreate(0x03, "DOWNLOAD_SONG", nombreArchivoCopia), dBowman.fdPoole); //playlistname / songname
+    //ESPERAMOS TRAMA SI SONG EXISTE O NO
+    Trama trama = readTrama(dBowman.fdPoole);
+    if (strcmp(trama.header, "FILE_EXIST") == 0) {
+        freeTrama(&trama);
+        threadDownloadSong(nombreArchivoCopia);
+    } else {
+        freeTrama(&trama);
+    }    
+}
+                                
+
+void requestDownloadPlaylist(char* nombreArchivoCopia) {
+    setTramaString(TramaCreate(0x03, "DOWNLOAD_LIST", nombreArchivoCopia), dBowman.fdPoole); //playlistname / songname
+
+    //ESPERAMOS TRAMA SI PLAYLIST EXISTE O NO
+    Trama trama = readTrama(dBowman.fdPoole);
+    if (strcmp(trama.header, "PLAY_EXIST") == 0) {
+        freeTrama(&trama);
+        threadDownloadSong(nombreArchivoCopia);
+    } else {
+        freeTrama(&trama);
+    }
 }
 
 /*
@@ -688,22 +714,17 @@ int main(int argc, char ** argv) {
                             int typeFile = songOrPlaylist(dBowman.upperInput);
 
                             char *nombreArchivoCopia = NULL;
-
                             char *nombreArchivo = strchr(dBowman.input, ' ');
                             if (nombreArchivo != NULL) {
                                 size_t tamano = strlen(nombreArchivo + 1) + 1;
-
                                 nombreArchivoCopia = malloc(tamano);
                                 strcpy(nombreArchivoCopia, nombreArchivo + 1); // Copia desde el carácter después del espacio
                             }
 
                             if (typeFile == 1) {
-                                threadDownloadSong(nombreArchivoCopia);
-                                printF("Download started!\n");
-
+                                requestDownloadSong(nombreArchivoCopia);
                             } else if (typeFile == 0) {
-                                //requestDownloadPlaylist(nombreArchivoCopia);
-                                printF("Download started!\n");
+                                requestDownloadPlaylist(nombreArchivoCopia);
                             } else {
                                 printF("ERROR: The song file extension is not valid.");
                             }

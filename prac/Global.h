@@ -44,7 +44,7 @@ typedef struct {
     int id;
     char *md5sum;
     char *nombre;
-    char *playlist;
+    char *pathSong; //TODO soluciona problema multiples descargas a la vez en bowman --> AÑADIR SEMAFOROS EN EL FD EN POOLE Floyd/sutton/song1.mp3
     size_t size;
     size_t bytesDescargados; //strlen(dataFile);
 } Song;
@@ -53,13 +53,13 @@ typedef struct {
     pthread_t thread;	
     Song song;
     float porcentaje; //(bytesDescargados/size) * 100. ej: 1020/1024 * 100
-    char *nombreDescargaComando;
+    char *nombreDescargaComando; //namesong / nameplaylist
 } DescargaBowman;
 
 typedef struct {
     pthread_t thread;	
     char *nombreDescargaComando;
-    int fd_bowman;
+    int fd_bowman; //???????
 } DescargaPoole;
 
 typedef struct {

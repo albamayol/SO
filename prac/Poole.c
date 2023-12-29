@@ -291,40 +291,6 @@ void listPlaylists(const char *path, char **fileNames, int *totalSongs) {
     closedir(dir);
 }
 
-void sendListPlaylists(int fd_bowman) {
-    char *playlists = NULL;
-    int totalSongs = 0;
-
-    listPlaylists(dPoole.serverName, &playlists, &totalSongs);
-    printF(playlists);
-
-    char *cantidadCanciones = convertIntToString(totalSongs);
-    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", cantidadCanciones), fd_bowman);
-    freeString(&cantidadCanciones);
-
-    enviarTramas(fd_bowman, playlists);
-    freeString(&playlists);
-}
-
-int searchSong(char *pathSong, int *fileSize) {
-    struct stat st;
-    int found = 0;
-
-    if (stat(pathSong, &st) == 0) {
-        found = 1;
-        *fileSize = st.st_size;
-    } else {
-        perror("Error al obtener el tamaño del archivo");
-        *fileSize = 0;
-    }
-    return found;
-}
-
-int getRandomID() {
-    srand(time(NULL)); // Semilla basada en el tiempo actual
-    return rand() % 1000; // Genera un número aleatorio entre 0 y 999
-}
-
 void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id) {
     size_t len = strlen(directoryPath) + strlen(song) + 2;
     char *path = malloc(len);
@@ -360,34 +326,58 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id) {
     close(fd_file);
 }
 
-void sendSong(char *song, int fd_bowman) {
+int searchSongOrPlaylist(char *pathSongPlaylist, int *fileSize) {
+    struct stat st;
+    int found = 0;
+
+    if (stat(pathSongPlaylist, &st) == 0) {
+        found = 1;
+        *fileSize = st.st_size;
+    } else {
+        perror("Error al encontrar la canción/playlist\n");
+        *fileSize = 0;
+    }
+    return found;
+}
+
+int getRandomID() {
+    srand(time(NULL)); // Semilla basada en el tiempo actual
+    return rand() % 1000; // Genera un número aleatorio entre 0 y 999
+}
+
+//REUTILIZAREMOS ESTA FUNCION PARA ENVIAR LAS CANCIONES DE LAS PLAYLISTS
+void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una playlist, añadir previamente char* song: sutton/song1.mp3
     int fileSize = 0;
 
     size_t len = strlen(dPoole.serverName) + strlen(song) + 2;
     char *pathSong = malloc(strlen(dPoole.serverName) + strlen(song) + 2);
     snprintf(pathSong, len, "%s/%s", dPoole.serverName, song);
 
-    if (searchSong(pathSong, &fileSize)) {
+    if (searchSongOrPlaylist(pathSong, &fileSize)) {
+        setTramaString(TramaCreate(0x01, "FILE_EXIST", ""), fd_bowman); 
+
         char *md5sum = resultMd5sumComand(pathSong);
         freeString(&pathSong);
         if (md5sum != NULL) {
-            // Calcular el numero random
             int randomID = getRandomID();
-
-            char *data = createString4Params(song, convertIntToString(fileSize), md5sum, convertIntToString(randomID));
+            
+            char *data = NULL;
+            if (strchr(song, '/') != NULL) { //es cancion de una playlist --> Quitamos sutton de song (sutton/song1.mp3)
+                data = createString4Params(strchr(song, '/') + 1, convertIntToString(fileSize), md5sum, convertIntToString(randomID));
+            } else { //es cancion normal
+                data = createString4Params(song, convertIntToString(fileSize), md5sum, convertIntToString(randomID));
+            }
             printF(data);
             setTramaString(TramaCreate(0x04, "NEW_FILE", data), fd_bowman);
             freeString(&md5sum);
             freeString(&data);
 
-            // Enviar los datos del fichero
             enviarDatosSong(fd_bowman, dPoole.serverName, song, convertIntToString(randomID));
             Trama trama = readTrama(fd_bowman); //espera respuesta estado de la descarga
             if (strcmp(trama.header, "CHECK_OK") == 0) {
                 asprintf(&dPoole.msg,"%s song sent and downloaded successfully!\n", song);
                 printF(dPoole.msg);
                 freeString(&dPoole.msg);
-                //la cancion ya se ha descargado al completo y ahora cerramos thread de la descarga
             } else if (strcmp(trama.header, "CHECK_KO") == 0) {
                 asprintf(&dPoole.msg,"The download of the %s song was unsuccessfull, try again\n", song);
                 printF(dPoole.msg);
@@ -395,18 +385,18 @@ void sendSong(char *song, int fd_bowman) {
             }
         }
     } else {
-        // mensaje la cancion no existe.
+        setTramaString(TramaCreate(0x01, "FILE_NOEXIST", ""), fd_bowman);
     }
 }
 
 static void *thread_function_send_song(void* thread) {
     DescargaPoole *mythread = (DescargaPoole*) thread;
-
+    
     sendSong(mythread->nombreDescargaComando, mythread->fd_bowman);
     return NULL;
 }
 
-void threadSendSong(char *song, ThreadPoole *thread) {
+void threadSendSong(char *song, ThreadPoole *thread) { //TODO si enviamos una cancion de una playlist, añadir previamente char* song: sutton/song1.mp3
     thread->numDescargas = 0;
     asprintf(&dPoole.msg,"\nNum descargas: %d.\n", (*thread).numDescargas);
     printF(dPoole.msg);
@@ -424,12 +414,55 @@ void threadSendSong(char *song, ThreadPoole *thread) {
     freeString(&song);
 }
 
-/*void sendPlaylist(char *playlist) {
+void sendListPlaylists(int fd_bowman) {
+    char *playlists = NULL;
+    int totalSongs = 0;
+
+    listPlaylists(dPoole.serverName, &playlists, &totalSongs);
+    printF(playlists);
+
+    char *cantidadCanciones = convertIntToString(totalSongs);
+    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", cantidadCanciones), fd_bowman);
+    freeString(&cantidadCanciones);
+
+    enviarTramas(fd_bowman, playlists);
+    freeString(&playlists);
+}
+
+void accedePlaylists(const char *path, ThreadPoole *thread) { //path = Floyd/sutton
+    struct dirent *entry;
+    DIR *dir = opendir(path);
+
+    if (dir == NULL) {
+        perror("Error al abrir el directorio");
+        return;
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG && strcmp(entry->d_name, ".DS_Store") != 0) {
+            // Es un fichero y no es ".DS_Store"
+            size_t fileNameLen = strlen(entry->d_name);
+            char *subPath = malloc(strlen(path) + fileNameLen + 2); // +2 para / y \0
+            sprintf(subPath, "%s/%s", path, entry->d_name);          
+            
+            threadSendSong(strchr(subPath, '/') + 1, thread); //queremos sutton/song1.mp3
+            freeString(&subPath);
+        }
+    }
+    closedir(dir);
+}
+
+void sendPlaylist(char *pathPlaylist, ThreadPoole *thread) { //Floyd/sutton
     // Buscar el nombre de la lista
-    // Crear thread
-    // Empezar a enviar las canciones, creo N thread por N canciones
-    // Cuando haya terminado libero todos los threads.
-}*/
+    if (searchSongOrPlaylist(pathPlaylist, NULL)) {
+        //enviar trama existe playlist
+        setTramaString(TramaCreate(0x01, "PLAY_EXIST", ""), thread->fd); 
+        accedePlaylists(pathPlaylist, thread); //accedemos playlist hasta que este valga null y vamos creando threads (por cada fichero q encuentre, creamos thread y descargamos)
+    } else {
+        //enviar trama no existe playlist
+        setTramaString(TramaCreate(0x01, "PLAY_NOEXIST", ""), thread->fd);
+    }
+}
 
 void conexionBowman(ThreadPoole* mythread) {
     Trama trama = readTrama(mythread->fd);
@@ -493,7 +526,11 @@ void conexionBowman(ThreadPoole* mythread) {
                 printF(aux);
                 threadSendSong(aux, mythread);
             } else {
-                //sendPlaylist(trama.data);
+                size_t len = strlen(mythread->user_name) + strlen(trama.data) + 2;
+                char *aux = (char *)malloc(len);
+                snprintf(aux, len, "%s/%s", mythread->user_name, trama.data);
+                printF(aux);
+                sendPlaylist(aux, mythread); //Floyd/sutton
             }
         } else {
             printF("Unknown command\n");
