@@ -29,7 +29,7 @@ Autores:
 #include <limits.h>
 #include <dirent.h>
 #include <sys/stat.h>
-//#include "semaphore_v2.h"
+#include "semaphore_v2.h"
 
 #define printF(x) write(1, x, strlen(x))
 
