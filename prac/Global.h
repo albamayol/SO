@@ -45,13 +45,13 @@ typedef struct {
     char *md5sum;
     char *nombre;
     size_t size;
-    ssize_t bytesDescargados;
+    size_t bytesDescargados; //strlen(dataFile);
 } Song;
 
 typedef struct {
     pthread_t thread;	
     Song song;
-    float porcentaje; //(bytesDescargados/tamaño) * 100. ej: 1020/1024 * 100
+    float porcentaje; //(bytesDescargados/size) * 100. ej: 1020/1024 * 100
     char *nombreDescargaComando;
 } DescargaBowman;
 
@@ -123,6 +123,7 @@ void cleanThreadsPoole(ThreadPoole** threads, int numThreads);
 void cleanThreadPoole(ThreadPoole* thread);
 void cleanThreadsBowman(DescargaBowman **descargas, int numDescargas);
 void cleanAllTheThreadsBowman(DescargaBowman **descargas, int numDescargas);
+char * resultMd5sumComand(char *pathName);
 void removeExtraSpaces(char *comanda);
 char * to_upper(char * str);
 int checkDownloadCommand(char * input);

@@ -153,6 +153,46 @@ char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *final,
     return msg;
 }
 
+char * resultMd5sumComand(char *pathName) {
+    char *command = NULL;
+
+    asprintf(&command, "md5sum %s", pathName);
+
+    FILE* pipe = popen(command, "r");
+    if (pipe == NULL) {
+        perror("popen");
+        return NULL;
+    }
+
+    // Create a dynamic buffer to store the command output
+    char* buffer = (char*)malloc(32);
+    if (buffer == NULL) {
+        perror("malloc");
+        pclose(pipe);
+        return NULL;
+    }
+
+    ssize_t bytesRead = read(fileno(pipe), buffer, 32 - 1);
+    if (bytesRead == -1) {
+        perror("read");
+        free(buffer);
+        pclose(pipe);
+        return NULL;
+    }
+
+    if (bytesRead == 0) {
+        buffer[0] = '\0';
+    } else {
+        buffer[bytesRead] = '\0';
+    }
+
+    // Close the pipe
+    pclose(pipe);
+    freeString(&command);
+
+    return buffer;
+}
+
 
 /*
 @Finalitat: Eliminar espacios en blanco adicionales

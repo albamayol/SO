@@ -320,46 +320,6 @@ int searchSong(char *pathSong, int *fileSize) {
     return found;
 }
 
-char * resultMd5sumComand(char *pathName) {
-    char *command = NULL;
-
-    asprintf(&command, "md5sum %s", pathName);
-
-    FILE* pipe = popen(command, "r");
-    if (pipe == NULL) {
-        perror("popen");
-        return NULL;
-    }
-
-    // Create a dynamic buffer to store the command output
-    char* buffer = (char*)malloc(32);
-    if (buffer == NULL) {
-        perror("malloc");
-        pclose(pipe);
-        return NULL;
-    }
-
-    ssize_t bytesRead = read(fileno(pipe), buffer, 32 - 1);
-    if (bytesRead == -1) {
-        perror("read");
-        free(buffer);
-        pclose(pipe);
-        return NULL;
-    }
-
-    if (bytesRead == 0) {
-        buffer[0] = '\0';
-    } else {
-        buffer[bytesRead] = '\0';
-    }
-
-    // Close the pipe
-    pclose(pipe);
-    freeString(&command);
-
-    return buffer;
-}
-
 int getRandomID() {
     srand(time(NULL)); // Semilla basada en el tiempo actual
     return rand() % 1000; // Genera un número aleatorio entre 0 y 999
@@ -367,41 +327,36 @@ int getRandomID() {
 
 void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id) {
     size_t len = strlen(directoryPath) + strlen(song) + 2;
-
     char *path = malloc(len);
+    char *data = malloc(244); // 256 - 3(Type + Header Length) - 9(Bytes del Header) = 244 Bytes
+    ssize_t bytesLeidos = 0;
 
     snprintf(path, len, "%s/%s", directoryPath, song);
 
     int fd_file = open(path, O_RDONLY, 0644);
     if (fd_file == -1) {
         perror("Error al crear el archivo");
-        exit(EXIT_FAILURE);
+        freeString(&path);
+        freeString(&data);
+        sig_func();
     } 
-
     freeString(&path);
 
     size_t longitudId = strlen(id);
-
-    char *data = malloc(244); // 256 - 3(Type + Header Length) - 9(Bytes del Header) = 244 Bytes
     char *buffer = malloc(244 - longitudId - 1); 
 
     strcpy(data, id);
     strcat(data, "&"); 
-    
-    ssize_t bytesLeidos = 0;
-    
     // Leer del archivo y enviar los datos
     while ((bytesLeidos = read(fd_file, buffer, 244 - longitudId - 1)) > 0) {
         strcat(data, buffer); 
-        setTramaString(TramaCreate(0x04, "FILE_DATA", data), fd_bowman);
-
+        setTramaString(TramaCreate(0x04, "FILE_DATA", data), fd_bowman); 
+        memset(data, 0, 244);
         strcpy(data, id);
         strcat(data, "&");
     }
-
-    free(data);
-    free(buffer);
-
+    freeString(&data);
+    freeString(&buffer);
     close(fd_file);
 }
 
@@ -409,16 +364,12 @@ void sendSong(char *song, int fd_bowman) {
     int fileSize = 0;
 
     size_t len = strlen(dPoole.serverName) + strlen(song) + 2;
-
     char *pathSong = malloc(strlen(dPoole.serverName) + strlen(song) + 2);
-
     snprintf(pathSong, len, "%s/%s", dPoole.serverName, song);
 
-    // Si se encuentra el archivo 'song' devolvera su tamaño por referencia
     if (searchSong(pathSong, &fileSize)) {
-        // Calcular el MD5SUM
         char *md5sum = resultMd5sumComand(pathSong);
-
+        freeString(&pathSong);
         if (md5sum != NULL) {
             // Calcular el numero random
             int randomID = getRandomID();
@@ -426,12 +377,22 @@ void sendSong(char *song, int fd_bowman) {
             char *data = createString4Params(song, convertIntToString(fileSize), md5sum, convertIntToString(randomID));
             printF(data);
             setTramaString(TramaCreate(0x04, "NEW_FILE", data), fd_bowman);
-        
             freeString(&md5sum);
             freeString(&data);
 
             // Enviar los datos del fichero
             enviarDatosSong(fd_bowman, dPoole.serverName, song, convertIntToString(randomID));
+            Trama trama = readTrama(fd_bowman); //espera respuesta estado de la descarga
+            if (strcmp(trama.header, "CHECK_OK") == 0) {
+                asprintf(&dPoole.msg,"%s song sent and downloaded successfully!\n", song);
+                printF(dPoole.msg);
+                freeString(&dPoole.msg);
+                //la cancion ya se ha descargado al completo y ahora cerramos thread de la descarga
+            } else if (strcmp(trama.header, "CHECK_KO") == 0) {
+                asprintf(&dPoole.msg,"The download of the %s song was unsuccessfull, try again\n", song);
+                printF(dPoole.msg);
+                freeString(&dPoole.msg);
+            }
         }
     }
 }
@@ -439,31 +400,25 @@ void sendSong(char *song, int fd_bowman) {
 static void *thread_function_send_song(void* thread) {
     DescargaPoole *mythread = (DescargaPoole*) thread;
 
-    asprintf(&dPoole.msg,"\nfile descriptor: %d.\n", mythread->fd_bowman);
-    printF(dPoole.msg);
-    freeString(&dPoole.msg);
-
     sendSong(mythread->nombreDescargaComando, mythread->fd_bowman);
     return NULL;
 }
 
 void threadSendSong(char *song, ThreadPoole *thread) {
+    thread->numDescargas = 0;
     asprintf(&dPoole.msg,"\nNum descargas: %d.\n", (*thread).numDescargas);
     printF(dPoole.msg);
     freeString(&dPoole.msg);
 
-    thread->numDescargas = 0;
-
     thread->descargas = realloc(thread->descargas, sizeof(DescargaPoole) * (thread->numDescargas + 1)); 
-    
     thread->descargas[thread->numDescargas].nombreDescargaComando = strdup(song);
     thread->descargas[thread->numDescargas].fd_bowman = thread->fd; // PUEDE QUE NO NECESITEMOS FD DEL STRUCT DESCARGAPOOLE
-
-    if (pthread_create(&thread->descargas[thread->numDescargas].thread, NULL, thread_function_send_song, (void *)&thread->descargas[thread->numDescargas]) != 0) {
+    thread->numDescargas++;
+    if (pthread_create(&thread->descargas[thread->numDescargas - 1].thread, NULL, thread_function_send_song, (void *)&thread->descargas[thread->numDescargas - 1]) != 0) {
         perror("Error al crear el thread para la descarga");
+        thread->numDescargas--;
     }
 
-    (*thread).numDescargas++;
     freeString(&song);
 }
 
