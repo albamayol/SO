@@ -720,7 +720,6 @@ int main(int argc, char ** argv) {
                         int numSpaces = checkDownloadCommand(dBowman.upperInput);
                         if (numSpaces == 1) {
                             //NUM ARGUMENTS CORRECTE!
-                            printF(dBowman.upperInput);
                             int typeFile = songOrPlaylist(dBowman.upperInput);
 
                             char *nombreArchivoCopia = NULL;
