@@ -78,7 +78,7 @@ void setTramaString(Trama trama, int fd) {
   freeTrama(&trama);
 }
 
-Trama TramaCreate (char type, char *header, char *data) {
+Trama TramaCreate (char type, char *header, char *data, size_t size) {
   Trama trama;
 
   trama.type = type;
@@ -88,13 +88,11 @@ Trama TramaCreate (char type, char *header, char *data) {
   memset(trama.header, 0, (trama.header_length + 1));
   strcpy(trama.header, header);
   
-  int sizeData = 256 - 3 - trama.header_length;
+  int sizeData = 256 - 3 - trama.header_length; 
   trama.data = malloc(sizeof(char) * (sizeData));
   memset(trama.data, '~', sizeData); //Padding
-  size_t sizeDataString = 0;
-  sizeDataString = strlen(data); 
 
-  for (size_t i = 0; i < sizeDataString; i++) {
+  for (size_t i = 0; i < size; i++) {
       trama.data[i] = data[i];
   }
 

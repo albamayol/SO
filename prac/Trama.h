@@ -17,7 +17,7 @@ char* createString4Params(char* param1, char* param2, char* param3, char *param4
 void shortToChars(short valor, char *cadena);
 void setTramaString (Trama trama, int fd);
 Trama readTrama(int fd);
-Trama TramaCreate (char type, char *header, char *data);
+Trama TramaCreate (char type, char *header, char *data, size_t size);
 void freeTrama(Trama *trama);
 
 #endif

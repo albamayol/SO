@@ -49,7 +49,7 @@ void openDiscoverySocket() {
 void notifyPooleDisconnected() {
     openDiscoverySocket();
     //ENVIAMOS TRAMA LOGOUTBOWMAN
-    setTramaString(TramaCreate(0x06, "POOLE_DISCONNECT", dPoole.serverName), dPoole.fdPooleClient);
+    setTramaString(TramaCreate(0x06, "POOLE_DISCONNECT", dPoole.serverName, strlen(dPoole.serverName)), dPoole.fdPooleClient);
     Trama trama = readTrama(dPoole.fdPooleClient);
     printF(trama.header);
     if (strcmp(trama.header, "CONOK") == 0) {
@@ -114,15 +114,15 @@ void printInfoFile() {
 void notifyBowmanLogout(int fd_bowman) {
     openDiscoverySocket();
     //ENVIAMOS TRAMA LOGOUTBOWMAN
-    setTramaString(TramaCreate(0x06, "BOWMAN_LOGOUT", dPoole.serverName), dPoole.fdPooleClient);
+    setTramaString(TramaCreate(0x06, "BOWMAN_LOGOUT", dPoole.serverName, strlen(dPoole.serverName)), dPoole.fdPooleClient);
     Trama trama = readTrama(dPoole.fdPooleClient);
     printF(trama.header);
     if (strcmp(trama.header, "CONOK") == 0) {
         //Avisamos Bowman OK
-        setTramaString(TramaCreate(0x06, "CONOK", dPoole.serverName), fd_bowman);
+        setTramaString(TramaCreate(0x06, "CONOK", dPoole.serverName, strlen(dPoole.serverName)), fd_bowman);
     } else if (strcmp(trama.header, "CONKO") == 0) {
         //Avisamos Bowman KO
-        setTramaString(TramaCreate(0x06, "CONKO", dPoole.serverName), fd_bowman);
+        setTramaString(TramaCreate(0x06, "CONKO", dPoole.serverName, strlen(dPoole.serverName)), fd_bowman);
     }
 
     freeTrama(&trama);
@@ -184,7 +184,7 @@ void enviarTramas(int fd_bowman, char *cadena) {
         i++;
     }
     char *numTramas = convertIntToString(i + 1);
-    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", numTramas), fd_bowman);
+    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", numTramas, strlen(numTramas)), fd_bowman);
     freeString(&numTramas);
 
     if (sizeData < 239) { // 256 - Type(1 Byte) - header_length(2 Bytes) - Header(14 Bytes) = 239 Bytes disponibles
@@ -192,7 +192,7 @@ void enviarTramas(int fd_bowman, char *cadena) {
         asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
         printF(dPoole.msg);
         freeString(&dPoole.msg);
-        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", trama), fd_bowman);
+        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", trama, strlen(trama)), fd_bowman);
     } else {
         i = 0;
         while (sizeData > 239) {
@@ -200,7 +200,7 @@ void enviarTramas(int fd_bowman, char *cadena) {
             asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
-            setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", trama), fd_bowman);
+            setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", trama, strlen(trama)), fd_bowman);
             sizeData -= 239; 
             i++;
             freeString(&trama);
@@ -209,7 +209,7 @@ void enviarTramas(int fd_bowman, char *cadena) {
         asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
         printF(dPoole.msg);
         freeString(&dPoole.msg);
-        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", trama), fd_bowman);
+        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", trama, strlen(trama)), fd_bowman);
     }
     
     freeString(&trama);
@@ -291,11 +291,11 @@ void listPlaylists(const char *path, char **fileNames, int *totalSongs) {
     closedir(dir);
 }
 
-void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id) {
+void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, int fileSize) {
     size_t len = strlen(directoryPath) + strlen(song) + 2;
     char *path = malloc(len);
-    char *data = malloc(244); // 256 - 3(Type + Header Length) - 9(Bytes del Header) = 244 Bytes
-    ssize_t bytesLeidos = 0;
+    char *data = malloc(244); // 256 - 3(Type + Header Length) - 9(Bytes del Header) = 244 Bytes + 1
+    int bytesLeidos = 0;
 
     snprintf(path, len, "%s/%s", directoryPath, song);
 
@@ -308,25 +308,40 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id) {
     } 
     freeString(&path);
 
-    size_t longitudId = strlen(id);
+    int longitudId = strlen(id);
     char *buffer = malloc(244 - longitudId - 1); 
 
     strcpy(data, id);
     strcat(data, "&"); 
     // Leer del archivo y enviar los datos
-    while ((bytesLeidos = read(fd_file, buffer, 244 - longitudId - 1)) > 0) {
-        strcat(data, buffer); 
-        setTramaString(TramaCreate(0x04, "FILE_DATA", data), fd_bowman); 
-        memset(data, 0, 244);
+
+    do {
+        bytesLeidos = read(fd_file, buffer, 244 - longitudId - 1);
+        for (int i = 0; i < bytesLeidos; i++) {
+            data[longitudId + 1 + i] = buffer[i];
+        }
+
+        setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman); 
+
         strcpy(data, id);
         strcat(data, "&");
+        fileSize -= bytesLeidos; 
+    } while(fileSize >= 244);
+
+    if (fileSize > 0) {
+        bytesLeidos = read(fd_file, buffer, fileSize);
+
+        for (int i = 0; i < bytesLeidos; i++) {
+            data[longitudId + 1 + i] = buffer[i];
+        }
+        setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman); 
     }
     freeString(&data);
     freeString(&buffer);
     close(fd_file);
 }
 
-int searchSongOrPlaylist(char *pathSongPlaylist, int *fileSize) {
+int searchSong(char *pathSongPlaylist, int *fileSize) {
     struct stat st;
     int found = 0;
 
@@ -336,6 +351,18 @@ int searchSongOrPlaylist(char *pathSongPlaylist, int *fileSize) {
     } else {
         perror("Error al encontrar la canción/playlist\n");
         *fileSize = 0;
+    }
+    return found;
+}
+
+int searchPlaylist(char *pathSongPlaylist) {
+    struct stat st;
+    int found = 0;
+
+    if (stat(pathSongPlaylist, &st) == 0) {
+        found = 1;
+    } else {
+        perror("Error al encontrar la canción/playlist\n");
     }
     return found;
 }
@@ -353,8 +380,8 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
     char *pathSong = malloc(strlen(dPoole.serverName) + strlen(song) + 2);
     snprintf(pathSong, len, "%s/%s", dPoole.serverName, song);
 
-    if (searchSongOrPlaylist(pathSong, &fileSize)) {
-        setTramaString(TramaCreate(0x01, "FILE_EXIST", ""), fd_bowman); 
+    if (searchSong(pathSong, &fileSize)) {
+        setTramaString(TramaCreate(0x01, "FILE_EXIST", "", 0), fd_bowman); 
 
         char *md5sum = resultMd5sumComand(pathSong);
         freeString(&pathSong);
@@ -367,12 +394,12 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
             } else { //es cancion normal
                 data = createString4Params(song, convertIntToString(fileSize), md5sum, convertIntToString(randomID));
             }
-            printF(data);
-            setTramaString(TramaCreate(0x04, "NEW_FILE", data), fd_bowman);
+    
+            setTramaString(TramaCreate(0x04, "NEW_FILE", data, strlen(data)), fd_bowman);
             freeString(&md5sum);
             freeString(&data);
 
-            enviarDatosSong(fd_bowman, dPoole.serverName, song, convertIntToString(randomID));
+            enviarDatosSong(fd_bowman, dPoole.serverName, song, convertIntToString(randomID), fileSize);
             Trama trama = readTrama(fd_bowman); //espera respuesta estado de la descarga
             if (strcmp(trama.header, "CHECK_OK") == 0) {
                 asprintf(&dPoole.msg,"%s song sent and downloaded successfully!\n", song);
@@ -385,7 +412,7 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
             }
         }
     } else {
-        setTramaString(TramaCreate(0x01, "FILE_NOEXIST", ""), fd_bowman);
+        setTramaString(TramaCreate(0x01, "FILE_NOEXIST", "", 0), fd_bowman);
     }
 }
 
@@ -410,8 +437,6 @@ void threadSendSong(char *song, ThreadPoole *thread) { //TODO si enviamos una ca
         perror("Error al crear el thread para la descarga");
         thread->numDescargas--;
     }
-
-    freeString(&song);
 }
 
 void sendListPlaylists(int fd_bowman) {
@@ -422,14 +447,14 @@ void sendListPlaylists(int fd_bowman) {
     printF(playlists);
 
     char *cantidadCanciones = convertIntToString(totalSongs);
-    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", cantidadCanciones), fd_bowman);
+    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", cantidadCanciones, strlen(cantidadCanciones)), fd_bowman);
     freeString(&cantidadCanciones);
 
     enviarTramas(fd_bowman, playlists);
     freeString(&playlists);
 }
 
-void accedePlaylists(const char *path, ThreadPoole *thread) { //path = Floyd/sutton
+void accedePlaylists(const char *path, ThreadPoole *thread) { //path = Pepe/sutton
     struct dirent *entry;
     DIR *dir = opendir(path);
 
@@ -439,28 +464,28 @@ void accedePlaylists(const char *path, ThreadPoole *thread) { //path = Floyd/sut
     }
 
     while ((entry = readdir(dir)) != NULL) {
-        if (entry->d_type == DT_REG && strcmp(entry->d_name, ".DS_Store") != 0) {
-            // Es un fichero y no es ".DS_Store"
+        if (entry->d_type == DT_REG && strcmp(entry->d_name, ".DS_Store") != 0) { // Es un fichero y no es ".DS_Store"
             size_t fileNameLen = strlen(entry->d_name);
             char *subPath = malloc(strlen(path) + fileNameLen + 2); // +2 para / y \0
             sprintf(subPath, "%s/%s", path, entry->d_name);          
             
-            threadSendSong(strchr(subPath, '/') + 1, thread); //queremos sutton/song1.mp3
+            char *subPathAux = strchr(subPath, '/') + 1;
+            threadSendSong(subPathAux, thread); //sutton/song1.mp3
             freeString(&subPath);
         }
     }
     closedir(dir);
 }
 
-void sendPlaylist(char *pathPlaylist, ThreadPoole *thread) { //Floyd/sutton
+void sendPlaylist(char *pathPlaylist, ThreadPoole *thread) { //Pepe/sutton
     // Buscar el nombre de la lista
-    if (searchSongOrPlaylist(pathPlaylist, NULL)) {
+    if (searchPlaylist(pathPlaylist)) {
         //enviar trama existe playlist
-        setTramaString(TramaCreate(0x01, "PLAY_EXIST", ""), thread->fd); 
+        setTramaString(TramaCreate(0x01, "PLAY_EXIST", "", 0), thread->fd); 
         accedePlaylists(pathPlaylist, thread); //accedemos playlist hasta que este valga null y vamos creando threads (por cada fichero q encuentre, creamos thread y descargamos)
     } else {
         //enviar trama no existe playlist
-        setTramaString(TramaCreate(0x01, "PLAY_NOEXIST", ""), thread->fd);
+        setTramaString(TramaCreate(0x01, "PLAY_NOEXIST", "", 0), thread->fd);
     }
 }
 
@@ -474,9 +499,9 @@ void conexionBowman(ThreadPoole* mythread) {
 
     // Transmisión Poole->Bowman para informar del estado de la conexion.
     if (strcmp(trama.header, "NEW_BOWMAN") == 0) {
-        setTramaString(TramaCreate(0x01, "CON_OK", ""), mythread->fd);
+        setTramaString(TramaCreate(0x01, "CON_OK", "", 0), mythread->fd);
     } else {
-        setTramaString(TramaCreate(0x01, "CON_KO", ""), mythread->fd);
+        setTramaString(TramaCreate(0x01, "CON_KO", "", 0), mythread->fd);
         close(mythread->fd);
 
         freeTrama(&trama);
@@ -520,17 +545,18 @@ void conexionBowman(ThreadPoole* mythread) {
 
             int typeFile = songOrPlaylist(upperInput);
             freeString(&upperInput);
-
+            
             if (typeFile == 1) {
                 char *aux = strdup(trama.data);
                 printF(aux);
                 threadSendSong(aux, mythread);
+                freeString(&aux);
             } else {
-                size_t len = strlen(mythread->user_name) + strlen(trama.data) + 2;
+                size_t len = strlen(dPoole.serverName) + strlen(trama.data) + 2;
                 char *aux = (char *)malloc(len);
-                snprintf(aux, len, "%s/%s", mythread->user_name, trama.data);
+                snprintf(aux, len, "%s/%s", dPoole.serverName, trama.data);
                 printF(aux);
-                sendPlaylist(aux, mythread); //Floyd/sutton
+                sendPlaylist(aux, mythread); //Pepe/sutton
             }
         } else {
             printF("Unknown command\n");
@@ -617,7 +643,7 @@ void establishDiscoveryConnection() {
     
     char* aux = NULL;
     aux = createString3Params(dPoole.serverName, dPoole.ipServer, dPoole.puertoServer);
-    setTramaString(TramaCreate(0x01, "NEW_POOLE", aux), dPoole.fdPooleClient);
+    setTramaString(TramaCreate(0x01, "NEW_POOLE", aux, strlen(aux)), dPoole.fdPooleClient);
     freeString(&aux);
 
     Trama trama = readTrama(dPoole.fdPooleClient);    

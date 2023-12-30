@@ -58,9 +58,9 @@ void conexionPoole(int fd_poole) {
         if (decreaseNumConnections(dDiscovery.poole_list, dDiscovery.poole_list_size, trama.data)) {
             printF(trama.header);
             printF(trama.data);
-            setTramaString(TramaCreate(0x06, "CONOK", ""), fd_poole);   
+            setTramaString(TramaCreate(0x06, "CONOK", "", 0), fd_poole);   
         } else {
-            setTramaString(TramaCreate(0x06, "CONKO", ""), fd_poole);
+            setTramaString(TramaCreate(0x06, "CONKO", "", 0), fd_poole);
         }
         freeTrama(&trama);
 
@@ -72,12 +72,12 @@ void conexionPoole(int fd_poole) {
         pthread_mutex_unlock(&dDiscovery.mutexList);    //UNLOCK
 
         if (erasePooleResult) {
-            setTramaString(TramaCreate(0x06, "CONOK", ""), fd_poole);   
+            setTramaString(TramaCreate(0x06, "CONOK", "", 0), fd_poole);   
             asprintf(&buffer, "sizeArrayPoolesWhenPooleDisconnects: %d \n", dDiscovery.poole_list_size);
             printF(buffer);
             freeString(&buffer);
         } else {
-            setTramaString(TramaCreate(0x06, "CONKO", ""), fd_poole);
+            setTramaString(TramaCreate(0x06, "CONKO", "", 0), fd_poole);
         }
         freeTrama(&trama);
     } else {
@@ -124,7 +124,7 @@ void conexionPoole(int fd_poole) {
 
         printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
 
-        setTramaString(TramaCreate(0x01, "CON_OK", ""), fd_poole);    
+        setTramaString(TramaCreate(0x01, "CON_OK", "", 0), fd_poole);    
     }
 
     close(fd_poole);
@@ -144,7 +144,7 @@ void conexionBowman(int fd_bowman) {
 
     if (e.num_connections == -1) {
         //NO HAY POOLE'S CONECTADOS! NO PODEMOS REDIRIGIR EL BOWMAN A NINGUN POOLE --> ENVIAMOS TRAMA CON_KO!!!
-        setTramaString(TramaCreate(0x01, "CON_KO", ""), fd_bowman);
+        setTramaString(TramaCreate(0x01, "CON_KO", "", 0), fd_bowman);
     } else {
         char* aux = NULL;
         char* portString = NULL;
@@ -154,7 +154,7 @@ void conexionBowman(int fd_bowman) {
         freeElement(&e);
         freeString(&portString);
         
-        setTramaString(TramaCreate(0x01, "CON_OK", aux), fd_bowman);
+        setTramaString(TramaCreate(0x01, "CON_OK", aux, strlen(aux)), fd_bowman);
         freeString(&aux);
         printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
     }
