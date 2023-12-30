@@ -545,7 +545,7 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
             break;
         }
         file_size -= bytesLeidos - 12 - strlen(convertIntToString(id)) - 1;
-        //actualizamos porcentaje y bytesdescargados
+        //Actualizamos porcentaje.
         mythread->porcentaje = ((float)mythread->song.bytesDescargados / mythread->song.size) * 100;
 
         freeString(&dataFile);
