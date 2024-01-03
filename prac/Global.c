@@ -158,7 +158,7 @@ char * resultMd5sumComand(char *pathName) {
 
     asprintf(&command, "md5sum %s", pathName);
 
-    FILE* pipe = popen(command, "r");
+    FILE* pipe = popen(command, "r"); //popen no se puede utilizar.
     if (pipe == NULL) {
         perror("popen");
         return NULL;

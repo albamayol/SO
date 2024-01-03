@@ -550,11 +550,14 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
 
         freeString(&dataFile);
     } while (bytesLeidos > 0); 
+    bytesLeidos = read(dBowman.fdPoole, buffer, 256);
+
 
     //COMPROBACIÓN MD5SUM
     char *md5sum = resultMd5sumComand(path);
     if (md5sum != NULL) {
         if (strcmp(md5sum, mythread->song.md5sum) == 0) {
+            printF("KEV");
             //OK
             setTramaString(TramaCreate(0x05, "CHECK_OK", "", 0), dBowman.fdPoole);
         } else {
@@ -563,7 +566,11 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
         }
         freeString(&md5sum);
     }
-
+    char auxA[1];
+    bytesLeidos = read(dBowman.fdPoole, auxA, 1);
+    asprintf(&dBowman.msg, "\n%zd datos en el FD al terminar la descarga de una song\n", bytesLeidos);
+    printF(dBowman.msg);
+    freeString(&dBowman.msg);
     close(fd_file);
     freeString(&path);
 }
@@ -603,7 +610,7 @@ static void *thread_function_download_song(void* thread) {
     DescargaBowman *mythread = (DescargaBowman*) thread;
 
     downloadSong(mythread);
-    return NULL;
+    return NULL; // bien
 }
 
 void threadDownloadSong(char *song) {
@@ -690,7 +697,18 @@ int main(int argc, char ** argv) {
 
             printInfoFileBowman();
 
-            while (1) {
+            //hilo de lectura
+            while(1) {
+                //que finalize cuando se desconecte el cliente
+                read(); //cambiar funcion readTrama.
+                //añadir la trama a la matriz global.
+            }
+
+            //2 hilos
+            //uno enviar peticiones a poole y otro recibir peticiones
+            while (1) { //escritura
+            //eliminar threads descargas canciones y playlists //entendido!!! //Solo podemos tener un hilo leyendo al mismo tiempo
+            //crear un hilo de lectura
                 printF("$ ");
                 dBowman.input = read_until(0, '\n');
                 dBowman.input[strlen(dBowman.input)] = '\0';

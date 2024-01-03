@@ -112,6 +112,8 @@ Trama readTrama(int fd) {
   inicializarTrama(&trama);
 
   read(fd, &trama.type, sizeof(char));  
+  //si el type es 4
+  
 
   read(fd, &trama.header_length, sizeof(unsigned short));
   trama.header = malloc((trama.header_length+1) * sizeof(char)); 
@@ -121,7 +123,8 @@ Trama readTrama(int fd) {
     trama.header[trama.header_length] = '\0'; 
   } 
 
-  trama.data = read_until(fd, '~');
+  //trama.data = read_until(fd, '~');
+
 
   size_t sizeData = 256 - 3 - trama.header_length - strlen(trama.data) - 1; // '~' restantes para leer la trama completa(256 Bytes)
 
@@ -129,6 +132,8 @@ Trama readTrama(int fd) {
   read(fd, buffer, sizeData * sizeof(char));
 
   freeString(&buffer);
+
+  //objetivo: leer 256 del tiron, segun el type actuamos de una forma u otra
   
   return trama;
 }

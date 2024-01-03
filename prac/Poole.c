@@ -200,7 +200,7 @@ void enviarTramas(int fd_bowman, char *cadena) {
             asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
-            setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", trama, strlen(trama)), fd_bowman);
+            setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", trama, strlen(trama)), fd_bowman); //PETA
             sizeData -= 239; 
             i++;
             freeString(&trama);
@@ -209,7 +209,7 @@ void enviarTramas(int fd_bowman, char *cadena) {
         asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
         printF(dPoole.msg);
         freeString(&dPoole.msg);
-        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", trama, strlen(trama)), fd_bowman);
+        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", trama, strlen(trama)), fd_bowman); //PETA
     }
     
     freeString(&trama);
@@ -511,6 +511,16 @@ void conexionBowman(ThreadPoole* mythread) {
     freeTrama(&trama);
 
     //TRANSMISIONES POOLE-->BOWMAN
+
+    //trhead recibir peticiones que le envia Bowman y N que se encarguen de procesar las respuestas por N clientes.
+    //lo ideal seria tener un uncio hile de respuesta por cliente. // memoria compartida: lista de tareas del clientes
+
+    //dfgsdfgdsfg
+    //sdfgdsfgsdfg
+    //dfasdgasdgfdfg
+
+    //1 semaforo por cliente.
+
     while(1) {
         trama = readTrama(mythread->fd);
 
@@ -552,6 +562,7 @@ void conexionBowman(ThreadPoole* mythread) {
                 threadSendSong(aux, mythread);
                 freeString(&aux);
             } else {
+                //me han pedido una lista
                 size_t len = strlen(dPoole.serverName) + strlen(trama.data) + 2;
                 char *aux = (char *)malloc(len);
                 snprintf(aux, len, "%s/%s", dPoole.serverName, trama.data);
