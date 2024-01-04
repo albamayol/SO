@@ -42,11 +42,6 @@ typedef struct {
 	int num_connections;
 } Element;
 
-/*typedef struct {
-    int idQueue;
-    int idSong;
-} RefDescarga;*/
-
 typedef struct {
     int id;
     char *md5sum;
@@ -98,10 +93,10 @@ typedef struct {
     int bowmanConnected;
     Element pooleConnected;
     DescargaBowman *descargas;
+    pthread_t threadRead;
     int numDescargas;
     int msgQueuePetitions;
     int msgQueueDescargas;
-    //int numQueuesDescarga;
     InfoPlaylist* infoPlaylists;
     int numInfoPlaylists;
 } dataBowman;

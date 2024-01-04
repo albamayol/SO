@@ -11,7 +11,6 @@ dataBowman dBowman;
 typedef struct {
     long idmsg;
     Trama trama;
-    //int idSong; //Si trama no es de info de una song, idSong == -1, sino tindra el id corresponent a la song
 } Missatge;
 
 int requestLogout();
@@ -156,14 +155,17 @@ void establishPooleConnection() {
     setTramaString(TramaCreate(0x01, "NEW_BOWMAN", dBowman.clienteName, strlen(dBowman.clienteName)), dBowman.fdPoole);
 
     // Recepción Poole->Bowman para comprobar el estado de la conexion.
-    Trama trama = readTrama(dBowman.fdPoole);
-    if (strcmp(trama.header, "CON_OK") == 0) {
+    Missatge msg;
+    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Trama), 0, 0);
+   
+    //Trama trama = readTrama(dBowman.fdPoole);
+    if (strcmp(msg.trama.header, "CON_OK") == 0) {
         dBowman.bowmanConnected = 1;
-    } else if (strcmp(trama.header, "CON_KO") == 0) {
+    } else if (strcmp(msg.trama.header, "CON_KO") == 0) {
         close(dBowman.fdPoole);
     }
 
-    freeTrama(&trama);
+    freeTrama(&(msg.trama));
 }
 
 void juntarTramasSongs(int numTramas, char **songs) {
@@ -706,10 +708,9 @@ void creacionMsgQueues() {
         return;
     }
     dBowman.msgQueueDescargas = id_queue;
-    
 }
 
-void creacionHiloLectura() {
+static void *thread_function_read() {
     while(1) {
         //que finalize cuando se desconecte el cliente
 
@@ -722,10 +723,16 @@ void creacionHiloLectura() {
         //CRIBAJE --> añadir mensaje a msg queue de peticiones o msg queue de descargas
         //CUANDO LEAMOS UN MESSAGE DE TIPO X, COMO NOS QUEDARÀ EL GAP Y SE AÑADIRIA LA PROXIMA TRAMA, JUSTO AL HACER RCV HACEMOS EN LA LINIA DE ABAJO RELLENAMOS EL GAP DEJADO CON UN MENSAJE CON TIPO 5000, QUE NUNCA SE VA A DAR
         if (strcmp(trama.header, "FILE_DATA") == 0) { 
-            //cribaje segun idsong!!! UNA SOLA QUEUE MSG DINAMICA QUE EL TYPE DEL MSG SERA EL ID DE LA SONG
-            //msg.idmsg = idSong;
+            char* stringID = read_until_string(trama.data, '&'); //cribaje segun idsong!!! UNA SOLA QUEUE MSG QUE EL TYPE DEL MSG SERA EL ID DE LA SONG
+            msg.idmsg = atoi(stringID);
+            freeString(&stringID);
+
+            if (msgsnd(dBowman.msgQueueDescargas, &msg, sizeof(Missatge), IPC_NOWAIT) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
+                perror("msgsnd"); 
+                exit(EXIT_FAILURE);
+            }
         } else {
-            if (strcmp(trama.header, "CONOK") == 0 || strcmp(trama.header, "CONKO") == 0) {                                     //LOGOUT
+            if (strcmp(trama.header, "CONOK") == 0 || strcmp(trama.header, "CONKO") == 0) {                                    //LOGOUT
                 msg.idmsg = 3;
             } else if (strcmp(trama.header, "SONGS_RESPONSE") == 0) {                                                           //LIST SONGS
                 msg.idmsg = 1;
@@ -741,13 +748,21 @@ void creacionHiloLectura() {
                 msg.idmsg = 6;
             } 
             if (msgsnd(dBowman.msgQueuePetitions, &msg, sizeof(Missatge), IPC_NOWAIT) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
-                perror("msgsnd");
+                perror("msgsnd"); 
                 exit(EXIT_FAILURE);
             }
         } 
         
         freeTrama(&trama);
         //freeTrama(&(msg.trama));
+    }
+
+    return NULL; 
+}
+
+void creacionHiloLectura() {
+    if (pthread_create(&dBowman.threadRead, NULL, thread_function_read, NULL) != 0) {
+        perror("Error al crear el thread de lectura\n");
     }
 }
 
