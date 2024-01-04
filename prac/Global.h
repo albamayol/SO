@@ -30,6 +30,7 @@ Autores:
 #include <limits.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <sys/msg.h>
 #include "semaphore_v2.h"
 
 #define printF(x) write(1, x, strlen(x))
@@ -40,12 +41,6 @@ typedef struct {
 	int port;
 	int num_connections;
 } Element;
-
-typedef struct {
-    long idmsg;
-    Trama trama;
-    //int idSong; //Si trama no es de info de una song, idSong == -1, sino tindra el id corresponent a la song
-} Missatge;
 
 /*typedef struct {
     int idQueue;

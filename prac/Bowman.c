@@ -8,6 +8,12 @@ Autores:
 
 dataBowman dBowman;
 
+typedef struct {
+    long idmsg;
+    Trama trama;
+    //int idSong; //Si trama no es de info de una song, idSong == -1, sino tindra el id corresponent a la song
+} Missatge;
+
 int requestLogout();
 /*
 @Finalitat: Inicializar las variables a NULL.
@@ -24,8 +30,6 @@ void inicializarDataBowman() {
     dBowman.ip = NULL;
     dBowman.puerto = NULL;
     dBowman.bowmanConnected = 0;
-    dBowman.msgQueuesDescargas = NULL;
-    dBowman.numQueuesDescarga = 0;
     dBowman.infoPlaylists = NULL;
 }
 /*
@@ -656,7 +660,7 @@ void requestDownloadSong(char* nombreArchivoCopia) {
     }    
 }
 
-void requestDownloadPlaylist(char* nombreArchivoCopia, ) {
+void requestDownloadPlaylist(char* nombreArchivoCopia) {
     setTramaString(TramaCreate(0x03, "DOWNLOAD_LIST", nombreArchivoCopia, strlen(nombreArchivoCopia)), dBowman.fdPoole); //playlistname / songname
 
     //ESPERAMOS TRAMA SI PLAYLIST EXISTE O NO
@@ -670,7 +674,7 @@ void requestDownloadPlaylist(char* nombreArchivoCopia, ) {
         freeString(&playlistDirectory);
 
         //por cada cancion de la playlist creamos su thread
-        int numSongs = numSongsDePlaylist(InfoPlaylist* infoPlaylists, char* listName);
+        int numSongs = numSongsDePlaylist(dBowman.infoPlaylists, nombreArchivoCopia);
         for (int i = 0; i < numSongs; i++) {
             threadDownloadSong(nombreArchivoCopia);
         }
@@ -690,16 +694,16 @@ void creacionMsgQueues() {
     
     int id_queue = msgget(IPC_PRIVATE, 0600 | IPC_CREAT);
     if (id_queue < 0) {
-        write(1, MSG_ERROR, strlen(MSG_ERROR));
-        return NULL;
+        write(1, "Error al crear la cua de missatges de les peticions\n", strlen("Error al crear la cua de missatges de les peticions\n"));
+        return;
     }
-    dBowman.msgQueuePetition = id_queue;
+    dBowman.msgQueuePetitions = id_queue;
 
     //creamos msgqueue para descargas de songs
     id_queue = msgget(IPC_PRIVATE, 0600 | IPC_CREAT);
     if (id_queue < 0) {
-        write(1, MSG_ERROR, strlen(MSG_ERROR));
-        return NULL;
+        write(1, "Error al crear la cua de missatges de les descargues\n", strlen("Error al crear la cua de missatges de les descargues\n"));
+        return;
     }
     dBowman.msgQueueDescargas = id_queue;
     
@@ -710,7 +714,7 @@ void creacionHiloLectura() {
         //que finalize cuando se desconecte el cliente
 
         Missatge msg;
-        Trama trama = readTrama(fdBowman.fdPoole); 
+        Trama trama = readTrama(dBowman.fdPoole); 
         msg.trama.type = trama.type;
         msg.trama.header_length = trama.header_length;
         msg.trama.header = strdup(trama.header);
@@ -719,7 +723,7 @@ void creacionHiloLectura() {
         //CUANDO LEAMOS UN MESSAGE DE TIPO X, COMO NOS QUEDARÀ EL GAP Y SE AÑADIRIA LA PROXIMA TRAMA, JUSTO AL HACER RCV HACEMOS EN LA LINIA DE ABAJO RELLENAMOS EL GAP DEJADO CON UN MENSAJE CON TIPO 5000, QUE NUNCA SE VA A DAR
         if (strcmp(trama.header, "FILE_DATA") == 0) { 
             //cribaje segun idsong!!! UNA SOLA QUEUE MSG DINAMICA QUE EL TYPE DEL MSG SERA EL ID DE LA SONG
-            msg.idmsg = idSong;
+            //msg.idmsg = idSong;
         } else {
             if (strcmp(trama.header, "CONOK") == 0 || strcmp(trama.header, "CONKO") == 0) {                                     //LOGOUT
                 msg.idmsg = 3;
@@ -736,7 +740,7 @@ void creacionHiloLectura() {
             } else if (strcmp(trama.header, "NEW_FILE") == 0) {                                                                 //NEW_FILE 
                 msg.idmsg = 6;
             } 
-            if (msgsnd(dBowman.msgQueuePetition, &msg, sizeof(Missatge), IPC_NOWAIT) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
+            if (msgsnd(dBowman.msgQueuePetitions, &msg, sizeof(Missatge), IPC_NOWAIT) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
                 perror("msgsnd");
                 exit(EXIT_FAILURE);
             }
