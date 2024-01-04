@@ -24,6 +24,9 @@ void inicializarDataBowman() {
     dBowman.ip = NULL;
     dBowman.puerto = NULL;
     dBowman.bowmanConnected = 0;
+    dBowman.msgQueuesDescargas = NULL;
+    dBowman.numQueuesDescarga = 0;
+    dBowman.infoPlaylists = NULL;
 }
 /*
 @Finalitat: Manejar la recepción de la signal (SIGINT) y liberar los recursos utilizados hasta el momento.
@@ -32,6 +35,7 @@ void inicializarDataBowman() {
 */
 void sig_func() {
     // limpiar los threads descargas. TODO
+    // limpiar las msg queues. TODO
     if(dBowman.bowmanConnected) {   //Si bowman està connectat a poole
         if (requestLogout()) {
             printF("Thanks for using HAL 9000, see you soon, music lover!\n");
@@ -360,6 +364,15 @@ char ***procesarTramasPlaylists(char *playlists, int **numCancionesPorLista, int
     return listas;
 }
 
+int numSongsDePlaylist(InfoPlaylist* infoPlaylists, char* listName) {
+    for (int i = 0; i < dBowman.numInfoPlaylists; i++) {
+        if (strcmp(infoPlaylists[i].nameplaylist, listName) == 0) {
+            return infoPlaylists[i].numSongs; //devolvemos numero de canciones que tiene esa playlist
+        }
+    }
+    return -1;
+}
+
 void printarPlaylists(int numListas, char ***listas, int *numCancionesPorLista) {
     asprintf(&dBowman.msg, "\nThere are %d lists available for download:", numListas);
     printF(dBowman.msg);
@@ -369,6 +382,12 @@ void printarPlaylists(int numListas, char ***listas, int *numCancionesPorLista) 
         asprintf(&dBowman.msg, "\n%d. %s", i + 1, listas[i][0]);
         printF(dBowman.msg);
         freeString(&dBowman.msg);
+
+        //guardamos info Playlists actuales
+        dBowman.infoPlaylists = realloc(dBowman.infoPlaylists, sizeof(InfoPlaylist) * dBowman.numInfoPlaylists + 1);
+        dBowman.infoPlaylists[dBowman.numInfoPlaylists].nameplaylist = strdup(listas[i][0]); 
+        dBowman.infoPlaylists[dBowman.numInfoPlaylists].numSongs = numCancionesPorLista[i];
+        dBowman.numInfoPlaylists++;
 
         free(listas[i][0]);
         
@@ -412,7 +431,7 @@ void requestListPlaylists() {
     playlists = juntarTramasPlaylists(numTramas);
 
     listas = procesarTramasPlaylists(playlists, &numCancionesPorLista, numCanciones, &numListas);
-
+    
     printarPlaylists(numListas, listas, numCancionesPorLista);
 
     free(playlists);
@@ -422,7 +441,7 @@ int requestLogout() {
     setTramaString(TramaCreate(0x06, "EXIT", dBowman.clienteName, strlen(dBowman.clienteName)), dBowman.fdPoole);
 
     char aux[257];
-    ssize_t bytesLeidos = read(dBowman.fdPoole, aux, 256);
+    ssize_t bytesLeidos = read(dBowman.fdPoole, aux, 256);  //
     aux[256] = '\0';
 
     //dBowman.bowmanConnected = 0;
@@ -478,7 +497,6 @@ char* read_until_string(char *string, char delimiter) {
 void getIdData(char* buffer, int *id, char** dataFile, DescargaBowman *mythread) {    //separamos id & datos archivo
     int counter = 0, i = 0; //lengthData = 244; //256 - (1 - 2 - 9 (header: "FILE_DATA")) = 244
     char* idString = (char *) malloc (1);
-    *dataFile = (char *) malloc (1);
 
     //primero obtenemos el id
     while (buffer[counter] != '&') {
@@ -493,12 +511,12 @@ void getIdData(char* buffer, int *id, char** dataFile, DescargaBowman *mythread)
 
     counter++; //saltamos &
 
-    //obtenemos datos 
     while ((counter < 244) && mythread->song.bytesDescargados < mythread->song.size) {    
+        *dataFile = (char*) realloc (*dataFile, i + 1);
         (*dataFile)[i] = buffer[counter];
         i++;
         counter++;
-        *dataFile = (char* ) realloc (*dataFile, i + 1);
+       
         mythread->song.bytesDescargados++; 
     }
 }
@@ -518,10 +536,10 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
 
     size_t len = strlen(directory) + strlen(mythread->song.nombre) + 2;
     char *path = malloc(len);
-    snprintf(path, len, "%s/%s", directory, mythread->song.nombre);
+    snprintf(path, len, "%s/%s", directory, mythread->song.nombre);//Floyd/sutton/song2
 
     // Creamos el archivo .mp3
-    int fd_file = open(path, O_CREAT | O_RDWR, 0644); // Apertura para leer y escribir
+    int fd_file = open(path, O_CREAT | O_RDWR, 0644); 
     if (fd_file == -1) {
         perror("Error al crear el archivo");
         freeString(&path);
@@ -530,9 +548,7 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
     }
     size_t file_size = size;
     do {
-        //memset(buffer, 0, 256); // Limpiar el buffer de lectura
-
-        bytesLeidos = read(dBowman.fdPoole, buffer, 256);
+        bytesLeidos = read(dBowman.fdPoole, buffer, 256); //FILE_DATA --> dynamic msg queue
         if (bytesLeidos == -1) {
             perror("Error al leer desde el file descriptor de Poole");
             break;
@@ -550,11 +566,12 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
 
         freeString(&dataFile);
     } while (bytesLeidos > 0); 
-    bytesLeidos = read(dBowman.fdPoole, buffer, 256);
-
 
     //COMPROBACIÓN MD5SUM
     char *md5sum = resultMd5sumComand(path);
+    printF("mdsum descarga: ");
+    printF(md5sum);
+    printF("\n");
     if (md5sum != NULL) {
         if (strcmp(md5sum, mythread->song.md5sum) == 0) {
             printF("KEV");
@@ -566,11 +583,7 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
         }
         freeString(&md5sum);
     }
-    char auxA[1];
-    bytesLeidos = read(dBowman.fdPoole, auxA, 1);
-    asprintf(&dBowman.msg, "\n%zd datos en el FD al terminar la descarga de una song\n", bytesLeidos);
-    printF(dBowman.msg);
-    freeString(&dBowman.msg);
+    
     close(fd_file);
     freeString(&path);
 }
@@ -580,7 +593,8 @@ void downloadSong(DescargaBowman *mythread) {
     int inicio = 0, i = 1;
 
     printF("Download started!\n");
-    ssize_t bytesLeidos = read(dBowman.fdPoole, aux, 256);
+    //leemos cola mensajes estatica
+    ssize_t bytesLeidos = read(dBowman.fdPoole, aux, 256); // NEW_FILE 
     aux[256] = '\0';
 
     checkPooleConnection(bytesLeidos);
@@ -594,7 +608,7 @@ void downloadSong(DescargaBowman *mythread) {
                 break;
             case 2: mythread->song.size = atoi(paramDataSong);
                 break;
-            case 3: mythread->song.md5sum = strdup(paramDataSong);
+            case 3: mythread->song.md5sum = strdup(paramDataSong); //Floyd/sutton
                 break;
             case 4: mythread->song.id = atoi(paramDataSong);
                 break;
@@ -603,6 +617,7 @@ void downloadSong(DescargaBowman *mythread) {
         i++;
     }    
     freeString(&dataSong);
+    
     createMP3FileInDirectory(dBowman.clienteName, mythread, mythread->song.size);
 }
 
@@ -610,10 +625,10 @@ static void *thread_function_download_song(void* thread) {
     DescargaBowman *mythread = (DescargaBowman*) thread;
 
     downloadSong(mythread);
-    return NULL; // bien
+    return NULL; 
 }
 
-void threadDownloadSong(char *song) {
+void threadDownloadSong(char *song) {   
     dBowman.descargas = realloc(dBowman.descargas, sizeof(DescargaBowman) * (dBowman.numDescargas + 1)); 
     dBowman.descargas[dBowman.numDescargas].nombreDescargaComando = strdup(song);
     dBowman.descargas[dBowman.numDescargas].porcentaje = 0.00; 
@@ -636,27 +651,99 @@ void requestDownloadSong(char* nombreArchivoCopia) {
     if (strcmp(trama.header, "FILE_EXIST") == 0) {
         freeTrama(&trama);
         threadDownloadSong(nombreArchivoCopia);
-    } else {
+    } else if (strcmp(trama.header, "FILE_NOEXIST") == 0) {
         freeTrama(&trama);
     }    
 }
 
-void requestDownloadPlaylist(char* nombreArchivoCopia) {
+void requestDownloadPlaylist(char* nombreArchivoCopia, ) {
     setTramaString(TramaCreate(0x03, "DOWNLOAD_LIST", nombreArchivoCopia, strlen(nombreArchivoCopia)), dBowman.fdPoole); //playlistname / songname
 
     //ESPERAMOS TRAMA SI PLAYLIST EXISTE O NO
     Trama trama = readTrama(dBowman.fdPoole);
     if (strcmp(trama.header, "PLAY_EXIST") == 0) {
         freeTrama(&trama);
-        // Crear directorio para la playlist.
 
         char *playlistDirectory = malloc(strlen(dBowman.clienteName) + strlen(nombreArchivoCopia) + 2); // +2 para / y \0
         sprintf(playlistDirectory, "%s/%s", dBowman.clienteName, nombreArchivoCopia);   
         createDirectory(playlistDirectory);
         freeString(&playlistDirectory);
-        threadDownloadSong(nombreArchivoCopia);
-    } else {
+
+        //por cada cancion de la playlist creamos su thread
+        int numSongs = numSongsDePlaylist(InfoPlaylist* infoPlaylists, char* listName);
+        for (int i = 0; i < numSongs; i++) {
+            threadDownloadSong(nombreArchivoCopia);
+        }
+    } else if (strcmp(trama.header, "PLAY_NOEXIST") == 0) {
         freeTrama(&trama);
+    }
+}
+
+void creacionMsgQueues() {
+    //[0] --> connect Poole
+    //[1] --> list songs
+    //[2] --> lists playlists
+    //[3] --> logout
+    //[4] --> check download song
+    //[5] --> check download playlist
+    //[6] --> NEW_FILE
+    
+    int id_queue = msgget(IPC_PRIVATE, 0600 | IPC_CREAT);
+    if (id_queue < 0) {
+        write(1, MSG_ERROR, strlen(MSG_ERROR));
+        return NULL;
+    }
+    dBowman.msgQueuePetition = id_queue;
+
+    //creamos msgqueue para descargas de songs
+    id_queue = msgget(IPC_PRIVATE, 0600 | IPC_CREAT);
+    if (id_queue < 0) {
+        write(1, MSG_ERROR, strlen(MSG_ERROR));
+        return NULL;
+    }
+    dBowman.msgQueueDescargas = id_queue;
+    
+}
+
+void creacionHiloLectura() {
+    while(1) {
+        //que finalize cuando se desconecte el cliente
+
+        Missatge msg;
+        Trama trama = readTrama(fdBowman.fdPoole); 
+        msg.trama.type = trama.type;
+        msg.trama.header_length = trama.header_length;
+        msg.trama.header = strdup(trama.header);
+        msg.trama.data = strdup(trama.data);
+        //CRIBAJE --> añadir mensaje a msg queue de peticiones o msg queue de descargas
+        //CUANDO LEAMOS UN MESSAGE DE TIPO X, COMO NOS QUEDARÀ EL GAP Y SE AÑADIRIA LA PROXIMA TRAMA, JUSTO AL HACER RCV HACEMOS EN LA LINIA DE ABAJO RELLENAMOS EL GAP DEJADO CON UN MENSAJE CON TIPO 5000, QUE NUNCA SE VA A DAR
+        if (strcmp(trama.header, "FILE_DATA") == 0) { 
+            //cribaje segun idsong!!! UNA SOLA QUEUE MSG DINAMICA QUE EL TYPE DEL MSG SERA EL ID DE LA SONG
+            msg.idmsg = idSong;
+        } else {
+            if (strcmp(trama.header, "CONOK") == 0 || strcmp(trama.header, "CONKO") == 0) {                                     //LOGOUT
+                msg.idmsg = 3;
+            } else if (strcmp(trama.header, "SONGS_RESPONSE") == 0) {                                                           //LIST SONGS
+                msg.idmsg = 1;
+            } else if (strcmp(trama.header, "PLAYLISTS_RESPONSE") == 0) {                                                       //LIST PLAYLISTS
+                msg.idmsg = 2;
+            } else if (strcmp(trama.header, "CON_OK") == 0 || strcmp(trama.header, "CON_KO") == 0) {                            //CONNECT POOLE
+                msg.idmsg = 0;
+            } else if (strcmp(trama.header, "PLAY_EXIST") == 0 || strcmp(trama.header, "PLAY_NOEXIST") == 0) {                  //CHECK PLAYLIST EXIST 
+                msg.idmsg = 5;
+            } else if (strcmp(trama.header, "FILE_NOEXIST") == 0 || strcmp(trama.header, "FILE_EXIST") == 0) {                  //CHECK SONG EXIST
+                msg.idmsg = 4;
+            } else if (strcmp(trama.header, "NEW_FILE") == 0) {                                                                 //NEW_FILE 
+                msg.idmsg = 6;
+            } 
+            if (msgsnd(dBowman.msgQueuePetition, &msg, sizeof(Missatge), IPC_NOWAIT) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
+                perror("msgsnd");
+                exit(EXIT_FAILURE);
+            }
+        } 
+        
+        freeTrama(&trama);
+        //freeTrama(&(msg.trama));
     }
 }
 
@@ -692,23 +779,17 @@ int main(int argc, char ** argv) {
             printF(dBowman.msg);
             freeString(&dBowman.msg);
 
-            //CREAR DIRECTORIO BOWMAN
             createDirectory(dBowman.clienteName);
 
             printInfoFileBowman();
 
-            //hilo de lectura
-            while(1) {
-                //que finalize cuando se desconecte el cliente
-                read(); //cambiar funcion readTrama.
-                //añadir la trama a la matriz global.
-            }
+            creacionMsgQueues();
 
-            //2 hilos
-            //uno enviar peticiones a poole y otro recibir peticiones
-            while (1) { //escritura
-            //eliminar threads descargas canciones y playlists //entendido!!! //Solo podemos tener un hilo leyendo al mismo tiempo
-            //crear un hilo de lectura
+            creacionHiloLectura();
+            
+
+          
+            while (1) { 
                 printF("$ ");
                 dBowman.input = read_until(0, '\n');
                 dBowman.input[strlen(dBowman.input)] = '\0';
@@ -726,7 +807,10 @@ int main(int argc, char ** argv) {
                     if (strcmp(dBowman.upperInput, "LOGOUT") == 0) {
                         sig_func();
                     } else if (strcmp(dBowman.upperInput, "LIST SONGS") == 0) {
+                        //creas msgqueue
+                        //guardas el id devuelto en el array de queues (ints) --> 2
                         requestListSongs();
+                        //TODO eliminas msgqueue cuando bowman out!!
                     } else if (strcmp(dBowman.upperInput, "LIST PLAYLISTS") == 0) {
                         requestListPlaylists();
                     } else if (strcmp(dBowman.upperInput, "CHECK DOWNLOADS") == 0) {

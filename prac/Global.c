@@ -153,10 +153,37 @@ char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *final,
     return msg;
 }
 
+void cleanPadding(char* string, char delimiter) {
+    for (size_t i = 0; i < strlen(string); i++) {
+        if (string[i] == delimiter) {
+            string[i] = '\0';
+        }
+    }
+}
+
 char * resultMd5sumComand(char *pathName) {
+    /*int child = 0;
+    int pipe[2] = {0};*/
     char *command = NULL;
 
     asprintf(&command, "md5sum %s", pathName);
+
+    /*if (pipe(pipe) == -1){
+        printF("Error en crear la pipe\n");
+        exit(-1);
+    }
+
+    child = fork();
+
+
+    if (child == 0) {
+        // CHILD process
+    } else {
+        close(pipe[0]);
+        write(pipe[1], command, strlen(liniaLimpia));
+        
+        free(linia);  
+    }*/
 
     FILE* pipe = popen(command, "r"); //popen no se puede utilizar.
     if (pipe == NULL) {
@@ -165,14 +192,14 @@ char * resultMd5sumComand(char *pathName) {
     }
 
     // Create a dynamic buffer to store the command output
-    char* buffer = (char*)malloc(32);
+    char* buffer = (char*)malloc(33);
     if (buffer == NULL) {
         perror("malloc");
         pclose(pipe);
         return NULL;
     }
 
-    ssize_t bytesRead = read(fileno(pipe), buffer, 32 - 1);
+    ssize_t bytesRead = read(fileno(pipe), buffer, 33 - 1);
     if (bytesRead == -1) {
         perror("read");
         free(buffer);
@@ -311,20 +338,13 @@ int songOrPlaylist(char *string) {
 }
 
 void createDirectory(char* directory) {
-    char *command = NULL;
+    struct stat st = {0};
 
-    asprintf(&command, "mkdir -p %s", directory);
-    
-    FILE* pipe = popen(command, "r");
-    if (pipe == NULL) {
-        perror("popen");
-        //exit(EXIT_FAILURE);
-    } else {
-        pclose(pipe); // Close the pipe
+    if (stat(directory, &st) == -1) {
+        if (mkdir(directory, 0777) == -1) {
+            perror("Error al crear el mkdir");
+        }
     }
-    
-    freeString(&command);
-    
 }
 
 Element pooleMinConnections(Element *poole_list, int poole_list_size) {

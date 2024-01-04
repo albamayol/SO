@@ -21,6 +21,7 @@ Autores:
 #include <signal.h>
 #include <stdint.h>
 #include <sys/wait.h> 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <netinet/in.h>
@@ -39,6 +40,17 @@ typedef struct {
 	int port;
 	int num_connections;
 } Element;
+
+typedef struct {
+    long idmsg;
+    Trama trama;
+    //int idSong; //Si trama no es de info de una song, idSong == -1, sino tindra el id corresponent a la song
+} Missatge;
+
+/*typedef struct {
+    int idQueue;
+    int idSong;
+} RefDescarga;*/
 
 typedef struct {
     int id;
@@ -71,6 +83,11 @@ typedef struct {
 } ThreadPoole;
 
 typedef struct {
+    char* nameplaylist;
+    int numSongs; 
+} InfoPlaylist;
+
+typedef struct {
     int fdDiscovery;
     int fdPoole;
     struct sockaddr_in discovery_addr;
@@ -87,6 +104,11 @@ typedef struct {
     Element pooleConnected;
     DescargaBowman *descargas;
     int numDescargas;
+    int msgQueuePetitions;
+    int msgQueueDescargas;
+    //int numQueuesDescarga;
+    InfoPlaylist* infoPlaylists;
+    int numInfoPlaylists;
 } dataBowman;
 
 typedef struct {
@@ -126,6 +148,7 @@ void cleanThreadsBowman(DescargaBowman **descargas, int numDescargas);
 void cleanAllTheThreadsBowman(DescargaBowman **descargas, int numDescargas);
 char * resultMd5sumComand(char *pathName);
 void removeExtraSpaces(char *comanda);
+void cleanPadding(char* string, char delimiter);
 char * to_upper(char * str);
 int checkDownloadCommand(char * input);
 char * verifyClientName(char * clienteNameAux);

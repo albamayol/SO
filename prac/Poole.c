@@ -170,7 +170,7 @@ void listSongs(const char *path, char **fileNames, int *totalSongs) {
     closedir(dir);
 }
 
-void enviarTramas(int fd_bowman, char *cadena) {
+void enviarTramas(int fd_bowman, char *cadena, char* header) {
     int i = 0;
     char *trama = NULL;
 
@@ -184,7 +184,7 @@ void enviarTramas(int fd_bowman, char *cadena) {
         i++;
     }
     char *numTramas = convertIntToString(i + 1);
-    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", numTramas, strlen(numTramas)), fd_bowman);
+    setTramaString(TramaCreate(0x02, header, numTramas, strlen(numTramas)), fd_bowman);
     freeString(&numTramas);
 
     if (sizeData < 239) { // 256 - Type(1 Byte) - header_length(2 Bytes) - Header(14 Bytes) = 239 Bytes disponibles
@@ -192,7 +192,7 @@ void enviarTramas(int fd_bowman, char *cadena) {
         asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
         printF(dPoole.msg);
         freeString(&dPoole.msg);
-        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", trama, strlen(trama)), fd_bowman);
+        setTramaString(TramaCreate(0x02, header, trama, strlen(trama)), fd_bowman);
     } else {
         i = 0;
         while (sizeData > 239) {
@@ -200,7 +200,7 @@ void enviarTramas(int fd_bowman, char *cadena) {
             asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
-            setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", trama, strlen(trama)), fd_bowman); //PETA
+            setTramaString(TramaCreate(0x02, header, trama, strlen(trama)), fd_bowman); //PETA
             sizeData -= 239; 
             i++;
             freeString(&trama);
@@ -209,7 +209,7 @@ void enviarTramas(int fd_bowman, char *cadena) {
         asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
         printF(dPoole.msg);
         freeString(&dPoole.msg);
-        setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", trama, strlen(trama)), fd_bowman); //PETA
+        setTramaString(TramaCreate(0x02, header, trama, strlen(trama)), fd_bowman); //PETA
     }
     
     freeString(&trama);
@@ -224,7 +224,7 @@ void sendListSongs(int fd_bowman) {
 
     printF(songs);
 
-    enviarTramas(fd_bowman, songs);
+    enviarTramas(fd_bowman, songs, "SONGS_RESPONSE");
 
     freeString(&songs);
 }
@@ -379,11 +379,14 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
     size_t len = strlen(dPoole.serverName) + strlen(song) + 2;
     char *pathSong = malloc(strlen(dPoole.serverName) + strlen(song) + 2);
     snprintf(pathSong, len, "%s/%s", dPoole.serverName, song);
-
+    printF(pathSong);
     if (searchSong(pathSong, &fileSize)) {
         setTramaString(TramaCreate(0x01, "FILE_EXIST", "", 0), fd_bowman); 
 
         char *md5sum = resultMd5sumComand(pathSong);
+        printF("mdsum original: ");
+        printF(md5sum);
+        printF("\n");
         freeString(&pathSong);
         if (md5sum != NULL) {
             int randomID = getRandomID();
@@ -400,7 +403,7 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
             freeString(&data);
 
             enviarDatosSong(fd_bowman, dPoole.serverName, song, convertIntToString(randomID), fileSize);
-            Trama trama = readTrama(fd_bowman); //espera respuesta estado de la descarga
+            Trama trama = readTrama(fd_bowman); //espera respuesta estado de la descarga --> md5sum
             if (strcmp(trama.header, "CHECK_OK") == 0) {
                 asprintf(&dPoole.msg,"%s song sent and downloaded successfully!\n", song);
                 printF(dPoole.msg);
@@ -447,10 +450,10 @@ void sendListPlaylists(int fd_bowman) {
     printF(playlists);
 
     char *cantidadCanciones = convertIntToString(totalSongs);
-    setTramaString(TramaCreate(0x02, "SONGS_RESPONSE", cantidadCanciones, strlen(cantidadCanciones)), fd_bowman);
+    setTramaString(TramaCreate(0x02, "PLAYLISTS_RESPONSE", cantidadCanciones, strlen(cantidadCanciones)), fd_bowman);
     freeString(&cantidadCanciones);
 
-    enviarTramas(fd_bowman, playlists);
+    enviarTramas(fd_bowman, playlists, "PLAYLISTS_RESPONSE");
     freeString(&playlists);
 }
 
@@ -550,6 +553,7 @@ void conexionBowman(ThreadPoole* mythread) {
         } else if (strcmp(trama.header, "CLEAR DOWNLOADS") == 0) {
             printF("No downloads to clear available\n");
         } else if (strstr(trama.header, "DOWNLOAD") != NULL) {  //DOWNLOAD <SONG/PLAYLIST>
+            cleanPadding(trama.data, '~');
             char *upperInput = to_upper(trama.data);
             removeExtraSpaces(upperInput);
 

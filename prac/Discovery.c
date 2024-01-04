@@ -82,23 +82,10 @@ void conexionPoole(int fd_poole) {
         freeTrama(&trama);
     } else {
         Element element;
-        
-        write(1, trama.header, strlen(trama.header));
-        write(1, "\n", 1);
-        write(1, trama.data, strlen(trama.data));
+
         separaDataToElement(trama.data, &element);
         freeTrama(&trama);
-        
-        write(1, "ELEMENT:\n", strlen("ELEMENT:\n"));
-        write(1, element.name, strlen(element.name));
-        write(1, "\n", 1);
-        write(1, element.ip, strlen(element.ip));
-        write(1, "\n", 1);
-        char *msg = NULL;
-        asprintf(&msg, "port: %d\n", element.port);
-        printF(msg);
-        freeString(&msg);
-
+ 
         //add element as the last one    
         asprintf(&buffer, "sizeArrayPooles: %d \n", dDiscovery.poole_list_size);
         printF(buffer);
