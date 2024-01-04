@@ -791,8 +791,6 @@ int main(int argc, char ** argv) {
 
             creacionHiloLectura();
             
-
-          
             while (1) { 
                 printF("$ ");
                 dBowman.input = read_until(0, '\n');

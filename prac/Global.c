@@ -161,65 +161,42 @@ void cleanPadding(char* string, char delimiter) {
     }
 }
 
-char * resultMd5sumComand(char *pathName) {
-    /*int child = 0;
-    int pipe[2] = {0};*/
-    char *command = NULL;
+char *resultMd5sumComand(char *pathName) {
+    // create pipe and recieve checksum from system_
+    int fd[2];
+    char *checksum = malloc(sizeof(char) * 33);
 
-    asprintf(&command, "md5sum %s", pathName);
-
-    /*if (pipe(pipe) == -1){
-        printF("Error en crear la pipe\n");
-        exit(-1);
+    if (pipe(fd) == -1) {
+        perror("Creacion Pipe sin exito.");
+        free(checksum);
+        return NULL;
     }
 
-    child = fork();
+    pid_t childPid = fork();
+    if (childPid == -1) {
+        perror("Creacion fork sin exito.");
+        free(checksum);
+        return NULL;
+    }
 
-
-    if (child == 0) {
-        // CHILD process
+    if (childPid == 0) {
+        close(fd[0]);
+        char *command = NULL;
+        asprintf(&command, "md5sum %s", pathName);
+        close(STDOUT_FILENO);
+        dup2(fd[1], STDOUT_FILENO);
+        execl("/bin/sh", "sh", "-c", command, (char *)NULL);
+        free(command);
+        dup2(fd[1], 0);
     } else {
-        close(pipe[0]);
-        write(pipe[1], command, strlen(liniaLimpia));
-        
-        free(linia);  
-    }*/
-
-    FILE* pipe = popen(command, "r"); //popen no se puede utilizar.
-    if (pipe == NULL) {
-        perror("popen");
-        return NULL;
+        close(fd[1]);
+        read(fd[0], checksum, sizeof(char) * 32);
+        checksum[32] = '\0';
+        close(fd[0]);
     }
 
-    // Create a dynamic buffer to store the command output
-    char* buffer = (char*)malloc(33);
-    if (buffer == NULL) {
-        perror("malloc");
-        pclose(pipe);
-        return NULL;
-    }
-
-    ssize_t bytesRead = read(fileno(pipe), buffer, 33 - 1);
-    if (bytesRead == -1) {
-        perror("read");
-        free(buffer);
-        pclose(pipe);
-        return NULL;
-    }
-
-    if (bytesRead == 0) {
-        buffer[0] = '\0';
-    } else {
-        buffer[bytesRead] = '\0';
-    }
-
-    // Close the pipe
-    pclose(pipe);
-    freeString(&command);
-
-    return buffer;
+    return checksum;
 }
-
 
 /*
 @Finalitat: Eliminar espacios en blanco adicionales
