@@ -50,16 +50,16 @@ void notifyPooleDisconnected() {
     openDiscoverySocket();
     //ENVIAMOS TRAMA LOGOUTBOWMAN
     setTramaString(TramaCreate(0x06, "POOLE_DISCONNECT", dPoole.serverName, strlen(dPoole.serverName)), dPoole.fdPooleClient);
-    Trama trama = readTrama(dPoole.fdPooleClient);
-    printF(trama.header);
-    if (strcmp(trama.header, "CONOK") == 0) {
+    TramaExtended tramaExtended = readTrama(dPoole.fdPooleClient);
+    
+    if (strcmp(tramaExtended.trama.header, "CONOK") == 0) {
         //nos desconectamos bien
         printF("Poole disconnected from Discovery succesfully\n");
-    } else if (strcmp(trama.header, "CONKO") == 0) {
+    } else if (strcmp(tramaExtended.trama.header, "CONKO") == 0) {
         printF("Sorry, couldn't disconnect from Discovery\n");
     }
 
-    freeTrama(&trama);
+    freeTrama(&(tramaExtended.trama));
     close(dPoole.fdPooleClient);
 }
 
@@ -115,17 +115,17 @@ void notifyBowmanLogout(int fd_bowman) {
     openDiscoverySocket();
     //ENVIAMOS TRAMA LOGOUTBOWMAN
     setTramaString(TramaCreate(0x06, "BOWMAN_LOGOUT", dPoole.serverName, strlen(dPoole.serverName)), dPoole.fdPooleClient);
-    Trama trama = readTrama(dPoole.fdPooleClient);
-    printF(trama.header);
-    if (strcmp(trama.header, "CONOK") == 0) {
+    TramaExtended tramaExtended = readTrama(dPoole.fdPooleClient);
+    
+    if (strcmp(tramaExtended.trama.header, "CONOK") == 0) {
         //Avisamos Bowman OK
         setTramaString(TramaCreate(0x06, "CONOK", dPoole.serverName, strlen(dPoole.serverName)), fd_bowman);
-    } else if (strcmp(trama.header, "CONKO") == 0) {
+    } else if (strcmp(tramaExtended.trama.header, "CONKO") == 0) {
         //Avisamos Bowman KO
         setTramaString(TramaCreate(0x06, "CONKO", dPoole.serverName, strlen(dPoole.serverName)), fd_bowman);
     }
 
-    freeTrama(&trama);
+    freeTrama(&(tramaExtended.trama));
     close(dPoole.fdPooleClient);
 }
 
@@ -403,12 +403,12 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
             freeString(&data);
 
             enviarDatosSong(fd_bowman, dPoole.serverName, song, convertIntToString(randomID), fileSize);
-            Trama trama = readTrama(fd_bowman); //espera respuesta estado de la descarga --> md5sum
-            if (strcmp(trama.header, "CHECK_OK") == 0) {
+            TramaExtended tramaExtended = readTrama(fd_bowman); //espera respuesta estado de la descarga --> md5sum
+            if (strcmp(tramaExtended.trama.header, "CHECK_OK") == 0) {
                 asprintf(&dPoole.msg,"%s song sent and downloaded successfully!\n", song);
                 printF(dPoole.msg);
                 freeString(&dPoole.msg);
-            } else if (strcmp(trama.header, "CHECK_KO") == 0) {
+            } else if (strcmp(tramaExtended.trama.header, "CHECK_KO") == 0) {
                 asprintf(&dPoole.msg,"The download of the %s song was unsuccessfull, try again\n", song);
                 printF(dPoole.msg);
                 freeString(&dPoole.msg);
@@ -493,25 +493,25 @@ void sendPlaylist(char *pathPlaylist, ThreadPoole *thread) { //Pepe/sutton
 }
 
 void conexionBowman(ThreadPoole* mythread) {
-    Trama trama = readTrama(mythread->fd);
-    mythread->user_name = strdup(trama.data);
+    TramaExtended tramaExtended = readTrama(mythread->fd);
+    mythread->user_name = strdup(tramaExtended.trama.data);
 
     asprintf(&dPoole.msg,"\nNew user connected: %s.\n", mythread->user_name);
     printF(dPoole.msg);
     freeString(&dPoole.msg);
 
     // Transmisión Poole->Bowman para informar del estado de la conexion.
-    if (strcmp(trama.header, "NEW_BOWMAN") == 0) {
+    if (strcmp(tramaExtended.trama.header, "NEW_BOWMAN") == 0) {
         setTramaString(TramaCreate(0x01, "CON_OK", "", 0), mythread->fd);
     } else {
         setTramaString(TramaCreate(0x01, "CON_KO", "", 0), mythread->fd);
         close(mythread->fd);
 
-        freeTrama(&trama);
+        freeTrama(&(tramaExtended.trama));
         cleanThreadPoole(mythread); //con el join ya salimos de la funcion de thread osea salimos de aqui
     }
     
-    freeTrama(&trama);
+    freeTrama(&(tramaExtended.trama));
 
     //TRANSMISIONES POOLE-->BOWMAN
 
@@ -525,60 +525,60 @@ void conexionBowman(ThreadPoole* mythread) {
     //1 semaforo por cliente.
 
     while(1) {
-        trama = readTrama(mythread->fd);
+        tramaExtended = readTrama(mythread->fd);
 
-        if (strcmp(trama.header, "EXIT") == 0) {    
+        if (strcmp(tramaExtended.trama.header, "EXIT") == 0) {    
             notifyBowmanLogout(mythread->fd);
             
             asprintf(&dPoole.msg,"\nNew request - %s logged out\n", mythread->user_name);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
 
-            freeTrama(&trama);
+            freeTrama(&(tramaExtended.trama));
             cleanThreadPoole(mythread); //clean thread hace cancel y join -> CANCEL + JOIN espera a que acabe la ejecución del thread y nos saca de la thread function
-        } else if (strcmp(trama.header, "LIST_SONGS") == 0) {
+        } else if (strcmp(tramaExtended.trama.header, "LIST_SONGS") == 0) {
             asprintf(&dPoole.msg,"\nNew request - %s requires the list of songs.\nSending song list to %s\n", mythread->user_name, mythread->user_name);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
 
             sendListSongs(mythread->fd);
-        } else if (strcmp(trama.header, "LIST_PLAYLISTS") == 0) {
+        } else if (strcmp(tramaExtended.trama.header, "LIST_PLAYLISTS") == 0) {
             asprintf(&dPoole.msg,"\nNew request - %s requires the list of playlists.\nSending playlist list to %s\n", mythread->user_name, mythread->user_name);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
 
             sendListPlaylists(mythread->fd);
-        } else if (strcmp(trama.header, "CHECK DOWNLOADS") == 0) {
+        } else if (strcmp(tramaExtended.trama.header, "CHECK DOWNLOADS") == 0) {
             printF("You have no ongoing or finished downloads\n");
-        } else if (strcmp(trama.header, "CLEAR DOWNLOADS") == 0) {
+        } else if (strcmp(tramaExtended.trama.header, "CLEAR DOWNLOADS") == 0) {
             printF("No downloads to clear available\n");
-        } else if (strstr(trama.header, "DOWNLOAD") != NULL) {  //DOWNLOAD <SONG/PLAYLIST>
-            cleanPadding(trama.data, '~');
-            char *upperInput = to_upper(trama.data);
+        } else if (strstr(tramaExtended.trama.header, "DOWNLOAD") != NULL) {  //DOWNLOAD <SONG/PLAYLIST>
+            cleanPadding(tramaExtended.trama.data, '~');
+            char *upperInput = to_upper(tramaExtended.trama.data);
             removeExtraSpaces(upperInput);
 
             int typeFile = songOrPlaylist(upperInput);
             freeString(&upperInput);
             
             if (typeFile == 1) {
-                char *aux = strdup(trama.data);
+                char *aux = strdup(tramaExtended.trama.data);
                 printF(aux);
                 threadSendSong(aux, mythread);
                 freeString(&aux);
             } else {
                 //me han pedido una lista
-                size_t len = strlen(dPoole.serverName) + strlen(trama.data) + 2;
+                size_t len = strlen(dPoole.serverName) + strlen(tramaExtended.trama.data) + 2;
                 char *aux = (char *)malloc(len);
-                snprintf(aux, len, "%s/%s", dPoole.serverName, trama.data);
+                snprintf(aux, len, "%s/%s", dPoole.serverName, tramaExtended.trama.data);
                 printF(aux);
                 sendPlaylist(aux, mythread); //Pepe/sutton
             }
         } else {
             printF("Unknown command\n");
         }
-        freeTrama(&trama);  
+        freeTrama(&tramaExtended.trama);  
     }
-    freeTrama(&trama);  
+    freeTrama(&(tramaExtended.trama));  
     freeString(&mythread->user_name);
 }
 
@@ -661,17 +661,17 @@ void establishDiscoveryConnection() {
     setTramaString(TramaCreate(0x01, "NEW_POOLE", aux, strlen(aux)), dPoole.fdPooleClient);
     freeString(&aux);
 
-    Trama trama = readTrama(dPoole.fdPooleClient);    
+    TramaExtended tramaExtended = readTrama(dPoole.fdPooleClient);    
 
-    if (strcmp(trama.header,"CON_OK") == 0)  {
+    if (strcmp(tramaExtended.trama.header,"CON_OK") == 0)  {
         close(dPoole.fdPooleClient);
-        freeTrama(&trama);
+        freeTrama(&(tramaExtended.trama));
         waitingForRequests();
-    } else if (strcmp(trama.header,"CON_KO") == 0) {
+    } else if (strcmp(tramaExtended.trama.header,"CON_KO") == 0) {
         //PRINT DE QUE NO SE HA PODIDO ESTABLECER LA COMUNICACION CON DISCOVERY
     }
     
-    freeTrama(&trama);
+    freeTrama(&(tramaExtended.trama));
 
     close(dPoole.fdPooleClient);
 }

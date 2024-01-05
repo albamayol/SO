@@ -52,23 +52,21 @@ void sig_func() {
 
 void conexionPoole(int fd_poole) {
     char *buffer = NULL;
-    Trama trama = readTrama(fd_poole);
-    if (strcmp(trama.header, "BOWMAN_LOGOUT") == 0) {
+    TramaExtended tramaExtended = readTrama(fd_poole);
+    if (strcmp(tramaExtended.trama.header, "BOWMAN_LOGOUT") == 0) {
         //LOGOUT --> trama.data contiene el nombre del poole donde ha ocurrido un logout
-        if (decreaseNumConnections(dDiscovery.poole_list, dDiscovery.poole_list_size, trama.data)) {
-            printF(trama.header);
-            printF(trama.data);
+        if (decreaseNumConnections(dDiscovery.poole_list, dDiscovery.poole_list_size, tramaExtended.trama.data)) {
             setTramaString(TramaCreate(0x06, "CONOK", "", 0), fd_poole);   
         } else {
             setTramaString(TramaCreate(0x06, "CONKO", "", 0), fd_poole);
         }
-        freeTrama(&trama);
+        freeTrama(&(tramaExtended.trama));
 
-    } else if (strcmp(trama.header, "POOLE_DISCONNECT") == 0) {
+    } else if (strcmp(tramaExtended.trama.header, "POOLE_DISCONNECT") == 0) {
         printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
 
         pthread_mutex_lock(&dDiscovery.mutexList);  //LOCK
-        int erasePooleResult = erasePooleFromList(&dDiscovery.poole_list, &dDiscovery.poole_list_size, trama.data);
+        int erasePooleResult = erasePooleFromList(&dDiscovery.poole_list, &dDiscovery.poole_list_size, tramaExtended.trama.data);
         pthread_mutex_unlock(&dDiscovery.mutexList);    //UNLOCK
 
         if (erasePooleResult) {
@@ -79,13 +77,13 @@ void conexionPoole(int fd_poole) {
         } else {
             setTramaString(TramaCreate(0x06, "CONKO", "", 0), fd_poole);
         }
-        freeTrama(&trama);
+        freeTrama(&(tramaExtended.trama));
     } else {
         Element element;
 
-        separaDataToElement(trama.data, &element);
-        freeTrama(&trama);
- 
+        separaDataToElement(tramaExtended.trama.data, &element);
+        freeTrama(&(tramaExtended.trama));
+
         //add element as the last one    
         asprintf(&buffer, "sizeArrayPooles: %d \n", dDiscovery.poole_list_size);
         printF(buffer);
@@ -119,8 +117,8 @@ void conexionPoole(int fd_poole) {
 
 
 void conexionBowman(int fd_bowman) {
-    Trama trama = readTrama(fd_bowman);
-    freeTrama(&trama);
+    TramaExtended tramaExtended = readTrama(fd_bowman);
+    freeTrama(&(tramaExtended.trama));
 
     /*SE PUEDE DAR EL CASO QUE UN POOLE SE ESTE CONECTANDO/DESCONECTANDO (MODIFICAN LA LISTA) Y QUE A SU VEZ SE CONECTE UN BOWMAN(PIDA LA INFO DEL POOLE CON MINIMO DE CONEXIONES)*/
     //lock
