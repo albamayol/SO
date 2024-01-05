@@ -99,42 +99,48 @@ Trama TramaCreate (char type, char *header, char *data, size_t size) {
   return trama;
 }
 
-void inicializarTrama(Trama *trama) {
-  trama->type = ' ';
-  trama->header_length = 0;
-  trama->header = NULL;
-  trama->data = NULL;
+void inicializarTrama(TramaExtended *tramaExtended) {
+  tramaExtended->trama.type = ' ';
+  tramaExtended->trama.header_length = 0;
+  tramaExtended->trama.header = NULL;
+  tramaExtended->trama.data = NULL;
+  tramaExtended->initialized = 0;
 }
 
-Trama readTrama(int fd) {
-  Trama trama;
+TramaExtended readTrama(int fd) {
+  //Trama trama;
+  TramaExtended tramaExtended;
   char *buffer = NULL;
-  inicializarTrama(&trama);
+  inicializarTrama(&tramaExtended);
+  size_t checkPoole = 0;
+  
+  checkPoole = read(fd, &tramaExtended.trama.type, sizeof(char));  
+  if (checkPoole <= 0) {
+    tramaExtended.initialized = 1;
+  }
 
-  read(fd, &trama.type, sizeof(char));  
+  read(fd, &tramaExtended.trama.header_length, sizeof(unsigned short));
+  tramaExtended.trama.header = malloc((tramaExtended.trama.header_length+1) * sizeof(char)); 
 
-  read(fd, &trama.header_length, sizeof(unsigned short));
-  trama.header = malloc((trama.header_length+1) * sizeof(char)); 
-
-  if (trama.header != NULL) {
-    read(fd, trama.header, trama.header_length);
-    trama.header[trama.header_length] = '\0'; 
+  if (tramaExtended.trama.header != NULL) {
+    read(fd, tramaExtended.trama.header, tramaExtended.trama.header_length);
+    tramaExtended.trama.header[tramaExtended.trama.header_length] = '\0'; 
   } 
 
-  size_t sizeData = 256 - 3 - trama.header_length;
+  size_t sizeData = 256 - 3 - tramaExtended.trama.header_length;
 
   buffer = (char *) malloc(sizeof(char) * sizeData);
-  trama.data = (char *) malloc(sizeof(char) * sizeData + 1);
-  memset(trama.data, '~', sizeData);
+  tramaExtended.trama.data = (char *) malloc(sizeof(char) * sizeData + 1);
+  memset(tramaExtended.trama.data, '~', sizeData);
 
   read(fd, buffer, sizeof(char) * sizeData);
   size_t i = 0;
   for (i = 0; i < sizeData; i++) {
-    trama.data[i] = buffer[i];
+    tramaExtended.trama.data[i] = buffer[i];
   }
-  trama.data[i] = '\0';
+  tramaExtended.trama.data[i] = '\0';
 
   freeString(&buffer);
 
-  return trama;
+  return tramaExtended;
 }
