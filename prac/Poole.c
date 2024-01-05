@@ -515,15 +515,6 @@ void conexionBowman(ThreadPoole* mythread) {
 
     //TRANSMISIONES POOLE-->BOWMAN
 
-    //trhead recibir peticiones que le envia Bowman y N que se encarguen de procesar las respuestas por N clientes.
-    //lo ideal seria tener un uncio hile de respuesta por cliente. // memoria compartida: lista de tareas del clientes
-
-    //dfgsdfgdsfg
-    //sdfgdsfgsdfg
-    //dfasdgasdgfdfg
-
-    //1 semaforo por cliente.
-
     while(1) {
         trama = readTrama(mythread->fd);
 
