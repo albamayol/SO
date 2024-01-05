@@ -261,7 +261,7 @@ void requestListSongs() {
     //aux[256] = '\0';
 
     Missatge msg;
-    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Trama), 1, 0);
+    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge), 1, 0);
 
     msgsnd(dBowman.msgQueuePetitions, &msgGap, sizeof(Missatge), IPC_NOWAIT);
 
@@ -289,7 +289,7 @@ char *juntarTramasPlaylists(int numTramas) {
 
     while(i < numTramas) {
 
-        msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Trama), 2, 0);
+        msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge), 2, 0);
 
         msgsnd(dBowman.msgQueuePetitions, &msgGap, sizeof(Missatge), IPC_NOWAIT);
 
@@ -454,7 +454,7 @@ void requestListPlaylists() {
     //ssize_t bytesLeidos = read(dBowman.fdPoole, aux, 256);
     //aux[256] = '\0';
 
-    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Trama), 2, 0);
+    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge), 2, 0);
     msgsnd(dBowman.msgQueuePetitions, &msgGap, sizeof(Missatge), IPC_NOWAIT);
 
     freeTrama(&(msg.trama));
@@ -468,7 +468,7 @@ void requestListPlaylists() {
     // Lectura cantidad de tramas que recibiremos
     //read(dBowman.fdPoole, aux, 256);
     //aux[256] = '\0';
-    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Trama), 2, 0);
+    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge), 2, 0);
     msgsnd(dBowman.msgQueuePetitions, &msgGap, sizeof(Missatge), IPC_NOWAIT);
 
     //int numTramas = atoi(aux + 17);
@@ -492,7 +492,7 @@ int requestLogout() {
     //ssize_t bytesLeidos = read(dBowman.fdPoole, aux, 256);  
     //aux[256] = '\0';
 
-    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Trama), 3, 0); //Aqui no hace falta llenar el gap porque solo recibiras una trama
+    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge), 3, 0); //Aqui no hace falta llenar el gap porque solo recibiras una trama
 
     //dBowman.bowmanConnected = 0;
     /*if (bytesLeidos <= 0) {
@@ -596,7 +596,7 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
     int sizeDataTrama = 256 - 12 - strlen(convertIntToString(idSong)) - 1;
     do {
         //bytesLeidos = read(dBowman.fdPoole, buffer, 256); //FILE_DATA --> dynamic msg queue
-        msgrcv(dBowman.msgQueueDescargas, &msg, sizeof(Trama), idSong, 0);
+        msgrcv(dBowman.msgQueueDescargas, &msg, sizeof(Missatge), idSong, 0);
         msgsnd(dBowman.msgQueueDescargas, &msgGap, sizeof(Missatge), IPC_NOWAIT);
         //CONTINUAR AQUI
         /*if (bytesLeidos == -1) {
@@ -649,7 +649,7 @@ void downloadSong(DescargaBowman *mythread) {
     //aux[256] = '\0';
     Missatge msg;
 
-    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Trama), 6, 0);
+    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge), 6, 0);
 
     //checkPooleConnection(bytesLeidos);
 
@@ -705,7 +705,7 @@ void requestDownloadSong(char* nombreArchivoCopia) {
     //ESPERAMOS TRAMA SI SONG EXISTE O NO
     //Trama trama = readTrama(dBowman.fdPoole);
     Missatge msg;
-    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Trama), 4, 0);
+    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge), 4, 0);
 
     if (strcmp(msg.trama.header, "FILE_EXIST") == 0) {
         freeTrama(&(msg.trama));
@@ -722,7 +722,7 @@ void requestDownloadPlaylist(char* nombreArchivoCopia) {
     //Trama trama = readTrama(dBowman.fdPoole);
 
     Missatge msg;
-    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Trama), 5, 0);
+    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge), 5, 0);
 
     if (strcmp(msg.trama.header, "PLAY_EXIST") == 0) {
         freeTrama(&(msg.trama));
@@ -778,7 +778,7 @@ static void *thread_function_read() {
         if (tramaExtended.initialized) {
             checkPooleConnection();
         }
-        
+
         msg.trama.type = tramaExtended.trama.type;
         msg.trama.header_length = tramaExtended.trama.header_length;
         msg.trama.header = strdup(tramaExtended.trama.header);
