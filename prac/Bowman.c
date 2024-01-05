@@ -606,7 +606,7 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
         //getIdData(buffer + 12, &dataFile, mythread);
         getIdData(msg.trama.data, &dataFile, mythread);
 
-        if (write(fd_file, dataFile, min(file_size, sizeDataTrama) == -1)) { // Escribir lo leído en el archivo
+        if (write(fd_file, dataFile, min(file_size, sizeDataTrama)) == -1) { // Escribir lo leído en el archivo
             perror("Error al escribir en el archivo");
             break;
         }
