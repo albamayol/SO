@@ -113,7 +113,7 @@ TramaExtended readTrama(int fd) {
   char *buffer = NULL;
   inicializarTrama(&tramaExtended);
   size_t checkPoole = 0;
-  
+
   checkPoole = read(fd, &tramaExtended.trama.type, sizeof(char));  
   if (checkPoole <= 0) {
     tramaExtended.initialized = 1;
@@ -139,7 +139,6 @@ TramaExtended readTrama(int fd) {
     tramaExtended.trama.data[i] = buffer[i];
   }
   tramaExtended.trama.data[i] = '\0';
-
   freeString(&buffer);
 
   return tramaExtended;

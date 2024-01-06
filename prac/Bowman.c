@@ -40,7 +40,7 @@ void inicializarDataBowman() {
 */
 void sig_func() {
     // limpiar los threads descargas. TODO
-    // limpiar las msg queues. TODO
+
     if(dBowman.bowmanConnected) {   //Si bowman està connectat a poole
         if (requestLogout()) {
             printF("Thanks for using HAL 9000, see you soon, music lover!\n");
@@ -72,6 +72,22 @@ void sig_func() {
     }
     freeElement(&dBowman.pooleConnected);
 
+    // Eliminar cola de mensajes peticiones
+    if (msgctl(dBowman.msgQueuePetitions, IPC_RMID, NULL) == -1) {
+        perror("Error al eliminar la cola de mensajes");
+    }
+
+    // Eliminar cola de mensajes descargas canciones
+    if (msgctl(dBowman.msgQueueDescargas, IPC_RMID, NULL) == -1) {
+        perror("Error al eliminar la cola de mensajes");
+    }
+
+    // Liberamos los recursos del thread de lectura
+    pthread_cancel(dBowman.threadRead);
+    pthread_join(dBowman.threadRead, NULL);
+
+    cleanAllTheThreadsBowman(&dBowman.descargas, dBowman.numDescargas);
+
     exit(EXIT_FAILURE);
 }
 
@@ -85,6 +101,25 @@ void printInfoFileBowman() {
     asprintf(&dBowman.msg, "User - %s\nDirectory - %s\nIP - %s\nPort - %s\n\n", dBowman.clienteName, dBowman.pathClienteFile, dBowman.ip, dBowman.puerto);
     printF(dBowman.msg);
     freeString(&dBowman.msg);
+}
+
+char* read_until_string(char *string, char delimiter) {
+    int i = 0;
+    char *msg = NULL;
+
+    while (string[i] != delimiter && string[i] != '\0') {
+        msg = realloc(msg, i + 2); // Incrementamos el tamaño para el carácter extra y el terminador
+        if (msg == NULL) {
+            perror("Error en realloc");
+            exit(EXIT_FAILURE);
+        }
+        msg[i] = string[i];
+        i++;
+    }
+
+    msg[i] = '\0';
+
+    return msg;
 }
 
 void establishDiscoveryConnection() {
@@ -134,6 +169,77 @@ void establishDiscoveryConnection() {
     close(dBowman.fdDiscovery);
 }
 
+void checkPooleConnection() {
+    dBowman.bowmanConnected = 0;
+    close(dBowman.fdPoole);
+    asprintf(&dBowman.msg, "\n¡Alert: %s disconnected because the server connection has ended!\n", dBowman.clienteName);
+    printF(dBowman.msg);
+    freeString(&dBowman.msg);
+    sig_func();
+}
+
+static void *thread_function_read() {
+    while(1) {
+        //que finalize cuando se desconecte el cliente
+        Missatge msg;
+        TramaExtended tramaExtended = readTrama(dBowman.fdPoole); 
+
+
+        // Comprobación si Poole ha cerrado conexión
+        if (tramaExtended.initialized) {
+            checkPooleConnection();
+        }
+
+        msg.trama.type = tramaExtended.trama.type;
+        msg.trama.header_length = tramaExtended.trama.header_length;
+        msg.trama.header = strdup(tramaExtended.trama.header);
+        msg.trama.data = strdup(tramaExtended.trama.data);
+
+        //CRIBAJE --> añadir mensaje a msg queue de peticiones o msg queue de descargas
+        //CUANDO LEAMOS UN MESSAGE DE TIPO X, COMO NOS QUEDARÀ EL GAP Y SE AÑADIRIA LA PROXIMA TRAMA, JUSTO AL HACER RCV HACEMOS EN LA LINIA DE ABAJO RELLENAMOS EL GAP DEJADO CON UN MENSAJE CON TIPO 5000, QUE NUNCA SE VA A DAR
+        if (strcmp(tramaExtended.trama.header, "FILE_DATA") == 0) { 
+            char* stringID = read_until_string(tramaExtended.trama.data, '&'); //cribaje segun idsong!!! UNA SOLA QUEUE MSG QUE EL TYPE DEL MSG SERA EL ID DE LA SONG
+            msg.idmsg = atoi(stringID);
+            freeString(&stringID);
+            if (msgsnd(dBowman.msgQueueDescargas, &msg, sizeof(Missatge), IPC_NOWAIT) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
+                perror("msgsnd"); 
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            if (strcmp(tramaExtended.trama.header, "CONOK") == 0 || strcmp(tramaExtended.trama.header, "CONKO") == 0) {                                    //LOGOUT
+                msg.idmsg = 3;
+            } else if (strcmp(tramaExtended.trama.header, "SONGS_RESPONSE") == 0) {                                                           //LIST SONGS
+                msg.idmsg = 1;
+            } else if (strcmp(tramaExtended.trama.header, "PLAYLISTS_RESPONSE") == 0) {                                                       //LIST PLAYLISTS
+                msg.idmsg = 2;
+            } else if (strcmp(tramaExtended.trama.header, "CON_OK") == 0 || strcmp(tramaExtended.trama.header, "CON_KO") == 0) {                            //CONNECT POOLE
+                msg.idmsg = 0;
+            } else if (strcmp(tramaExtended.trama.header, "PLAY_EXIST") == 0 || strcmp(tramaExtended.trama.header, "PLAY_NOEXIST") == 0) {                  //CHECK PLAYLIST EXIST 
+                msg.idmsg = 5;
+            } else if (strcmp(tramaExtended.trama.header, "FILE_NOEXIST") == 0 || strcmp(tramaExtended.trama.header, "FILE_EXIST") == 0) {                  //CHECK SONG EXIST
+                msg.idmsg = 4;
+            } else if (strcmp(tramaExtended.trama.header, "NEW_FILE") == 0) {                                                                 //NEW_FILE 
+                msg.idmsg = 6;
+            } 
+            size_t message_size = sizeof(long) + sizeof(short) + strlen(msg.trama.header) + strlen(msg.trama.data) + sizeof(char);
+            if (msgsnd(dBowman.msgQueuePetitions, &msg, message_size, IPC_NOWAIT) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
+                perror("msgsnd"); 
+                exit(EXIT_FAILURE);
+            }
+        } 
+        
+        freeTrama(&(tramaExtended.trama));
+        freeTrama(&(msg.trama)); // REVISAR!!!
+    }
+    return NULL; 
+}
+
+void creacionHiloLectura() {
+    if (pthread_create(&dBowman.threadRead, NULL, thread_function_read, NULL) != 0) {
+        perror("Error al crear el thread de lectura\n");
+    }
+}
+
 void establishPooleConnection() {
     dBowman.fdPoole = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dBowman.fdPoole < 0) {
@@ -153,16 +259,23 @@ void establishPooleConnection() {
         sig_func();
     }
 
+    creacionHiloLectura();
+    
     // Transmission Bowman->Poole
     setTramaString(TramaCreate(0x01, "NEW_BOWMAN", dBowman.clienteName, strlen(dBowman.clienteName)), dBowman.fdPoole);
-
+    
     // Recepción Poole->Bowman para comprobar el estado de la conexion.
     Missatge msg;
-    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge), 0, 0); // Aqui no hace falta llenar el gap porque solo esperamos 1 trama.
-
+    //size_t message_size = sizeof(long) + sizeof(short) + strlen(msg.trama.header) + strlen(msg.trama.data) + 2;
+    if (msgrcv(dBowman.msgQueuePetitions, &msg, 256*sizeof(char) + sizeof(short), 0, 0) == -1) {
+        printF("ERROR");
+    }    
+    
+     // Aqui no hace falta llenar el gap porque solo esperamos 1 trama.
     //Trama trama = readTrama(dBowman.fdPoole);
     if (strcmp(msg.trama.header, "CON_OK") == 0) {
         dBowman.bowmanConnected = 1;
+        printF("KEV");
     } else if (strcmp(msg.trama.header, "CON_KO") == 0) {
         close(dBowman.fdPoole);
     }
@@ -238,15 +351,6 @@ void printarSongs(int numCanciones, char ***canciones) {
         freeString(&dBowman.msg);
         free((*canciones)[i]);
     }
-}
-
-void checkPooleConnection() {
-    dBowman.bowmanConnected = 0;
-    close(dBowman.fdPoole);
-    asprintf(&dBowman.msg, "\n¡Alert: %s disconnected because the server connection has ended!\n", dBowman.clienteName);
-    printF(dBowman.msg);
-    freeString(&dBowman.msg);
-    sig_func();
 }
 
 void requestListSongs() {
@@ -528,25 +632,6 @@ int requestLogout() {
     return 2;
 }
 
-char* read_until_string(char *string, char delimiter) {
-    int i = 0;
-    char *msg = NULL;
-
-    while (string[i] != delimiter && string[i] != '\0') {
-        msg = realloc(msg, i + 2); // Incrementamos el tamaño para el carácter extra y el terminador
-        if (msg == NULL) {
-            perror("Error en realloc");
-            exit(EXIT_FAILURE);
-        }
-        msg[i] = string[i];
-        i++;
-    }
-
-    msg[i] = '\0';
-
-    return msg;
-}
-
 void getIdData(char* buffer, char** dataFile, DescargaBowman *mythread) {    //separamos id & datos archivo
     int counter = 0, i = 0; //lengthData = 244; //256 - (1 - 2 - 9 (header: "FILE_DATA")) = 244
 
@@ -767,68 +852,6 @@ void creacionMsgQueues() {
     dBowman.msgQueueDescargas = id_queue;
 }
 
-static void *thread_function_read() {
-    while(1) {
-        //que finalize cuando se desconecte el cliente
-
-        Missatge msg;
-        TramaExtended tramaExtended = readTrama(dBowman.fdPoole); 
-
-        // Comprobación si Poole ha cerrado conexión
-        if (tramaExtended.initialized) {
-            checkPooleConnection();
-        }
-
-        msg.trama.type = tramaExtended.trama.type;
-        msg.trama.header_length = tramaExtended.trama.header_length;
-        msg.trama.header = strdup(tramaExtended.trama.header);
-        msg.trama.data = strdup(tramaExtended.trama.data);
-        //CRIBAJE --> añadir mensaje a msg queue de peticiones o msg queue de descargas
-        //CUANDO LEAMOS UN MESSAGE DE TIPO X, COMO NOS QUEDARÀ EL GAP Y SE AÑADIRIA LA PROXIMA TRAMA, JUSTO AL HACER RCV HACEMOS EN LA LINIA DE ABAJO RELLENAMOS EL GAP DEJADO CON UN MENSAJE CON TIPO 5000, QUE NUNCA SE VA A DAR
-        if (strcmp(tramaExtended.trama.header, "FILE_DATA") == 0) { 
-            char* stringID = read_until_string(tramaExtended.trama.data, '&'); //cribaje segun idsong!!! UNA SOLA QUEUE MSG QUE EL TYPE DEL MSG SERA EL ID DE LA SONG
-            msg.idmsg = atoi(stringID);
-            freeString(&stringID);
-
-            if (msgsnd(dBowman.msgQueueDescargas, &msg, sizeof(Missatge), IPC_NOWAIT) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
-                perror("msgsnd"); 
-                exit(EXIT_FAILURE);
-            }
-        } else {
-            if (strcmp(tramaExtended.trama.header, "CONOK") == 0 || strcmp(tramaExtended.trama.header, "CONKO") == 0) {                                    //LOGOUT
-                msg.idmsg = 3;
-            } else if (strcmp(tramaExtended.trama.header, "SONGS_RESPONSE") == 0) {                                                           //LIST SONGS
-                msg.idmsg = 1;
-            } else if (strcmp(tramaExtended.trama.header, "PLAYLISTS_RESPONSE") == 0) {                                                       //LIST PLAYLISTS
-                msg.idmsg = 2;
-            } else if (strcmp(tramaExtended.trama.header, "CON_OK") == 0 || strcmp(tramaExtended.trama.header, "CON_KO") == 0) {                            //CONNECT POOLE
-                msg.idmsg = 0;
-            } else if (strcmp(tramaExtended.trama.header, "PLAY_EXIST") == 0 || strcmp(tramaExtended.trama.header, "PLAY_NOEXIST") == 0) {                  //CHECK PLAYLIST EXIST 
-                msg.idmsg = 5;
-            } else if (strcmp(tramaExtended.trama.header, "FILE_NOEXIST") == 0 || strcmp(tramaExtended.trama.header, "FILE_EXIST") == 0) {                  //CHECK SONG EXIST
-                msg.idmsg = 4;
-            } else if (strcmp(tramaExtended.trama.header, "NEW_FILE") == 0) {                                                                 //NEW_FILE 
-                msg.idmsg = 6;
-            } 
-            if (msgsnd(dBowman.msgQueuePetitions, &msg, sizeof(Missatge), IPC_NOWAIT) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
-                perror("msgsnd"); 
-                exit(EXIT_FAILURE);
-            }
-        } 
-        
-        freeTrama(&(tramaExtended.trama));
-        //freeTrama(&(msg.trama));
-    }
-
-    //return NULL; 
-}
-
-void creacionHiloLectura() {
-    if (pthread_create(&dBowman.threadRead, NULL, thread_function_read, NULL) != 0) {
-        perror("Error al crear el thread de lectura\n");
-    }
-}
-
 /*
 @Finalitat: Implementar el main del programa.
 @Paràmetres: ---
@@ -881,7 +904,6 @@ int main(int argc, char ** argv) {
                     if (strcmp(dBowman.upperInput, "CONNECT") == 0) {
                         establishDiscoveryConnection();
                         establishPooleConnection();
-                        creacionHiloLectura();
                     } else {
                         printF("You must establish a connection with the server before making any request\n");
                     }

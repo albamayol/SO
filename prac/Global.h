@@ -134,7 +134,7 @@ typedef struct {
 char* read_until(int fd, char delimiter);
 void cleanThreadsPoole(ThreadPoole** threads, int numThreads);
 void cleanThreadPoole(ThreadPoole* thread);
-void cleanThreadsBowman(DescargaBowman **descargas, int numDescargas);
+void cleanThreadsBowman(DescargaBowman **descargas, int *numDescargas);
 void cleanAllTheThreadsBowman(DescargaBowman **descargas, int numDescargas);
 char * resultMd5sumComand(char *pathName);
 void removeExtraSpaces(char *comanda);
