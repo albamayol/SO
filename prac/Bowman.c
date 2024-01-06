@@ -852,6 +852,13 @@ void creacionMsgQueues() {
     dBowman.msgQueueDescargas = id_queue;
 }
 
+void showDownloadStatus(DescargaBowman *descargas, int numDescargas) {
+    for (int i = 0; i < numDescargas; i++) {
+        //CONTINUAR
+    }
+
+}
+
 /*
 @Finalitat: Implementar el main del programa.
 @Paràmetres: ---
@@ -918,9 +925,10 @@ int main(int argc, char ** argv) {
                     } else if (strcmp(dBowman.upperInput, "LIST PLAYLISTS") == 0) {
                         requestListPlaylists();
                     } else if (strcmp(dBowman.upperInput, "CHECK DOWNLOADS") == 0) {
-                        printF("You have no ongoing or finished downloads\n");
+                        showDownloadStatus(dBowman.descargas, dBowman.numDescargas);
                     } else if (strcmp(dBowman.upperInput, "CLEAR DOWNLOADS") == 0) {
-                        printF("No downloads to clear available\n");
+                        cleanThreadsBowman(&dBowman.descargas, &dBowman.numDescargas);
+                        showDownloadStatus(dBowman.descargas, dBowman.numDescargas);
                     } else if (strstr(dBowman.upperInput, "DOWNLOAD") != NULL) {  //DOWNLOAD <SONG/PLAYLIST>
                         //comprobar 2 arguments --> 1 espai a la comanda
                         int numSpaces = checkDownloadCommand(dBowman.upperInput);
@@ -950,7 +958,6 @@ int main(int argc, char ** argv) {
                         printF("Unknown command\n");
                     }
                 }
-
                 freeString(&dBowman.input);
                 freeString(&dBowman.upperInput);
             }
