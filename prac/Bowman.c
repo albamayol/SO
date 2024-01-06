@@ -576,7 +576,6 @@ void requestListPlaylists() {
     msgsnd(dBowman.msgQueuePetitions, &msgGap, sizeof(Missatge), IPC_NOWAIT);
 
     //int numTramas = atoi(aux + 17);
-    cleanPadding(msg.trama.data, '~');
     int numTramas = atoi(msg.trama.data);
 
     playlists = juntarTramasPlaylists(numTramas);
