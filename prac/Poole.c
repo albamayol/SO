@@ -516,7 +516,7 @@ void conexionBowman(ThreadPoole* mythread) {
     //TRANSMISIONES POOLE-->BOWMAN
 
     while(1) {
-        tramaExtended = readTrama(mythread->fd);
+        TramaExtended tramaExtended = readTrama(mythread->fd);
 
         if (strcmp(tramaExtended.trama.header, "EXIT") == 0) {    
             notifyBowmanLogout(mythread->fd);

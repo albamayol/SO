@@ -69,17 +69,21 @@ void cleanThreadPoole(ThreadPoole *thread) {
 
 void cleanAllTheThreadsBowman(DescargaBowman **descargas, int numDescargas) {
     for (int i = 0; i < numDescargas; i++) {
-        pthread_cancel((*descargas)[i].thread);
-        pthread_join((*descargas)[i].thread, NULL);
-        freeString(&(*descargas)[i].song.md5sum);
-        freeString(&(*descargas)[i].song.nombre);
-        freeString(&(*descargas)[i].nombreDescargaComando);
+        // 0 1 NULL 3 NULL 5 6 
+        if ((*descargas)[i].song.nombre != NULL) {
+            pthread_cancel((*descargas)[i].thread);
+            pthread_join((*descargas)[i].thread, NULL);
+            freeString(&(*descargas)[i].song.md5sum);
+            freeString(&(*descargas)[i].song.nombre);
+            freeString(&(*descargas)[i].nombreDescargaComando);
+        }
     }
 }
 
-// REVISAR!!!!!!! PERO TIENE BUENA PINTA
-void cleanThreadsBowman(DescargaBowman **descargas, int *numDescargas) { //FUNCION PARA HACER EL CLEAR
+void cleanThreadsBowman(DescargaBowman **descargas, int *numDescargas) { 
+    //DescargaBowman *descargasAux = NULL;
     int numDescargasAux = *numDescargas;
+    //int numDescargasUpdated = 0;
 
     for (int i = 0; i < numDescargasAux; i++) {
         if ((*descargas)[i].porcentaje == 100.00) { 
@@ -88,25 +92,27 @@ void cleanThreadsBowman(DescargaBowman **descargas, int *numDescargas) { //FUNCI
             freeString(&(*descargas)[i].song.md5sum);
             freeString(&(*descargas)[i].song.nombre);
             freeString(&(*descargas)[i].nombreDescargaComando);
-
-            DescargaBowman *copiaDescargas = malloc(*numDescargas * sizeof(DescargaBowman));
-
-            // Copiar elementos de descargas a copiaDescargas
-            memcpy(copiaDescargas, *descargas, *numDescargas * sizeof(DescargaBowman));
-            
-            (*descargas) = realloc(*descargas, (*numDescargas) - 1); 
-
-            for (int j = 0; j < (*numDescargas) - 1; j++) { 
-                if (j < i) {
-                    (*descargas)[j] = copiaDescargas[j];
-                } else {
-                    (*descargas)[j] = copiaDescargas[j + 1];
-                }
-            }
-            free(copiaDescargas);
-            (*numDescargas)--;         
-        }
+            //(*descargas)[i] = NULL;
+            // 0 1 NULL 3 NULL 5 6 
+        } /*else {
+            descargasAux = realloc(descargasAux, sizeof(DescargaBowman) * (numDescargasUpdated + 1));
+            descargasAux[numDescargasUpdated].thread = (*descargas)[i].thread;
+            descargasAux[numDescargasUpdated].porcentaje = (*descargas)[i].porcentaje;
+            descargasAux[numDescargasUpdated].nombreDescargaComando = strdup((*descargas)[i].nombreDescargaComando);
+            descargasAux[numDescargasUpdated].song.md5sum = strdup((*descargas)[i].song.md5sum);
+            descargasAux[numDescargasUpdated].song.nombre = strdup((*descargas)[i].song.nombre);
+            descargasAux[numDescargasUpdated].song.pathSong = strdup((*descargas)[i].song.pathSong);
+            descargasAux[numDescargasUpdated].song.id = (*descargas)[i].song.id;
+            descargasAux[numDescargasUpdated].song.size = (*descargas)[i].song.size;
+            descargasAux[numDescargasUpdated].song.bytesDescargados = (*descargas)[i].song.bytesDescargados;
+            numDescargasUpdated++;
+            // 2, 5*/
+        //}
     }
+    /*cleanAllTheThreadsBowman(descargas, *numDescargas);
+
+    *descargas = descargasAux;
+    *numDescargas = numDescargasUpdated;*/
 }
 
 char* read_until(int fd, char delimiter) {

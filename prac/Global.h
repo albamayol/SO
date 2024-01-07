@@ -46,7 +46,7 @@ typedef struct {
     int id;
     char *md5sum;
     char *nombre;
-    char *pathSong; //TODO soluciona problema multiples descargas a la vez en bowman --> AÑADIR SEMAFOROS EN EL FD EN POOLE Floyd/sutton/song1.mp3
+    //char *pathSong; //TODO soluciona problema multiples descargas a la vez en bowman --> AÑADIR SEMAFOROS EN EL FD EN POOLE Floyd/sutton/song1.mp3
     size_t size;
     size_t bytesDescargados; //strlen(dataFile);
 } Song;

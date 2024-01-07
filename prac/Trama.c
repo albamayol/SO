@@ -108,10 +108,10 @@ void inicializarTrama(TramaExtended *tramaExtended) {
 }
 
 TramaExtended readTrama(int fd) {
-  //Trama trama;
   TramaExtended tramaExtended;
   char *buffer = NULL;
   inicializarTrama(&tramaExtended);
+
   size_t checkPoole = 0;
 
   checkPoole = read(fd, &tramaExtended.trama.type, sizeof(char));  
@@ -120,17 +120,17 @@ TramaExtended readTrama(int fd) {
   }
 
   read(fd, &tramaExtended.trama.header_length, sizeof(unsigned short));
-  tramaExtended.trama.header = malloc((tramaExtended.trama.header_length+1) * sizeof(char)); 
+  tramaExtended.trama.header = malloc((tramaExtended.trama.header_length + 1) * sizeof(char)); 
 
   if (tramaExtended.trama.header != NULL) {
     read(fd, tramaExtended.trama.header, tramaExtended.trama.header_length);
     tramaExtended.trama.header[tramaExtended.trama.header_length] = '\0'; 
   } 
-
+  printF(tramaExtended.trama.header);
   size_t sizeData = 256 - 3 - tramaExtended.trama.header_length;
 
-  buffer = (char *) malloc(sizeof(char) * sizeData);
-  tramaExtended.trama.data = (char *) malloc(sizeof(char) * sizeData + 1);
+  buffer = malloc(sizeof(char) * sizeData);
+  tramaExtended.trama.data = malloc(sizeof(char) * (sizeData + 1));
   memset(tramaExtended.trama.data, '~', sizeData);
 
   read(fd, buffer, sizeof(char) * sizeData);
@@ -139,6 +139,7 @@ TramaExtended readTrama(int fd) {
     tramaExtended.trama.data[i] = buffer[i];
   }
   tramaExtended.trama.data[i] = '\0';
+  printF(tramaExtended.trama.data);
   freeString(&buffer);
 
   return tramaExtended;
