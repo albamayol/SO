@@ -32,6 +32,7 @@ Autores:
 #include <sys/stat.h>
 #include <sys/msg.h>
 #include <math.h>
+#include <sys/ipc.h>
 #include "semaphore_v2.h"
 
 #define printF(x) write(1, x, strlen(x))

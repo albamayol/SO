@@ -8,7 +8,7 @@ Autores:
 
 dataBowman dBowman;
     
-typedef struct {
+/*typedef struct {
     char type;
     short header_length; 
     char header[256];
@@ -26,7 +26,7 @@ typedef struct {
     short header_length;
     char mtext[256];
     //char data[256];
-} MissatgeAuxAux;
+} MissatgeAuxAux;*/
 
 typedef struct {
     long idmsg;
@@ -204,8 +204,8 @@ void checkPooleConnection() {
 static void *thread_function_read() {
     while(1) {
         //que finalize cuando se desconecte el cliente
-        MissatgeAuxAux msg;
-        memset(&msg, 0, sizeof(MissatgeAuxAux));
+        Missatge msg;
+        memset(&msg, 0, sizeof(Missatge));
 
         TramaExtended tramaExtended = readTrama(dBowman.fdPoole); 
 
@@ -214,18 +214,18 @@ static void *thread_function_read() {
             checkPooleConnection();
         }
         
-        msg.mtype = tramaExtended.trama.type;
-        msg.header_length = tramaExtended.trama.header_length;
-        //msg.trama.header = strdup(tramaExtended.trama.header);
-        //msg.trama.data = strdup(tramaExtended.trama.data);
+        msg.trama.type = tramaExtended.trama.type;
+        msg.trama.header_length = tramaExtended.trama.header_length;
+        msg.trama.header = strdup(tramaExtended.trama.header);
+        msg.trama.data = strdup(tramaExtended.trama.data);
 
-        size_t i;
+        /*size_t i;
         memset(msg.mtext, 0, 256);
         //msg.header = {0};
         for (i = 0; i < strlen(tramaExtended.trama.header); i++) {
             msg.mtext[i] = tramaExtended.trama.header[i];
         }
-        msg.mtext[i] = '\0';
+        msg.mtext[i] = '\0';*/
 
         /*memset(msg.data, 0, 256);
         //msg.data = {0};
@@ -234,12 +234,12 @@ static void *thread_function_read() {
         }
         msg.data[i] = '\0';*/
 
-        size_t totalSize = sizeof(MissatgeAuxAux) - sizeof(long);
+        size_t totalSize = sizeof(Missatge) - sizeof(long);
         //CRIBAJE --> añadir mensaje a msg queue de peticiones o msg queue de descargas
         //CUANDO LEAMOS UN MESSAGE DE TIPO X, COMO NOS QUEDARÀ EL GAP Y SE AÑADIRIA LA PROXIMA TRAMA, JUSTO AL HACER RCV HACEMOS EN LA LINIA DE ABAJO RELLENAMOS EL GAP DEJADO CON UN MENSAJE CON TIPO 5000, QUE NUNCA SE VA A DAR
         if (strcmp(tramaExtended.trama.header, "FILE_DATA") == 0) { 
             char* stringID = read_until_string(tramaExtended.trama.data, '&'); //cribaje segun idsong!!! UNA SOLA QUEUE MSG QUE EL TYPE DEL MSG SERA EL ID DE LA SONG
-            msg.mtype = atoi(stringID);
+            msg.trama.type = atoi(stringID);
             freeString(&stringID);
 
             if (msgsnd(dBowman.msgQueueDescargas, &msg, totalSize, IPC_NOWAIT) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
@@ -248,26 +248,27 @@ static void *thread_function_read() {
             }
         } else {
             if (strcmp(tramaExtended.trama.header, "CONOK") == 0 || strcmp(tramaExtended.trama.header, "CONKO") == 0) {                                    //LOGOUT
-                //msg.idmsg = 3;
-                msg.mtype = 3;
+                msg.idmsg = 3;
             } else if (strcmp(tramaExtended.trama.header, "SONGS_RESPONSE") == 0) {                                                           //LIST SONGS
-                msg.mtype = 1;
+                msg.idmsg = 1;
             } else if (strcmp(tramaExtended.trama.header, "PLAYLISTS_RESPONSE") == 0) {                                                       //LIST PLAYLISTS
-                msg.mtype = 2;
+                msg.idmsg = 2;
             } else if (strcmp(tramaExtended.trama.header, "CON_OK") == 0 || strcmp(tramaExtended.trama.header, "CON_KO") == 0) {                            //CONNECT POOLE
-                msg.mtype = 0;
+                msg.idmsg = 0;
             } else if (strcmp(tramaExtended.trama.header, "PLAY_EXIST") == 0 || strcmp(tramaExtended.trama.header, "PLAY_NOEXIST") == 0) {                  //CHECK PLAYLIST EXIST 
-                msg.mtype = 5;
+                msg.idmsg = 5;
             } else if (strcmp(tramaExtended.trama.header, "FILE_NOEXIST") == 0 || strcmp(tramaExtended.trama.header, "FILE_EXIST") == 0) {                  //CHECK SONG EXIST
-                msg.mtype = 4;
+                msg.idmsg = 4;
             } else if (strcmp(tramaExtended.trama.header, "NEW_FILE") == 0) {                                                                 //NEW_FILE 
-                msg.mtype = 6;
+                msg.idmsg = 6;
             }
-            asprintf(&dBowman.msg, "\nId msgQueue %d, Id mensaje: %ld, type: %d, length %hd, header: %s", dBowman.msgQueuePetitions, msg.mtype, msg.type, msg.header_length, msg.mtext);
+            asprintf(&dBowman.msg, "\nId msgQueue %d, Id mensaje: %ld, type: %d, length %hd, header: %s, data: %s\n", dBowman.msgQueuePetitions, msg.idmsg, msg.trama.type, msg.trama.header_length, msg.trama.header, msg.trama.data);
             printF(dBowman.msg);
             freeString(&dBowman.msg);
 
-            if (msgsnd(dBowman.msgQueuePetitions, &msg, 257*sizeof(char) + sizeof(short), IPC_NOWAIT) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
+            //257*sizeof(char) + sizeof(short)
+
+            if (msgsnd(dBowman.msgQueuePetitions, &msg, totalSize, IPC_NOWAIT) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
                 perror("msgsnd"); 
                 //exit(EXIT_FAILURE);
             }
@@ -312,6 +313,7 @@ void establishPooleConnection() {
     // Recepción Poole->Bowman para comprobar el estado de la conexion.
     Missatge msg;
     //size_t message_size = sizeof(long) + sizeof(short) + strlen(msg.trama.header) + strlen(msg.trama.data) + 2;
+    
     if (msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 0, 0) == -1) {
         printF("ERROR");
     }    
