@@ -71,6 +71,15 @@ void notifyPooleDisconnected() {
 void sig_func() {
     close(dPoole.fdPooleServer);
     close(dPoole.fdPooleClient);
+
+    if (dPoole.fdPipe[0] != -1) {
+        close(dPoole.fdPipe[0]);
+    }
+
+    if (dPoole.fdPipe[1] != -1) {
+        close(dPoole.fdPipe[1]);
+    }
+
     pthread_mutex_destroy(&dPoole.mutexStats);
 
     notifyPooleDisconnected();
@@ -680,13 +689,16 @@ void funcionMonolit() {
     size_t len = strlen(dPoole.serverName) + strlen("stats.txt") + 2; //Pepe/stats.txt\0
     char *path = malloc(len);
     snprintf(path, len, "%s/%s", dPoole.serverName, "stats.txt");
+
     int fd_file = open(path, O_RDWR, 0644);
+
+    freeString(&path);
 
     if (fd_file == -1) {
         perror("Error al crear el archivo");
-        freeString(&path);
         sig_func();
     }
+    int flag = 0;
 
     while(1) {
         char *cancion = read_until(fd_file, '\n');
@@ -695,10 +707,27 @@ void funcionMonolit() {
         }
         int numDescargas = atoi(read_until(fd_file, '\n'));
         if (strcmp(descargaCancion, cancion) == 0) {
+            flag = 1;
             numDescargas++;
-
-        } 
+            lseek(fd_file, -(sizeof(char)*2), SEEK_CUR);
+            char *numD = convertIntToString(numDescargas); //"2";
+            write(fd_file, &numD, strlen(numD));
+            freeString(&numD);
+        }
+        freeString(&cancion);
     }
+
+    if (!flag) {
+        lseek(fd_file, 0, SEEK_END);
+        size_t len = strlen(descargaCancion) + 3;
+        char *linea = malloc(len);
+        snprintf(linea, len, "\n%s\n%s", descargaCancion, "1");
+        write(fd_file, &linea, len);
+        freeString(&linea);
+    }
+
+    freeString(&descargaCancion);
+    close(fd_file);
 
     pthread_mutex_unlock(&dPoole.mutexStats);
 }
@@ -746,12 +775,14 @@ int main(int argc, char ** argv) {
                 printInfoFile();
                 close(fd);
                 close(dPoole.fdPipe[0]); //Lectura Cerrada
+                dPoole.fdPipe[0] = -1;
 
                 establishDiscoveryConnection();
 
                 sig_func();
             } else {
                 close(dPoole.fdPipe[1]); // Escritura Cerrada
+                dPoole.fdPipe[1] = -1;
                 funcionMonolit();
             }
         }

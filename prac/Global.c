@@ -356,7 +356,6 @@ void createStatsFile(char* directory) {
     if (fd_file == -1) {
         perror("Error al crear el archivo");
         freeString(&path);
-        sig_func();
     }
     close(fd_file);
 }
