@@ -742,7 +742,6 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
         file_size -= sizeDataTrama;
         //Actualizamos porcentaje.
         mythread->porcentaje = ((float)mythread->song.bytesDescargados / mythread->song.size) * 100;
-
         freeString(&dataFile);
         freeTrama(&(msg.trama));
     } while (file_size > 0); 
@@ -902,51 +901,34 @@ void creacionMsgQueues() {
     //printf("Id msgQueueDescargas %d\n", id_queue);
 }
 
-void printProgressBar(float percentage) {
-    int i;
-    printf("%.2f%% |", percentage);
-
-    int numBars = (int)(percentage / 5.0);  // Assuming 20 bars for each 100%
-    for (i = 0; i < numBars; ++i) {
-        printf("=");
-    }
-
-    for (; i < 20; ++i) {
-        printf(" ");
-    }
-
-    printf("|");
-
-    // Use fflush(stdout) to force the output to be displayed immediately
-    fflush(stdout);
-}
-
 void showDownloadStatus(DescargaBowman *descargas, int numDescargas) {
     for (int i = 0; i < numDescargas; i++) {
-        //CONTINUAR
-        if (strcmp(descargas[i].song.nombre, descargas[i].nombreDescargaComando) == 0) {
-            //Es una cancion
-            printF(descargas[i].song.nombre);
-            printF("\n");
-        } else {
-            // Es una cancion de una playlist
-            asprintf(&dBowman.msg, "%s - %s\n", descargas[i].nombreDescargaComando, descargas[i].song.nombre);
+        if (descargas[i].song.nombre != NULL) {
+            // Descarga no eliminada
+            if (strcmp(descargas[i].song.nombre, descargas[i].nombreDescargaComando) == 0) {
+                //Es una cancion
+                printF(descargas[i].song.nombre);
+                printF("\n");
+            } else {
+                // Es una cancion de una playlist
+                asprintf(&dBowman.msg, "%s - %s\n", descargas[i].nombreDescargaComando, descargas[i].song.nombre);
+                printF(dBowman.msg);
+                freeString(&dBowman.msg);
+            }
+            int numeroEqualChar = (int)(descargas[i].porcentaje / 5.0); // Asumimos que un 100% equivale a 20('=').
+                
+            char *cadena = malloc(numeroEqualChar + 1);
+            int j = 0;
+            for (j = 0; j < numeroEqualChar; j++) {
+                cadena[j] = '=';
+            }
+            cadena[j] = '\0';
+
+            asprintf(&dBowman.msg, "\t%.2f%% |%s%%|\n", descargas[i].porcentaje, cadena);
             printF(dBowman.msg);
             freeString(&dBowman.msg);
+            freeString(&cadena);
         }
-        int numeroEqualChar = (int)(descargas[i].porcentaje / 5.0); // Asumimos que un 100% equivale a 20('=').
-            
-        char *cadena = malloc(numeroEqualChar + 1);
-        int j = 0;
-        for (j = 0; j < numeroEqualChar; j++) {
-            cadena[j] = '=';
-        }
-        cadena[j] = '\0';
-
-        asprintf(&dBowman.msg, "\t%.2f%% |%s%%|\n", descargas[i].porcentaje, cadena);
-        printF(dBowman.msg);
-        freeString(&dBowman.msg);
-        freeString(&cadena);
     }
 }
 

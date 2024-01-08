@@ -71,6 +71,7 @@ void notifyPooleDisconnected() {
 void sig_func() {
     close(dPoole.fdPooleServer);
     close(dPoole.fdPooleClient);
+    pthread_mutex_destroy(&dPoole.mutexStats);
 
     notifyPooleDisconnected();
     
@@ -391,11 +392,14 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
         if (md5sum != NULL) {
             int randomID = getRandomID();
             
+            char *cancion = NULL;
             char *data = NULL;
             if (strchr(song, '/') != NULL) { //es cancion de una playlist --> Quitamos sutton de song (sutton/song1.mp3)
                 data = createString4Params(strchr(song, '/') + 1, convertIntToString(fileSize), md5sum, convertIntToString(randomID));
+                cancion = strdup(strchr(song, '/') + 1);
             } else { //es cancion normal
                 data = createString4Params(song, convertIntToString(fileSize), md5sum, convertIntToString(randomID));
+                cancion = strdup(song);
             }
     
             setTramaString(TramaCreate(0x04, "NEW_FILE", data, strlen(data)), fd_bowman);
@@ -408,6 +412,9 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
                 asprintf(&dPoole.msg,"%s song sent and downloaded successfully!\n", song);
                 printF(dPoole.msg);
                 freeString(&dPoole.msg);
+                // Mandamos el nombre de la cancion por la Pipe para que lo reciba el Monolit.
+                pthread_mutex_lock(&dPoole.mutexStats);
+                write(dPoole.fdPipe[1], cancion, strlen(cancion));
             } else if (strcmp(tramaExtended.trama.header, "CHECK_KO") == 0) {
                 asprintf(&dPoole.msg,"The download of the %s song was unsuccessfull, try again\n", song);
                 printF(dPoole.msg);
@@ -667,6 +674,35 @@ void establishDiscoveryConnection() {
     close(dPoole.fdPooleClient);
 }
 
+void funcionMonolit() {
+    char *descargaCancion = read_until(dPoole.fdPipe[0], '\0'); //Bloquante hasta obtener cancion
+    
+    size_t len = strlen(dPoole.serverName) + strlen("stats.txt") + 2; //Pepe/stats.txt\0
+    char *path = malloc(len);
+    snprintf(path, len, "%s/%s", dPoole.serverName, "stats.txt");
+    int fd_file = open(path, O_RDWR, 0644);
+
+    if (fd_file == -1) {
+        perror("Error al crear el archivo");
+        freeString(&path);
+        sig_func();
+    }
+
+    while(1) {
+        char *cancion = read_until(fd_file, '\n');
+        if (cancion == NULL) {
+            break; //EOF
+        }
+        int numDescargas = atoi(read_until(fd_file, '\n'));
+        if (strcmp(descargaCancion, cancion) == 0) {
+            numDescargas++;
+
+        } 
+    }
+
+    pthread_mutex_unlock(&dPoole.mutexStats);
+}
+
 /*
 @Finalitat: Implementar el main del programa.
 @Paràmetres: ---
@@ -694,14 +730,31 @@ int main(int argc, char ** argv) {
             dPoole.puertoServer = read_until(fd, '\n');
             
             createDirectory(dPoole.serverName); //CREAR DIRECTORIO POOLE
-            printInfoFile();
-            close(fd);
 
-            establishDiscoveryConnection();
+            // Crear fichero stats.txt
+            createStatsFile(dPoole.serverName);
 
-            sig_func();
+            // Creación subproceso (Monolit)
+            if (pipe(dPoole.fdPipe) == -1) {
+                perror("Crecion Pipe sin exito");
+            }
+
+            int monolit = fork();
+            if (monolit > 0) {
+                // El proceso padre(Poole) le avisará al hijo(Monolit) de que hay una nueva descarga.
+                // Le enviará el nombre de la cancion por una pipe.
+                printInfoFile();
+                close(fd);
+                close(dPoole.fdPipe[0]); //Lectura Cerrada
+
+                establishDiscoveryConnection();
+
+                sig_func();
+            } else {
+                close(dPoole.fdPipe[1]); // Escritura Cerrada
+                funcionMonolit();
+            }
         }
     }
-
     return 0;
 }

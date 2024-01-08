@@ -69,7 +69,6 @@ void cleanThreadPoole(ThreadPoole *thread) {
 
 void cleanAllTheThreadsBowman(DescargaBowman **descargas, int numDescargas) {
     for (int i = 0; i < numDescargas; i++) {
-        // 0 1 NULL 3 NULL 5 6 
         if ((*descargas)[i].song.nombre != NULL) {
             pthread_cancel((*descargas)[i].thread);
             pthread_join((*descargas)[i].thread, NULL);
@@ -86,14 +85,12 @@ void cleanThreadsBowman(DescargaBowman **descargas, int *numDescargas) {
     //int numDescargasUpdated = 0;
 
     for (int i = 0; i < numDescargasAux; i++) {
-        if ((*descargas)[i].porcentaje == 100.00) { 
+        if ((*descargas)[i].porcentaje == 100) {
             pthread_cancel((*descargas)[i].thread);
             pthread_join((*descargas)[i].thread, NULL);
             freeString(&(*descargas)[i].song.md5sum);
             freeString(&(*descargas)[i].song.nombre);
             freeString(&(*descargas)[i].nombreDescargaComando);
-            //(*descargas)[i] = NULL;
-            // 0 1 NULL 3 NULL 5 6 
         } /*else {
             descargasAux = realloc(descargasAux, sizeof(DescargaBowman) * (numDescargasUpdated + 1));
             descargasAux[numDescargasUpdated].thread = (*descargas)[i].thread;
@@ -348,6 +345,20 @@ void createDirectory(char* directory) {
             perror("Error al crear el mkdir");
         }
     }
+}
+
+void createStatsFile(char* directory) {
+    size_t len = strlen(directory) + strlen("stats.txt") + 2; //Pepe/stats.txt\0
+    char *path = malloc(len);
+    snprintf(path, len, "%s/%s", directory, "stats.txt");
+
+    int fd_file = open(path, O_CREAT | O_EXCL, 0644);
+    if (fd_file == -1) {
+        perror("Error al crear el archivo");
+        freeString(&path);
+        sig_func();
+    }
+    close(fd_file);
 }
 
 Element pooleMinConnections(Element *poole_list, int poole_list_size) {

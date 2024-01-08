@@ -31,6 +31,7 @@ Autores:
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/msg.h>
+#include <math.h>
 #include "semaphore_v2.h"
 
 #define printF(x) write(1, x, strlen(x))
@@ -115,6 +116,8 @@ typedef struct {
     char *msg;
     ThreadPoole *threads;
     int threads_array_size;
+    int fdPipe[2];
+    pthread_mutex_t mutexStats;
 } dataPoole;
 
 typedef struct {
