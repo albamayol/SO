@@ -34,7 +34,7 @@ void freePoolesArray(Element *array, int size) {
 
 void cleanThreadsPoole(ThreadPoole** threads, int numThreads) {
     for (int i = 0; i < numThreads; i++) {
-        if ((*threads)[i].user_name != NULL) { // SI TENEMOS TIEMPO CAMBIAR
+        if ((*threads)[i].user_name != NULL) { 
             for (int j = 0; j < (*threads)[i].numDescargas; j++) {
                 pthread_cancel((*threads)[i].descargas[j].thread);
                 pthread_join((*threads)[i].descargas[j].thread, NULL);
@@ -77,6 +77,13 @@ void cleanAllTheThreadsBowman(DescargaBowman **descargas, int numDescargas) {
             freeString(&(*descargas)[i].nombreDescargaComando);
         }
     }
+}
+
+void cleanInfoPlaylists(InfoPlaylist *infoPlaylists, int size) {
+    for (int i = 0; i < size; ++i) {
+        freeString(&(infoPlaylists[i].nameplaylist));
+    }
+    free(infoPlaylists);
 }
 
 void cleanThreadsBowman(DescargaBowman **descargas, int *numDescargas) { 
@@ -185,7 +192,6 @@ void cleanPadding(char* string, char delimiter) {
 }
 
 char *resultMd5sumComand(char *pathName) {
-    // create pipe and recieve checksum from system_
     int fd[2];
     char *checksum = malloc(sizeof(char) * 33);
 
@@ -204,17 +210,23 @@ char *resultMd5sumComand(char *pathName) {
 
     if (childPid == 0) {
         close(fd[0]);
+
         char *command = NULL;
         asprintf(&command, "md5sum %s", pathName);
+
         close(STDOUT_FILENO);
+
         dup2(fd[1], STDOUT_FILENO);
         execl("/bin/sh", "sh", "-c", command, (char *)NULL);
+
         free(command);
         dup2(fd[1], 0);
     } else {
         close(fd[1]);
+
         read(fd[0], checksum, sizeof(char) * 32);
         checksum[32] = '\0';
+        
         close(fd[0]);
     }
 
@@ -252,7 +264,6 @@ void removeExtraSpaces(char *comanda) {
 char * to_upper(char * str) {
 	size_t length = strlen(str) + 1;
     char * result = (char *) malloc(length * sizeof(char));
-    // inits a '\0'
 	memset(result,0, length);
 
     for (size_t i = 0; i < length; i++){
@@ -324,7 +335,6 @@ int songOrPlaylist(char *string) {
     size_t length = strlen(string);
     int indicePunto = length - 4; 
 
-    // song1.mp3
     if (strcmp(&string[indicePunto], ".MP3") == 0) {
         return 1;
     } else {
@@ -348,7 +358,7 @@ void createDirectory(char* directory) {
 }
 
 void createStatsFile(char* directory) {
-    size_t len = strlen(directory) + strlen("stats.txt") + 2; //Pepe/stats.txt\0
+    size_t len = strlen(directory) + strlen("stats.txt") + 2; 
     char *path = malloc(len);
     snprintf(path, len, "%s/%s", directory, "stats.txt");
 
@@ -419,7 +429,7 @@ int decreaseNumConnections(Element *poole_list, int poole_list_size, char* poole
             return 1;
         }
     }
-    return 0; //no se ha encontrado ese poole en discovery
+    return 0; 
 }
 
 int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleName) {
@@ -443,13 +453,13 @@ int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleNa
     freePoolesArray(*poole_list, *poole_list_size);
     *poole_list_size = updatedPooleListSize;
     *poole_list = updatedPooleList;
-    return flagFound; //no se ha encontrado ese poole en discovery
+    return flagFound; 
 }
 
 char* convertIntToString(int num) {
-    int numDigits = snprintf(NULL, 0, "%d", num);  //calcula el numero de digitos necesarios para interpretar un int como string
+    int numDigits = snprintf(NULL, 0, "%d", num);  
     char* string = (char*)malloc(sizeof(char)*(numDigits + 1)); 
-    sprintf(string, "%d", num); //CONVERSION --> sprintf está diseñada para formatear y printar uns string. Añade automaticamente el \0 al final. Si no hubiese hecho malloc +1 para el \0, el último caracter se lo hubiese "comido" el \0
+    sprintf(string, "%d", num); 
 
     return string;
 }

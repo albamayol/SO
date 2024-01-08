@@ -54,7 +54,6 @@ void conexionPoole(int fd_poole) {
     char *buffer = NULL;
     TramaExtended tramaExtended = readTrama(fd_poole);
     if (strcmp(tramaExtended.trama.header, "BOWMAN_LOGOUT") == 0) {
-        //LOGOUT --> trama.data contiene el nombre del poole donde ha ocurrido un logout
         if (decreaseNumConnections(dDiscovery.poole_list, dDiscovery.poole_list_size, tramaExtended.trama.data)) {
             setTramaString(TramaCreate(0x06, "CONOK", "", 0), fd_poole);   
         } else {
@@ -65,9 +64,9 @@ void conexionPoole(int fd_poole) {
     } else if (strcmp(tramaExtended.trama.header, "POOLE_DISCONNECT") == 0) {
         printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
 
-        pthread_mutex_lock(&dDiscovery.mutexList);  //LOCK
+        pthread_mutex_lock(&dDiscovery.mutexList); 
         int erasePooleResult = erasePooleFromList(&dDiscovery.poole_list, &dDiscovery.poole_list_size, tramaExtended.trama.data);
-        pthread_mutex_unlock(&dDiscovery.mutexList);    //UNLOCK
+        pthread_mutex_unlock(&dDiscovery.mutexList);   
 
         if (erasePooleResult) {
             setTramaString(TramaCreate(0x06, "CONOK", "", 0), fd_poole);   
@@ -84,12 +83,10 @@ void conexionPoole(int fd_poole) {
         separaDataToElement(tramaExtended.trama.data, &element);
         freeTrama(&(tramaExtended.trama));
 
-        //add element as the last one    
         asprintf(&buffer, "sizeArrayPooles: %d \n", dDiscovery.poole_list_size);
         printF(buffer);
         freeString(&buffer);
 
-        //lock
         pthread_mutex_lock(&dDiscovery.mutexList);
         dDiscovery.poole_list = (Element *)realloc(dDiscovery.poole_list, (dDiscovery.poole_list_size + 1) * sizeof(Element));
         
@@ -99,7 +96,6 @@ void conexionPoole(int fd_poole) {
         dDiscovery.poole_list[dDiscovery.poole_list_size].num_connections = element.num_connections;
         dDiscovery.poole_list_size++;
         pthread_mutex_unlock(&dDiscovery.mutexList);
-        //unlock
 
         asprintf(&buffer, "sizeArrayPoolesUpdated: %d \n", dDiscovery.poole_list_size);
         printF(buffer);
@@ -120,15 +116,11 @@ void conexionBowman(int fd_bowman) {
     TramaExtended tramaExtended = readTrama(fd_bowman);
     freeTrama(&(tramaExtended.trama));
 
-    /*SE PUEDE DAR EL CASO QUE UN POOLE SE ESTE CONECTANDO/DESCONECTANDO (MODIFICAN LA LISTA) Y QUE A SU VEZ SE CONECTE UN BOWMAN(PIDA LA INFO DEL POOLE CON MINIMO DE CONEXIONES)*/
-    //lock
     pthread_mutex_lock(&dDiscovery.mutexList);
-    Element e = pooleMinConnections(dDiscovery.poole_list, dDiscovery.poole_list_size); // Enviar trama con servername, ip y port del Poole
-    //unlock
+    Element e = pooleMinConnections(dDiscovery.poole_list, dDiscovery.poole_list_size); 
     pthread_mutex_unlock(&dDiscovery.mutexList);
 
     if (e.num_connections == -1) {
-        //NO HAY POOLE'S CONECTADOS! NO PODEMOS REDIRIGIR EL BOWMAN A NINGUN POOLE --> ENVIAMOS TRAMA CON_KO!!!
         setTramaString(TramaCreate(0x01, "CON_KO", "", 0), fd_bowman);
     } else {
         char* aux = NULL;
@@ -149,7 +141,7 @@ void conexionBowman(int fd_bowman) {
 
 void connect_Poole() {
     socklen_t pAddr = sizeof(dDiscovery.poole_addr);
-    int fd_poole = accept(dDiscovery.fdPoole, (struct sockaddr *)&dDiscovery.poole_addr, &pAddr); //fd para interaccionar
+    int fd_poole = accept(dDiscovery.fdPoole, (struct sockaddr *)&dDiscovery.poole_addr, &pAddr); 
     if (fd_poole < 0) { 
         //setTramaString(TramaCreate(0x01, "CON_KO", ""), fd_poole);    //TODO REVISAR DONDE VA ESTA TRAMA CON_KO!!!
         perror("Error al aceptar la conexión de Poole");
@@ -168,38 +160,30 @@ void connect_Bowman() {
         close(fd_bowman);
         return;
     }
-    //el envío de tramas es muy rapido, alomejor no hace falta crear un thread, poco probable que mientras trato una conexion de poole reciba otra de otro poole
-    //ademas es mucho gasto recursos
-    //cerrar conexion socket!!
     conexionBowman(fd_bowman);
 }
 
 void startPooleListener() {
 
-    dDiscovery.fdPoole = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);    //fd para creacion del socket
+    dDiscovery.fdPoole = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);   
     if (dDiscovery.fdPoole < 0) {
         perror ("Error al crear el socket de Poole");
         exit (EXIT_FAILURE);
     } 
 
-    // Specify the adress and port of the socket
-    // We'll admit connexions to any IP of our machine in the specified port
     bzero (&dDiscovery.poole_addr, sizeof (dDiscovery.poole_addr));
     dDiscovery.poole_addr.sin_family = AF_INET;
     dDiscovery.poole_addr.sin_port = htons (atoi(dDiscovery.portPoole));
     dDiscovery.poole_addr.sin_addr.s_addr = inet_addr(dDiscovery.ipPoole);
 
-    // When executing bind, we should add a cast:
-    // bind waits for a struct sockaddr* and we are passing a struct sockaddr_in*
     if (bind (dDiscovery.fdPoole, (void *) &dDiscovery.poole_addr, sizeof (dDiscovery.poole_addr)) < 0) {
         perror ("Error al enlazar el socket de Poole");
         close(dDiscovery.fdPoole);
         exit (EXIT_FAILURE);
     }
-    // We now open the port (20 backlog queue, typical value)
+    printf("after bind\n");
     listen (dDiscovery.fdPoole, 20);
     
-    // Procesamos las peticiones de Poole's
     while (1) {
         connect_Poole();
     }
@@ -212,32 +196,25 @@ void startBowmanListener() {
         sig_func();
     }
 
-    // Specify the adress and port of the socket
-    // We'll admit connexions to any IP of our machine in the specified port
     bzero (&dDiscovery.bowman_addr, sizeof (dDiscovery.bowman_addr));
     dDiscovery.bowman_addr.sin_family = AF_INET;
     dDiscovery.bowman_addr.sin_port = htons (atoi(dDiscovery.portBowman));
     dDiscovery.bowman_addr.sin_addr.s_addr = inet_addr(dDiscovery.ipBowman);
 
-    // When executing bind, we should add a cast:
-    // bind waits for a struct sockaddr* and we are passing a struct sockaddr_in*
     if (bind (dDiscovery.fdBowman, (void *) &dDiscovery.bowman_addr, sizeof (dDiscovery.bowman_addr)) < 0) {
         perror ("Error al enlazar el socket de Bowman");
         close(dDiscovery.fdBowman);
         sig_func();
     }
-    // We now open the port (20 backlog queue, typical value)
     listen (dDiscovery.fdBowman, 20);
 
-    //procesamos las peticiones de Bowman's
     while(1) {
         connect_Bowman();
     }
 }
 
-static void *initial_thread_function_bowman() { //revisar si static o no!
+static void *initial_thread_function_bowman() { 
     startBowmanListener();
-    //pthread_exit(NULL); //revisar! no se puede hacer! hay otra manera! asi se malgasta memoria
     return NULL;
 }
 
