@@ -648,7 +648,7 @@ int min(size_t a, size_t b) {
 }
 
 void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t size, int idSong) {
-    char* dataFile = NULL;
+    //char* dataFile = NULL;
     Missatge msg;
 
     size_t len = strlen(directory) + strlen(mythread->song.nombre) + 2;
@@ -659,12 +659,13 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
     if (fd_file == -1) {
         perror("Error al crear el archivo");
         freeString(&path);
-        freeString(&dataFile);
+        //freeString(&dataFile);
         sig_func();
     }
     size_t file_size = size;
     int sizeDataTrama = 256 - 12 - strlen(convertIntToString(idSong)) - 1;
     do {
+        char *dataFile = NULL;
         printF("KEVIN");
         msgrcv(dBowman.msgQueueDescargas, &msg, sizeof(Missatge) - sizeof(long), idSong, 0);
         
