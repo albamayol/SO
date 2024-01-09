@@ -88,7 +88,8 @@ Trama TramaCreate (char type, char *header, char *data, size_t size) {
   memset(trama.header, 0, (trama.header_length + 1));
   strcpy(trama.header, header);
   
-  int sizeData = 256 - 3 - trama.header_length; 
+  int sizeData = 256 - 3 - trama.header_length;
+  
   trama.data = malloc(sizeof(char) * (sizeData));
   memset(trama.data, '~', sizeData); //Padding
 

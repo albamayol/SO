@@ -520,8 +520,3 @@ void separaDataToElement(char* data, Element* e) {
     freeString(&ip);
     freeString(&port);
 }
-
-
-
-
-

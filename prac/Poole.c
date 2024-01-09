@@ -175,7 +175,7 @@ void listSongs(const char *path, char **fileNames, int *totalSongs) {
     closedir(dir);
 }
 
-void enviarTramas(int fd_bowman, char *cadena, char* header) {
+void enviarTramas(int fd_bowman, char *cadena, char* header, size_t numMaxChars) {
     int i = 0;
     char *trama = NULL;
 
@@ -184,15 +184,17 @@ void enviarTramas(int fd_bowman, char *cadena, char* header) {
     // Primero de todo enviamos una trama con el numero total de tramas que procesará Bowman.
     size_t aux = sizeData;
 
-    while (aux > 239) {
-        aux -= 239; 
+    while (aux > numMaxChars) {
+        aux -= numMaxChars; 
         i++;
     }
     char *numTramas = convertIntToString(i + 1);
     setTramaString(TramaCreate(0x02, header, numTramas, strlen(numTramas)), fd_bowman);
     freeString(&numTramas);
 
-    if (sizeData < 239) { // 256 - Type(1 Byte) - header_length(2 Bytes) - Header(14 Bytes) = 239 Bytes disponibles
+    if (sizeData < numMaxChars) { 
+        // 256 - Type(1 Byte) - header_length(2 Bytes) - Header(14 Bytes) = 239 Bytes disponibles para list songs
+        // 256 - Type(1 Byte) - header_length(2 Bytes) - Header(19 Bytes) = 234 Bytes disponibles para list playlists
         trama = readNumChars(cadena, 0, sizeData);
         asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
         printF(dPoole.msg);
@@ -200,17 +202,17 @@ void enviarTramas(int fd_bowman, char *cadena, char* header) {
         setTramaString(TramaCreate(0x02, header, trama, strlen(trama)), fd_bowman);
     } else {
         i = 0;
-        while (sizeData > 239) {
-            trama = readNumChars(cadena, i * 239, 239);
+        while (sizeData > numMaxChars) {
+            trama = readNumChars(cadena, i * numMaxChars, numMaxChars);
             asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
             setTramaString(TramaCreate(0x02, header, trama, strlen(trama)), fd_bowman); 
-            sizeData -= 239; 
+            sizeData -= numMaxChars; 
             i++;
             freeString(&trama);
         }
-        trama = readNumChars(cadena, i * 239, sizeData);
+        trama = readNumChars(cadena, i * numMaxChars, sizeData);
         asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
         printF(dPoole.msg);
         freeString(&dPoole.msg);
@@ -229,7 +231,7 @@ void sendListSongs(int fd_bowman) {
 
     printF(songs);
 
-    enviarTramas(fd_bowman, songs, "SONGS_RESPONSE");
+    enviarTramas(fd_bowman, songs, "SONGS_RESPONSE", 239);
 
     freeString(&songs);
 }
@@ -371,7 +373,7 @@ int searchPlaylist(char *pathSongPlaylist) {
 
 int getRandomID() {
     srand(time(NULL)); 
-    return rand() % 1000; 
+    return (rand() % 999) + 1; 
 }
 
 void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una playlist, añadir previamente char* song: sutton/song1.mp3
@@ -436,16 +438,16 @@ static void *thread_function_send_song(void* thread) {
 }
 
 void threadSendSong(char *song, ThreadPoole *thread) { //TODO si enviamos una cancion de una playlist, añadir previamente char* song: sutton/song1.mp3
-    thread->numDescargas = 0;
+    thread->numDescargas++;
     asprintf(&dPoole.msg,"\nNum descargas: %d.\n", (*thread).numDescargas);
     printF(dPoole.msg);
     freeString(&dPoole.msg);
 
-    thread->descargas = realloc(thread->descargas, sizeof(DescargaPoole) * (thread->numDescargas + 1)); 
-    thread->descargas[thread->numDescargas].nombreDescargaComando = strdup(song);
-    thread->descargas[thread->numDescargas].fd_bowman = thread->fd; 
-    thread->numDescargas++;
-    if (pthread_create(&thread->descargas[thread->numDescargas - 1].thread, NULL, thread_function_send_song, (void *)&thread->descargas[thread->numDescargas - 1]) != 0) {
+    (*thread).descargas = realloc((*thread).descargas, sizeof(DescargaPoole) * thread->numDescargas); 
+    (*thread).descargas[thread->numDescargas - 1].nombreDescargaComando = strdup(song);
+    (*thread).descargas[thread->numDescargas - 1].fd_bowman = thread->fd; 
+    
+    if (pthread_create(&(*thread).descargas[thread->numDescargas - 1].thread, NULL, thread_function_send_song, (void *)&(*thread).descargas[thread->numDescargas - 1]) != 0) {
         perror("Error al crear el thread para la descarga");
         thread->numDescargas--;
     }
@@ -462,7 +464,7 @@ void sendListPlaylists(int fd_bowman) {
     setTramaString(TramaCreate(0x02, "PLAYLISTS_RESPONSE", cantidadCanciones, strlen(cantidadCanciones)), fd_bowman);
     freeString(&cantidadCanciones);
 
-    enviarTramas(fd_bowman, playlists, "PLAYLISTS_RESPONSE");
+    enviarTramas(fd_bowman, playlists, "PLAYLISTS_RESPONSE", 234);
     freeString(&playlists);
 }
 
@@ -500,7 +502,9 @@ void sendPlaylist(char *pathPlaylist, ThreadPoole *thread) { //Pepe/sutton
 
 void conexionBowman(ThreadPoole* mythread) {
     TramaExtended tramaExtended = readTrama(mythread->fd);
+    mythread->descargas = NULL;
     mythread->user_name = strdup(tramaExtended.trama.data);
+    mythread->numDescargas = 0;
 
     asprintf(&dPoole.msg,"\nNew user connected: %s.\n", mythread->user_name);
     printF(dPoole.msg);
