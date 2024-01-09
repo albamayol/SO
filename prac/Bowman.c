@@ -37,6 +37,14 @@ void inicializarDataBowman() {
     dBowman.infoPlaylists = NULL;
     dBowman.numInfoPlaylists = 0;
 }
+
+void inicializarMissatgeGap() {
+    msgGap.mtype = 1000;
+    msgGap.type = '\0';
+    msgGap.header_length = 0;
+    memset(msgGap.header, '\0', 256);
+    memset(msgGap.data, '\0', 256);
+}
 /*
 @Finalitat: Manejar la recepción de la signal (SIGINT) y liberar los recursos utilizados hasta el momento.
 @Paràmetres: ---
@@ -75,17 +83,17 @@ void sig_func() {
     freeElement(&dBowman.pooleConnected);
 
     // Eliminar cola de mensajes peticiones
-    /*if (msgctl(dBowman.msgQueuePetitions, IPC_RMID, NULL) == -1) {
+    if (msgctl(dBowman.msgQueuePetitions, IPC_RMID, NULL) == -1) {
         perror("Error al eliminar la cola de mensajes");
-    }*/
-    msgctl (dBowman.msgQueuePetitions, IPC_RMID, (struct msqid_ds *)NULL);
+    }
+    //msgctl (dBowman.msgQueuePetitions, IPC_RMID, (struct msqid_ds *)NULL);
 
     // Eliminar cola de mensajes descargas canciones
-    /*if (msgctl(dBowman.msgQueueDescargas, IPC_RMID, NULL) == -1) {
+    if (msgctl(dBowman.msgQueueDescargas, IPC_RMID, NULL) == -1) {
         perror("Error al eliminar la cola de mensajes");
-    }*/
+    }
 
-    msgctl (dBowman.msgQueueDescargas, IPC_RMID, (struct msqid_ds *)NULL);
+    //msgctl (dBowman.msgQueueDescargas, IPC_RMID, (struct msqid_ds *)NULL);
 
     cleanInfoPlaylists(dBowman.infoPlaylists, dBowman.numInfoPlaylists);
     
@@ -218,7 +226,7 @@ static void *thread_function_read() {
             msg.mtype = atoi(stringID);
             freeString(&stringID);
 
-            if (msgsnd(dBowman.msgQueueDescargas, &msg, sizeof(Missatge) - sizeof(long), IPC_NOWAIT) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
+            if (msgsnd(dBowman.msgQueueDescargas, &msg, sizeof(Missatge) - sizeof(long), 0) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
                 perror("msgsnd"); 
                 sig_func();
             }
@@ -242,7 +250,7 @@ static void *thread_function_read() {
             printF(dBowman.msg);
             freeString(&dBowman.msg);
 
-            if (msgsnd(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), IPC_NOWAIT) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
+            if (msgsnd(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 0) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
                 perror("msgsnd"); 
                 sig_func();
             }
@@ -650,23 +658,30 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
         sig_func();
     }
     size_t file_size = size;
-    int sizeDataTrama = 256 - 12 - strlen(convertIntToString(idSong)) - 1;
+    asprintf(&dBowman.msg, "Size: %ld\n", size);
+    printF(dBowman.msg);
+    freeString(&dBowman.msg);
+    size_t sizeDataTrama = 256 - 12 - strlen(convertIntToString(idSong)) - 1;
     do {
         printF("KEVIN");
+        //bloquear
         msgrcv(dBowman.msgQueueDescargas, &msg, sizeof(Missatge) - sizeof(long), idSong, 0);
         
-        msgsnd(dBowman.msgQueueDescargas, &msgGap, sizeof(Missatge) - sizeof(long), IPC_NOWAIT);
-        
+        msgsnd(dBowman.msgQueueDescargas, &msgGap, sizeof(Missatge) - sizeof(long), 0);
+        //desbloquear
         getIdData(msg.data, &dataFile, mythread);
-        printF("ALBA");
-        printF(dataFile);
-        printF("\n");
+        //printF("ALBA");
+        //printF(dataFile);
+        //printF("\n");
 
         if (write(fd_file, dataFile, min(file_size, sizeDataTrama)) == -1) { // Escribir lo leído en el archivo
             perror("Error al escribir en el archivo");
             break;
         }
         file_size -= sizeDataTrama;
+        asprintf(&dBowman.msg, "Size: %ld\n", file_size);
+        printF(dBowman.msg);
+        freeString(&dBowman.msg);
         mythread->porcentaje = ((float)mythread->song.bytesDescargados / mythread->song.size) * 100;
         freeString(&dataFile);
     } while (file_size > 0); 
@@ -780,9 +795,9 @@ void requestDownloadPlaylist(char* nombreArchivoCopia) {
 void creacionMsgQueues() {
     key_t key1 = ftok("Bowman.c", 0xCA);
 
-    int id_queue = msgget(key1, 0600 | IPC_CREAT);
+    int id_queue = msgget(key1, 0666 | IPC_CREAT);
     printf("Cola peticiones: %d\n", id_queue);
-    printf("%d\n", errno);
+    //printf("%d\n", errno);
     if (id_queue < 0) {
         write(1, "Error al crear la cua de missatges de les peticions\n", strlen("Error al crear la cua de missatges de les peticions\n"));
         return;
@@ -791,7 +806,7 @@ void creacionMsgQueues() {
 
     key_t key2 = ftok("Bowman.c", 0xCB);
 
-    id_queue = msgget(key2, 0600 | IPC_CREAT);
+    id_queue = msgget(key2, 0666 | IPC_CREAT);
     printf("Cola Descargas: %d\n", id_queue);
     if (id_queue < 0) {
         write(1, "Error al crear la cua de missatges de les descargues\n", strlen("Error al crear la cua de missatges de les descargues\n"));
@@ -869,7 +884,7 @@ int main(int argc, char ** argv) {
 
             creacionMsgQueues();
 
-            msgGap.mtype = 1000;
+            inicializarMissatgeGap();
             
             while (1) { 
                 printF("$ ");
