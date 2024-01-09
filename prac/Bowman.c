@@ -298,8 +298,6 @@ void establishPooleConnection() {
     } else if (strcmp(msg.header, "CON_KO") == 0) {
         close(dBowman.fdPoole);
     }
-
-    //freeTrama(&(msg.trama));
 }
 
 void juntarTramasSongs(int numTramas, char **songs) {
@@ -324,7 +322,6 @@ void juntarTramasSongs(int numTramas, char **songs) {
 
         (*songs)[totalSize] = '\0';
         i++;
-        //freeTrama(&(msg.trama));
     }
 }
 
@@ -558,8 +555,6 @@ void requestListPlaylists() {
     msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 2, 0);
     msgsnd(dBowman.msgQueuePetitions, &msgGap, sizeof(Missatge) - sizeof(long), IPC_NOWAIT);
 
-    //freeTrama(&(msg.trama));
-
     cleanPadding(msg.data, '~');
     int numCanciones = atoi(msg.data);
 
@@ -581,9 +576,6 @@ int requestLogout() {
     setTramaString(TramaCreate(0x06, "EXIT", dBowman.clienteName, strlen(dBowman.clienteName)), dBowman.fdPoole);
 
     Missatge msg;
-    //char aux[257];
-    //ssize_t bytesLeidos = read(dBowman.fdPoole, aux, 256);  
-    //aux[256] = '\0';
 
     msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 3, 0); //Aqui no hace falta llenar el gap porque solo recibiras una trama
 
@@ -606,18 +598,13 @@ int requestLogout() {
 
     if (strcmp(msg.header, "CONOK") == 0) {
         printF(msg.header);
-        //OK
         close(dBowman.fdPoole);
-        //freeTrama(&(msg.trama));
         return 1;
     } else if (strcmp(msg.header, "CONKO")) {
         printF(msg.header);
-        //KO
         printF("Sorry, couldn't logout, try again\n");
-        //freeTrama(&(msg.trama));
         return 0;
     }
-    //freeTrama(&(msg.trama));
     return 2;
 }
 
@@ -648,7 +635,7 @@ int min(size_t a, size_t b) {
 }
 
 void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t size, int idSong) {
-    //char* dataFile = NULL;
+    char* dataFile = NULL;
     Missatge msg;
 
     size_t len = strlen(directory) + strlen(mythread->song.nombre) + 2;
@@ -659,13 +646,12 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
     if (fd_file == -1) {
         perror("Error al crear el archivo");
         freeString(&path);
-        //freeString(&dataFile);
+        freeString(&dataFile);
         sig_func();
     }
     size_t file_size = size;
     int sizeDataTrama = 256 - 12 - strlen(convertIntToString(idSong)) - 1;
     do {
-        char *dataFile = NULL;
         printF("KEVIN");
         msgrcv(dBowman.msgQueueDescargas, &msg, sizeof(Missatge) - sizeof(long), idSong, 0);
         
@@ -746,7 +732,6 @@ void threadDownloadSong(char *song) {
     dBowman.descargas[dBowman.numDescargas].nombreDescargaComando = strdup(song);
     dBowman.descargas[dBowman.numDescargas].porcentaje = 0.00; 
     dBowman.descargas[dBowman.numDescargas].song.bytesDescargados = 0; 
-    //dBowman.descargas[dBowman.numDescargas].song.pathSong = NULL;
     dBowman.numDescargas++;
 
     if (pthread_create(&dBowman.descargas[dBowman.numDescargas - 1].thread, NULL, thread_function_download_song, (void *)&dBowman.descargas[dBowman.numDescargas - 1]) != 0) {
@@ -764,10 +749,8 @@ void requestDownloadSong(char* nombreArchivoCopia) {
     msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 4, 0);
 
     if (strcmp(msg.header, "FILE_EXIST") == 0) {
-        //freeTrama(&(msg.trama));
         threadDownloadSong(nombreArchivoCopia);
     } else if (strcmp(msg.header, "FILE_NOEXIST") == 0) {
-        //freeTrama(&(msg.trama));
     }    
 }
 
@@ -779,8 +762,6 @@ void requestDownloadPlaylist(char* nombreArchivoCopia) {
     msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 5, 0);
 
     if (strcmp(msg.header, "PLAY_EXIST") == 0) {
-        //freeTrama(&(msg.trama));
-
         char *playlistDirectory = malloc(strlen(dBowman.clienteName) + strlen(nombreArchivoCopia) + 2); 
         sprintf(playlistDirectory, "%s/%s", dBowman.clienteName, nombreArchivoCopia);   
         createDirectory(playlistDirectory);
@@ -792,7 +773,7 @@ void requestDownloadPlaylist(char* nombreArchivoCopia) {
             threadDownloadSong(nombreArchivoCopia);
         }
     } else if (strcmp(msg.header, "PLAY_NOEXIST") == 0) {
-        //freeTrama(&(msg.trama));
+        printF("This playlist does not exist.\n");
     }
 }
 
