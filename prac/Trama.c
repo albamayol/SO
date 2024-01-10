@@ -140,7 +140,6 @@ TramaExtended readTrama(int fd) {
     tramaExtended.trama.data[i] = buffer[i];
   }
   tramaExtended.trama.data[i] = '\0';
-  printF(tramaExtended.trama.data);
   freeString(&buffer);
 
   return tramaExtended;

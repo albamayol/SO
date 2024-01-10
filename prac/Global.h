@@ -95,6 +95,7 @@ typedef struct {
     Element pooleConnected;
     DescargaBowman *descargas;
     pthread_t threadRead;
+    pthread_mutex_t mutexDescargas;
     int numDescargas;
     int msgQueuePetitions;
     int msgQueueDescargas;
