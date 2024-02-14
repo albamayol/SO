@@ -319,18 +319,27 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, i
     strcpy(data, id);
     strcat(data, "&"); 
 
+    char tecla = ' ';
     do {
         bytesLeidos = read(fd_file, buffer, 244 - longitudId - 1);
         for (int i = 0; i < bytesLeidos; i++) {
             data[longitudId + 1 + i] = buffer[i];
         }
 
-        setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman); 
+        read(0, &tecla, sizeof(char));
+        if (tecla == 'A') {
+            setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman); 
+            printF(data);
+            printF("\n");
+        }
 
         strcpy(data, id);
         strcat(data, "&");
+        asprintf(&dPoole.msg,"%d tamaño!\n", fileSize);
+        printF(dPoole.msg);
+        freeString(&dPoole.msg);
         fileSize -= bytesLeidos; 
-    } while(fileSize >= 244);
+    } while(fileSize >= 244 - longitudId - 1);
 
     if (fileSize > 0) {
         bytesLeidos = read(fd_file, buffer, fileSize);
@@ -339,6 +348,8 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, i
             data[longitudId + 1 + i] = buffer[i];
         }
         setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman); 
+        printF(data);
+        printF("\n");
     }
     freeString(&data);
     freeString(&buffer);
