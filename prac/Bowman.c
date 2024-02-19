@@ -16,7 +16,7 @@ typedef struct {
     char data[256];
 } Missatge;
 
-Missatge msgGap;
+//Missatge msgGap;
 
 int requestLogout();
 /*
@@ -38,13 +38,13 @@ void inicializarDataBowman() {
     dBowman.numInfoPlaylists = 0;
 }
 
-void inicializarMissatgeGap() {
+/*void inicializarMissatgeGap() {
     msgGap.mtype = 1000;
     msgGap.type = '\0';
     msgGap.header_length = 0;
     memset(msgGap.header, '\0', 256);
     memset(msgGap.data, '\0', 256);
-}
+}*/
 
 /*
 @Finalitat: Manejar la recepción de la signal (SIGINT) y liberar los recursos utilizados hasta el momento.
@@ -197,7 +197,8 @@ static void *thread_function_read() {
         Missatge msg;
         memset(&msg, 0, sizeof(Missatge));
 
-        TramaExtended tramaExtended = readTrama(dBowman.fdPoole); 
+        TramaExtended tramaExtended = readTrama(dBowman.fdPoole);
+        //escribir en un file lo que recibimos del socket. 
 
         if (tramaExtended.initialized) {
             freeTrama(&tramaExtended.trama);
@@ -318,7 +319,7 @@ void juntarTramasSongs(int numTramas, char **songs) {
     while(i < numTramas) {
         msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 1, 0);
         
-        msgsnd(dBowman.msgQueuePetitions, &msgGap, sizeof(Missatge) - sizeof(long), 0);
+        //msgsnd(dBowman.msgQueuePetitions, &msgGap, sizeof(Missatge) - sizeof(long), 0);
 
         cleanPadding(msg.data, '~');
         size_t dataSize = strlen(msg.data);
@@ -382,7 +383,7 @@ void requestListSongs() {
     Missatge msg;
     msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 1, 0);
 
-    msgsnd(dBowman.msgQueuePetitions, &msgGap, sizeof(Missatge) - sizeof(long), 0);
+    //msgsnd(dBowman.msgQueuePetitions, &msgGap, sizeof(Missatge) - sizeof(long), 0);
 
     cleanPadding(msg.data, '~');
     int numTramas = atoi(msg.data);
@@ -409,7 +410,7 @@ char *juntarTramasPlaylists(int numTramas) {
 
         msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 2, 0);
 
-        msgsnd(dBowman.msgQueuePetitions, &msgGap, sizeof(Missatge) - sizeof(long), 0);
+        //msgsnd(dBowman.msgQueuePetitions, &msgGap, sizeof(Missatge) - sizeof(long), 0);
 
         cleanPadding(msg.data, '~');
         int dataSize = strlen(msg.data);
@@ -563,13 +564,13 @@ void requestListPlaylists() {
 
     // Lectura cantidad de canciones
     msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 2, 0);
-    msgsnd(dBowman.msgQueuePetitions, &msgGap, sizeof(Missatge) - sizeof(long), 0);
+    //msgsnd(dBowman.msgQueuePetitions, &msgGap, sizeof(Missatge) - sizeof(long), 0);
 
     cleanPadding(msg.data, '~');
     int numCanciones = atoi(msg.data);
 
     msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 2, 0);
-    msgsnd(dBowman.msgQueuePetitions, &msgGap, sizeof(Missatge) - sizeof(long), 0);
+    //msgsnd(dBowman.msgQueuePetitions, &msgGap, sizeof(Missatge) - sizeof(long), 0);
 
     int numTramas = atoi(msg.data);
 
@@ -652,11 +653,6 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
         Missatge msg;
         
         msgrcv(dBowman.msgQueueDescargas, &msg, sizeof(Missatge) - sizeof(long), idSong, 0);
-        //una cola con buzones(y cada buzon pertenece a una cancion).
-        
-
-        
-        //msgsnd(dBowman.msgQueueDescargas, &msgGap, sizeof(Missatge) - sizeof(long), 0);
 
         getIdData(msg.data, &dataFile, mythread);
         printF(dataFile);
@@ -677,7 +673,7 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
         
         //pthread_mutex_unlock(&dBowman.mutexDescargas);
     } while (file_size > 0); 
-
+    
     //COMPROBACIÓN MD5SUM
     char *md5sum = resultMd5sumComand(path);
     printF("mdsum descarga: ");
@@ -877,7 +873,7 @@ int main(int argc, char ** argv) {
 
             creacionMsgQueues();
 
-            inicializarMissatgeGap();
+            //inicializarMissatgeGap();
 
             while (1) { 
                 printF("$ ");

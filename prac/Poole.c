@@ -299,7 +299,8 @@ void listPlaylists(const char *path, char **fileNames, int *totalSongs) {
 void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, int fileSize) {
     size_t len = strlen(directoryPath) + strlen(song) + 2;
     char *path = malloc(len);
-    char *data = malloc(244); // 256 - 3(Type + Header Length) - 9(Bytes del Header) = 244 Bytes + 1
+    //char *data = malloc(244); // 256 - 3(Type + Header Length) - 9(Bytes del Header) = 244 Bytes + 1
+    char data[244];
     int bytesLeidos = 0;
 
     snprintf(path, len, "%s/%s", directoryPath, song);
@@ -308,37 +309,53 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, i
     if (fd_file == -1) {
         perror("Error al crear el archivo");
         freeString(&path);
-        freeString(&data);
+        //freeString(&data);
         sig_func();
     } 
     freeString(&path);
 
     int longitudId = strlen(id);
-    char *buffer = malloc(244 - longitudId - 1); 
+    char *buffer = malloc(244 - longitudId - 1);
 
-    strcpy(data, id);
-    strcat(data, "&"); 
+    //snprintf(data, strlen(id) + 1, "%s&", id);
+    //strcpy(data, id); //memcpy
+    
+    memcpy(data, id, strlen(id));  //memcpy, n bloques de mem a esa direccion de mem(copio bytes).
+    data[strlen(id)] = '\0';
+    size_t len_data = strlen(data);
+    data[len_data] = '&';
+    //strcat(data, aux);
 
-    char tecla = ' ';
+    //char tecla = ' ';
     do {
-        bytesLeidos = read(fd_file, buffer, 244 - longitudId - 1);
-        for (int i = 0; i < bytesLeidos; i++) {
-            data[longitudId + 1 + i] = buffer[i];
-        }
-
-        read(0, &tecla, sizeof(char));
-        if (tecla == 'A') {
-            setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman); 
+        //read(0, &tecla, sizeof(char));
+        //if (tecla == 'A') {
+            bytesLeidos = read(fd_file, buffer, 244 - longitudId - 1);
+            printF(buffer);
+            printF("\nKEVIN\n");
+            for (int i = 0; i < bytesLeidos; i++) {
+                data[longitudId + 1 + i] = buffer[i];
+            }
             printF(data);
+            //read(0, &tecla, sizeof(char));
+            //if (tecla == 'A') {
+            setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman);
+            usleep(200); //revisar el valor.
+            //printF(data);
             printF("\n");
-        }
 
-        strcpy(data, id);
-        strcat(data, "&");
-        asprintf(&dPoole.msg,"%d tamaño!\n", fileSize);
-        printF(dPoole.msg);
-        freeString(&dPoole.msg);
-        fileSize -= bytesLeidos; 
+            //strcpy(data, id); //cambiar
+            //strcat(data, "&"); //cambiar
+            memcpy(data, id, strlen(id));
+            data[strlen(id)] = '\0';
+            len_data = strlen(data);
+            data[len] = '&';
+
+            asprintf(&dPoole.msg,"%d tamaño!\n", fileSize);
+            printF(dPoole.msg);
+            freeString(&dPoole.msg);
+            fileSize -= bytesLeidos; 
+        //}
     } while(fileSize >= 244 - longitudId - 1);
 
     if (fileSize > 0) {
@@ -351,7 +368,7 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, i
         printF(data);
         printF("\n");
     }
-    freeString(&data);
+    //freeString(&data);
     freeString(&buffer);
     close(fd_file);
 }
