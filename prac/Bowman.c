@@ -16,7 +16,7 @@ typedef struct {
     char data[256];
 } Missatge;
 
-Missatge msgGap;
+Missatge msgGap; //TODO Remove cuando apliquemos busties
 
 int requestLogout();
 /*
@@ -38,7 +38,7 @@ void inicializarDataBowman() {
     dBowman.numInfoPlaylists = 0;
 }
 
-void inicializarMissatgeGap() {
+void inicializarMissatgeGap() {//TODO Remove cuando apliquemos busties
     msgGap.mtype = 1000;
     msgGap.type = '\0';
     msgGap.header_length = 0;
@@ -258,7 +258,7 @@ static void *thread_function_read() {
         } 
         freeTrama(&(tramaExtended.trama));
     }
-    checkPooleConnection();
+    checkPooleConnection(); //TODO REVISAR, PQ NO VA A LLEGAR NUNCA AQUI
     return NULL; 
 }
 
