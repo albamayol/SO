@@ -192,6 +192,14 @@ void checkPooleConnection() {
 }
 
 static void *thread_function_read() {
+    int fd_file = open("Floyd/test.mp3", O_CREAT | O_RDWR, 0644); 
+    if (fd_file == -1) {
+        perror("Error al crear el archivo");
+        //freeString(&path);
+        //freeString(&dataFile);
+        sig_func();
+    }
+
     while(1) {
         //TODO que finalize cuando se desconecte el cliente
         Missatge msg;
@@ -227,7 +235,11 @@ static void *thread_function_read() {
             msg.mtype = atoi(stringID);
             freeString(&stringID);
 
-            //pthread_mutex_lock(&dBowman.mutexDescargas);
+            if (write(fd_file, tramaExtended.trama.data, strlen(tramaExtended.trama.data)) == -1) { // Escribir lo leído en el archivo
+                perror("Error al escribir en el archivo");
+                break;
+            }
+
             if (msgsnd(dBowman.msgQueueDescargas, &msg, sizeof(Missatge) - sizeof(long), 0) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
                 perror("msgsnd"); 
                 sig_func();
@@ -720,7 +732,6 @@ void downloadSong(DescargaBowman *mythread) {
         i++;
     }    
     freeString(&dataSong);
-    //printF("SANDRA");
     createMP3FileInDirectory(dBowman.clienteName, mythread, mythread->song.size, mythread->song.id);
 }
 
