@@ -150,7 +150,7 @@ void listSongs(const char *path, char **fileNames, int *totalSongs) {
     (*fileNames)[0] = '\0'; 
 
     while ((entry = readdir(dir)) != NULL) {
-        if (entry->d_type == DT_REG && strcmp(entry->d_name, ".DS_Store") != 0) {
+        if ((strstr(entry->d_name, ".mp3") != NULL) && (strcmp(entry->d_name, ".DS_Store") != 0)) {
             size_t fileNameLen = strlen(entry->d_name);
             *fileNames = realloc(*fileNames, totalLength + fileNameLen + 1); 
             
@@ -297,11 +297,12 @@ void listPlaylists(const char *path, char **fileNames, int *totalSongs) {
 }
 
 void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, int fileSize) {
+    int bytesLeidos = 0;
     size_t len = strlen(directoryPath) + strlen(song) + 2;
     char *path = malloc(len);
-    //char *data = malloc(244); // 256 - 3(Type + Header Length) - 9(Bytes del Header) = 244 Bytes + 1
     char data[244];
-    int bytesLeidos = 0;
+    memset(&data, '\0', 244);
+
 
     snprintf(path, len, "%s/%s", directoryPath, song);
 
@@ -309,7 +310,6 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, i
     if (fd_file == -1) {
         perror("Error al crear el archivo");
         freeString(&path);
-        //freeString(&data);
         sig_func();
     } 
     freeString(&path);
@@ -317,50 +317,34 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, i
     int longitudId = strlen(id);
     char *buffer = malloc(244 - longitudId - 1);
 
-    strcpy(data, id); //memcpy
-    
-    //memcpy(data, id, strlen(id));  //memcpy, n bloques de mem a esa direccion de mem(copio bytes).
-    //data[strlen(id)] = '\0';
-    //size_t len_data = strlen(data);
-    //data[len_data] = '&';
-    strcat(data, "&");
+    int i = 0;
+    for (i = 0; i < longitudId; i++) {
+        data[i] = id[i];
+    }
+    data[i] = '&';
+    i++;
 
-    //char tecla = ' ';
     do {
-        //read(0, &tecla, sizeof(char));
-        //if (tecla == 'A') {
-            bytesLeidos = read(fd_file, buffer, 244 - longitudId - 1);
-            for (int i = 0; i < bytesLeidos; i++) {
-                data[longitudId + 1 + i] = buffer[i];
-            }
-            //read(0, &tecla, sizeof(char));
-            //if (tecla == 'A') {
-            setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman);
-            //usleep(200); //revisar el valor.
-            sleep(0.001);
+        bytesLeidos = read(fd_file, buffer, 244 - longitudId - 1);
+        for (int j = 0; j < bytesLeidos; j++) {
+            data[i + j] = buffer[j];
+        }
+        
+        setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman);
+        //usleep(60000); //valor de Malé
+        usleep(1000); //valor de Ferran
 
-            strcpy(data, id); //cambiar
-            strcat(data, "&"); //cambiar
-            //memcpy(data, id, strlen(id));
-            //data[strlen(id)] = '\0';
-            //len_data = strlen(data);
-            //data[len] = '&';
-
-            fileSize -= bytesLeidos; 
-        //}
+        fileSize -= bytesLeidos; 
     } while(fileSize >= 244 - longitudId - 1);
 
     if (fileSize > 0) {
         bytesLeidos = read(fd_file, buffer, fileSize);
 
-        for (int i = 0; i < bytesLeidos; i++) {
-            data[longitudId + 1 + i] = buffer[i];
+        for (int j = 0; j < bytesLeidos; j++) {
+            data[i + j] = buffer[j];
         }
         setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman); 
-        printF(data);
-        printF("\n");
     }
-    //freeString(&data);
     freeString(&buffer);
     close(fd_file);
 }
@@ -415,14 +399,14 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
         if (md5sum != NULL) {
             int randomID = getRandomID();
             
-            char *cancion = NULL;
+            //char *cancion = NULL; FASE 4
             char *data = NULL;
             if (strchr(song, '/') != NULL) { //es cancion de una playlist --> Quitamos sutton de song (sutton/song1.mp3)
                 data = createString4Params(strchr(song, '/') + 1, convertIntToString(fileSize), md5sum, convertIntToString(randomID));
-                cancion = strdup(strchr(song, '/') + 1);
+                //cancion = strdup(strchr(song, '/') + 1); FASE 4
             } else { //es cancion normal
                 data = createString4Params(song, convertIntToString(fileSize), md5sum, convertIntToString(randomID));
-                cancion = strdup(song);
+                //cancion = strdup(song); FASE 4
             }
     
             setTramaString(TramaCreate(0x04, "NEW_FILE", data, strlen(data)), fd_bowman);
@@ -431,14 +415,16 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
 
             enviarDatosSong(fd_bowman, dPoole.serverName, song, convertIntToString(randomID), fileSize);
 
+           
             TramaExtended tramaExtended = readTrama(fd_bowman); //espera respuesta estado de la descarga --> md5sum
             if (strcmp(tramaExtended.trama.header, "CHECK_OK") == 0) {
                 asprintf(&dPoole.msg,"%s song sent and downloaded successfully!\n", song);
                 printF(dPoole.msg);
                 freeString(&dPoole.msg);
                 // Mandamos el nombre de la cancion por la Pipe para que lo reciba el Monolit.
-                pthread_mutex_lock(&dPoole.mutexStats);
-                write(dPoole.fdPipe[1], cancion, strlen(cancion));
+                //pthread_mutex_lock(&dPoole.mutexStats); FASE 4
+                //write(dPoole.fdPipe[1], cancion, strlen(cancion)); FASE 4
+                //freeString(&cancion); FASE 4
             } else if (strcmp(tramaExtended.trama.header, "CHECK_KO") == 0) {
                 asprintf(&dPoole.msg,"The download of the %s song was unsuccessfull, try again\n", song);
                 printF(dPoole.msg);

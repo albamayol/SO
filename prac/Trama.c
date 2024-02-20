@@ -127,7 +127,6 @@ TramaExtended readTrama(int fd) {
     read(fd, tramaExtended.trama.header, tramaExtended.trama.header_length);
     tramaExtended.trama.header[tramaExtended.trama.header_length] = '\0'; 
   } 
-  printF(tramaExtended.trama.header);
   size_t sizeData = 256 - 3 - tramaExtended.trama.header_length;
 
   buffer = malloc(sizeof(char) * sizeData);
