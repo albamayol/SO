@@ -371,9 +371,8 @@ void requestListSongs() {
     int numTramas = atoi(msg.data);
 
     juntarTramasSongs(numTramas, &songs);
-    printF("(juntar tramas songs)\n");
-    printF(songs);
-    printF("\n");
+    //printF(songs);
+    //printF("\n");
     numCanciones = procesarTramasSongs(&canciones, songs);
 
     printarSongs(numCanciones, &canciones);
@@ -597,8 +596,6 @@ void getIdData(char* buffer, char* dataFile, DescargaBowman *mythread) {
 
         mythread->song.bytesDescargados++;
     }
-        
-    
 }
 
 int min(size_t a, size_t b) {

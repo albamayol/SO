@@ -492,6 +492,7 @@ void accedePlaylists(const char *path, ThreadPoole *thread) { //path = Pepe/sutt
             char *subPathAux = strchr(subPath, '/') + 1;
             threadSendSong(subPathAux, thread); //sutton/song1.mp3
             freeString(&subPath);
+            freeString(&subPathAux);
         }
     }
     closedir(dir);
