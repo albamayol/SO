@@ -621,9 +621,9 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
     }
 
     int file_size = size;
-    asprintf(&dBowman.msg, "Size: %ld\n", size);
-    printF(dBowman.msg);
-    freeString(&dBowman.msg);
+    //asprintf(&dBowman.msg, "Size: %ld\n", size);
+    //printF(dBowman.msg);
+    //freeString(&dBowman.msg);
     char* idSongString = convertIntToString(idSong);
     int sizeDataTrama = 256 - 12 - strlen(idSongString) - 1;
     freeString(&idSongString);
@@ -634,27 +634,26 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
         msgrcv(dBowman.msgQueueDescargas, &msg, sizeof(Missatge) - sizeof(long), idSong, 0);
 
         getIdData(msg.data, dataFile, mythread);
-        printF(dataFile);
-        printF("\n");
+        //printF(dataFile);
+        //printF("\n");
 
         if (write(fd_file, dataFile, min(file_size, sizeDataTrama)) == -1) { // Escribir lo leído en el archivo
             perror("Error al escribir en el archivo");
             break;
         }
 
-
         file_size -= sizeDataTrama;
-        asprintf(&dBowman.msg, "Size: %d\n", file_size);
-        printF(dBowman.msg);
-        freeString(&dBowman.msg);
+        //asprintf(&dBowman.msg, "Size: %d\n", file_size);
+        //printF(dBowman.msg);
+        //freeString(&dBowman.msg);
         mythread->porcentaje = ((float)mythread->song.bytesDescargados / mythread->song.size) * 100;
     } while (file_size > 0); 
     
-    //COMPROBACIÓN MD5SUM
+    //Calculo del MD5SUM para verificar que hayamos descargado correctamente la cancion original.
     char *md5sum = resultMd5sumComand(path);
-    printF("mdsum descarga: ");
-    printF(md5sum);
-    printF("\n");
+    //printF("mdsum descarga: ");
+    //printF(md5sum);
+    //printF("\n");
     if (md5sum != NULL) {
         if (strcmp(md5sum, mythread->song.md5sum) == 0) {
             setTramaString(TramaCreate(0x05, "CHECK_OK", "", 0), dBowman.fdPoole);
@@ -703,6 +702,7 @@ static void *thread_function_download_song(void* thread) {
     DescargaBowman *mythread = (DescargaBowman*) thread;
 
     downloadSong(mythread);
+    printF("KEVIN"); 
     return NULL; 
 }
 
@@ -887,6 +887,7 @@ int main(int argc, char ** argv) {
                             }
                             if (typeFile == 1) {
                                 requestDownloadSong(nombreArchivoCopia);
+                                printF("DAVID"); 
                             } else if (typeFile == 0) {
                                 requestDownloadPlaylist(nombreArchivoCopia);
                             } else {

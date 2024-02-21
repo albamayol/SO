@@ -196,26 +196,26 @@ void enviarTramas(int fd_bowman, char *cadena, char* header, size_t numMaxChars)
         // 256 - Type(1 Byte) - header_length(2 Bytes) - Header(14 Bytes) = 239 Bytes disponibles para list songs
         // 256 - Type(1 Byte) - header_length(2 Bytes) - Header(19 Bytes) = 234 Bytes disponibles para list playlists
         trama = readNumChars(cadena, 0, sizeData);
-        asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
-        printF(dPoole.msg);
-        freeString(&dPoole.msg);
+        //asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
+        //printF(dPoole.msg);
+        //freeString(&dPoole.msg);
         setTramaString(TramaCreate(0x02, header, trama, strlen(trama)), fd_bowman);
     } else {
         i = 0;
         while (sizeData > numMaxChars) {
             trama = readNumChars(cadena, i * numMaxChars, numMaxChars);
-            asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
-            printF(dPoole.msg);
-            freeString(&dPoole.msg);
+            //asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
+            //printF(dPoole.msg);
+            //freeString(&dPoole.msg);
             setTramaString(TramaCreate(0x02, header, trama, strlen(trama)), fd_bowman); 
             sizeData -= numMaxChars; 
             i++;
             freeString(&trama);
         }
         trama = readNumChars(cadena, i * numMaxChars, sizeData);
-        asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
-        printF(dPoole.msg);
-        freeString(&dPoole.msg);
+        //asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
+        //printF(dPoole.msg);
+        //freeString(&dPoole.msg);
         setTramaString(TramaCreate(0x02, header, trama, strlen(trama)), fd_bowman);
     }
     
@@ -229,7 +229,7 @@ void sendListSongs(int fd_bowman) {
 
     listSongs(dPoole.serverName, &songs, &totalSongs);
 
-    printF(songs);
+    //printF(songs);
 
     enviarTramas(fd_bowman, songs, "SONGS_RESPONSE", 239);
 
@@ -302,7 +302,6 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, i
     char *path = malloc(len);
     char data[244];
     memset(&data, '\0', 244);
-
 
     snprintf(path, len, "%s/%s", directoryPath, song);
 
@@ -415,7 +414,6 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
 
             enviarDatosSong(fd_bowman, dPoole.serverName, song, convertIntToString(randomID), fileSize);
 
-           
             TramaExtended tramaExtended = readTrama(fd_bowman); //espera respuesta estado de la descarga --> md5sum
             if (strcmp(tramaExtended.trama.header, "CHECK_OK") == 0) {
                 asprintf(&dPoole.msg,"%s song sent and downloaded successfully!\n", song);
@@ -440,6 +438,7 @@ static void *thread_function_send_song(void* thread) {
     DescargaPoole *mythread = (DescargaPoole*) thread;
     
     sendSong(mythread->nombreDescargaComando, mythread->fd_bowman);
+    printF("KEVIN");
     return NULL;
 }
 
@@ -464,7 +463,7 @@ void sendListPlaylists(int fd_bowman) {
     int totalSongs = 0;
 
     listPlaylists(dPoole.serverName, &playlists, &totalSongs);
-    printF(playlists);
+    //printF(playlists);
 
     char *cantidadCanciones = convertIntToString(totalSongs);
     setTramaString(TramaCreate(0x02, "PLAYLISTS_RESPONSE", cantidadCanciones, strlen(cantidadCanciones)), fd_bowman);
@@ -534,6 +533,7 @@ void conexionBowman(ThreadPoole* mythread) {
 
     while(1) {
         TramaExtended tramaExtended = readTrama(mythread->fd);
+        printF(tramaExtended.trama.header);
 
         if (strcmp(tramaExtended.trama.header, "EXIT") == 0) {    
             notifyBowmanLogout(mythread->fd);
@@ -570,9 +570,10 @@ void conexionBowman(ThreadPoole* mythread) {
             
             if (typeFile == 1) {
                 char *aux = strdup(tramaExtended.trama.data);
-                printF(aux);
+                //printF(aux);
                 threadSendSong(aux, mythread);
                 freeString(&aux);
+                printF("DAVID");
             } else {
                 size_t len = strlen(dPoole.serverName) + strlen(tramaExtended.trama.data) + 2;
                 char *aux = (char *)malloc(len);
