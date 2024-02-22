@@ -655,11 +655,11 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
     //printF(md5sum);
     //printF("\n");
     if (md5sum != NULL) {
-        if (strcmp(md5sum, mythread->song.md5sum) == 0) {
+        /*if (strcmp(md5sum, mythread->song.md5sum) == 0) {
             setTramaString(TramaCreate(0x05, "CHECK_OK", "", 0), dBowman.fdPoole);
         } else {
             setTramaString(TramaCreate(0x05, "CHECK_KO", "", 0), dBowman.fdPoole);
-        }
+        }*/
         freeString(&md5sum);
     }
     
