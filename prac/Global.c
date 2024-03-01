@@ -141,6 +141,27 @@ char* read_until(int fd, char delimiter) {
     return msg;
 }
 
+
+char* read_until_string(char *string, char delimiter) {
+    int i = 0;
+    char *msg = NULL;
+
+    while (string[i] != delimiter && string[i] != '\0') {
+        msg = realloc(msg, i + 2);
+        if (msg == NULL) {
+            perror("Error en realloc");
+            exit(EXIT_FAILURE);
+        }
+        msg[i] = string[i];
+        i++;
+    }
+
+    msg[i] = '\0';
+
+    return msg;
+}
+
+
 char* readNumChars(char *string, int inicio, int final) {
     char *msg = (char *)malloc(final + 1); 
     if (msg == NULL) {
@@ -436,9 +457,12 @@ int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleNa
     int flagFound = 0;
     Element* updatedPooleList = NULL;
     int updatedPooleListSize = 0;
+    printF("pooleNameSalida: ");
+    printF(pooleName);
+    printF("\n");
 
     for (int i = 0; i < *poole_list_size; i++) {
-        printF((*poole_list)[i].name);
+        //printF((*poole_list)[i].name);
         if (strcmp((*poole_list)[i].name, pooleName) != 0) {
             updatedPooleList = realloc(updatedPooleList, sizeof(Element) * (updatedPooleListSize + 1));
             updatedPooleList[updatedPooleListSize].name = strdup((*poole_list)[i].name);
@@ -453,6 +477,11 @@ int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleNa
     freePoolesArray(*poole_list, *poole_list_size);
     *poole_list_size = updatedPooleListSize;
     *poole_list = updatedPooleList;
+    char *prueba = NULL;
+    asprintf(&prueba, "FLAG FOUND: %d", flagFound);
+    printF(prueba);
+    printF("\n");
+    freeString(&prueba);
     return flagFound; 
 }
 

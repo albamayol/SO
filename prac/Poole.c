@@ -114,7 +114,7 @@ void sig_func() {
 @Retorn: ---
 */
 void printInfoFile() {
-    asprintf(&dPoole.msg, "\nFile read correctly:\nServer - %s\nServer Directory - %s\nIP Discovery - %s\nPort Server - %s\nIP Server - %s\nPort Server - %s\n\n", dPoole.serverName, dPoole.pathServerFile, dPoole.ipDiscovery, dPoole.puertoServer, dPoole.ipServer, dPoole.puertoServer);
+    asprintf(&dPoole.msg, "\nFile read correctly:\nServer - %s\nServer Directory - %s\nIP Discovery - %s\nPort Server - %s\nIP Server - %s\nPort Server - %s\n\n", dPoole.serverName, dPoole.pathServerFile, dPoole.ipDiscovery, dPoole.puertoDiscovery, dPoole.ipServer, dPoole.puertoServer);
     printF(dPoole.msg);
     freeString(&dPoole.msg);
 }
@@ -486,7 +486,9 @@ void accedePlaylists(const char *path, ThreadPoole *thread) { //path = Pepe/sutt
     }
 
     int i = 0;
+    
     thread->descargas = realloc(thread->descargas, sizeof(DescargaPoole) * (thread->numDescargas + numArchivos)); 
+    
     while ((entry = readdir(dir)) != NULL) {
         if (entry->d_type == DT_REG && strcmp(entry->d_name, ".DS_Store") != 0) { // Es un fichero y no es ".DS_Store"
             size_t fileNameLen = strlen(entry->d_name);
@@ -501,6 +503,7 @@ void accedePlaylists(const char *path, ThreadPoole *thread) { //path = Pepe/sutt
         }
     }
     thread->numDescargas += numArchivos;
+    
     closedir(dir);
 }
 
@@ -516,7 +519,7 @@ void sendPlaylist(char *pathPlaylist, ThreadPoole *thread) { //Pepe/sutton
 void conexionBowman(ThreadPoole* mythread) {
     TramaExtended tramaExtended = readTrama(mythread->fd);
     mythread->descargas = NULL;
-    mythread->user_name = strdup(tramaExtended.trama.data);
+    mythread->user_name = strdup(read_until_string(tramaExtended.trama.data, '~'));
     mythread->numDescargas = 0;
 
     asprintf(&dPoole.msg,"\nNew user connected: %s.\n", mythread->user_name);

@@ -136,6 +136,7 @@ typedef struct {
 } dataDiscovery;
 
 char* read_until(int fd, char delimiter);
+char* read_until_string(char *string, char delimiter);
 void cleanThreadsPoole(ThreadPoole** threads, int numThreads);
 void cleanThreadPoole(ThreadPoole* thread);
 void cleanThreadsBowman(DescargaBowman **descargas, int *numDescargas);

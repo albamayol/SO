@@ -53,19 +53,26 @@ void sig_func() {
 void conexionPoole(int fd_poole) {
     char *buffer = NULL;
     TramaExtended tramaExtended = readTrama(fd_poole);
+
     if (strcmp(tramaExtended.trama.header, "BOWMAN_LOGOUT") == 0) {
-        if (decreaseNumConnections(dDiscovery.poole_list, dDiscovery.poole_list_size, tramaExtended.trama.data)) {
+        char* nameCleaned = NULL;
+        nameCleaned = read_until_string(tramaExtended.trama.data, '~');
+        printF("namePooleToDecreaseConnections: ");
+        printF(nameCleaned);
+        printF("\n");
+        if (decreaseNumConnections(dDiscovery.poole_list, dDiscovery.poole_list_size, nameCleaned)) {
             setTramaString(TramaCreate(0x06, "CONOK", "", 0), fd_poole);   
         } else {
             setTramaString(TramaCreate(0x06, "CONKO", "", 0), fd_poole);
         }
+        freeString(&nameCleaned);
         freeTrama(&(tramaExtended.trama));
-
     } else if (strcmp(tramaExtended.trama.header, "POOLE_DISCONNECT") == 0) {
         printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
-
+        char* nameCleaned = NULL;
+        nameCleaned = read_until_string(tramaExtended.trama.data, '~');
         pthread_mutex_lock(&dDiscovery.mutexList); 
-        int erasePooleResult = erasePooleFromList(&dDiscovery.poole_list, &dDiscovery.poole_list_size, tramaExtended.trama.data);
+        int erasePooleResult = erasePooleFromList(&dDiscovery.poole_list, &dDiscovery.poole_list_size, nameCleaned);
         pthread_mutex_unlock(&dDiscovery.mutexList);   
 
         if (erasePooleResult) {
@@ -76,6 +83,7 @@ void conexionPoole(int fd_poole) {
         } else {
             setTramaString(TramaCreate(0x06, "CONKO", "", 0), fd_poole);
         }
+        freeString(&nameCleaned);
         freeTrama(&(tramaExtended.trama));
     } else {
         Element element;

@@ -108,25 +108,6 @@ void printInfoFileBowman() {
     freeString(&dBowman.msg);
 }
 
-char* read_until_string(char *string, char delimiter) {
-    int i = 0;
-    char *msg = NULL;
-
-    while (string[i] != delimiter && string[i] != '\0') {
-        msg = realloc(msg, i + 2);
-        if (msg == NULL) {
-            perror("Error en realloc");
-            exit(EXIT_FAILURE);
-        }
-        msg[i] = string[i];
-        i++;
-    }
-
-    msg[i] = '\0';
-
-    return msg;
-}
-
 void establishDiscoveryConnection() {
     dBowman.fdDiscovery = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dBowman.fdDiscovery < 0) {
@@ -694,7 +675,7 @@ void downloadSong(DescargaBowman *mythread) {
     int inicio = 0, i = 1;
     Missatge msg;
 
-    printF("Download started!\n");
+    //printF("Download started!\n");
     
     msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 6, 0);
 
@@ -914,6 +895,7 @@ int main(int argc, char ** argv) {
                     } else if (strstr(dBowman.upperInput, "DOWNLOAD") != NULL) { 
                         int numSpaces = checkDownloadCommand(dBowman.upperInput);
                         if (numSpaces == 1) {
+                            printF("Download started!\n");
                             int typeFile = songOrPlaylist(dBowman.upperInput);
 
                             char *nombreArchivoCopia = NULL;
