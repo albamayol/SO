@@ -330,8 +330,8 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, i
         }
         
         setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman);
-        //usleep(60000); //valor de Malé
-        usleep(1000); //valor de Ferran
+        usleep(60000); //valor de Malé 
+        //usleep(1000); //valor de Ferran
 
         fileSize -= bytesLeidos; 
     } while(fileSize >= 244 - longitudId - 1);
@@ -385,7 +385,7 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
     size_t len = strlen(dPoole.serverName) + strlen(song) + 2;
     char *pathSong = malloc(strlen(dPoole.serverName) + strlen(song) + 2);
     snprintf(pathSong, len, "%s/%s", dPoole.serverName, song);
-    printF(pathSong);
+    //printF(pathSong);
 
     if (searchSong(pathSong, &fileSize)) {
         setTramaString(TramaCreate(0x01, "FILE_EXIST", "", 0), fd_bowman); 
@@ -413,21 +413,6 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
             freeString(&data);
 
             enviarDatosSong(fd_bowman, dPoole.serverName, song, convertIntToString(randomID), fileSize);
-            /*usleep(5000);
-            TramaExtended tramaExtended = readTrama(fd_bowman); //espera respuesta estado de la descarga --> md5sum
-            if (strcmp(tramaExtended.trama.header, "CHECK_OK") == 0) {
-                asprintf(&dPoole.msg,"%s song sent and downloaded successfully!\n", song);
-                printF(dPoole.msg);
-                freeString(&dPoole.msg);
-                // Mandamos el nombre de la cancion por la Pipe para que lo reciba el Monolit.
-                //pthread_mutex_lock(&dPoole.mutexStats); FASE 4
-                //write(dPoole.fdPipe[1], cancion, strlen(cancion)); FASE 4
-                //freeString(&cancion); FASE 4
-            } else if (strcmp(tramaExtended.trama.header, "CHECK_KO") == 0) {
-                asprintf(&dPoole.msg,"The download of the %s song was unsuccessfull, try again\n", song);
-                printF(dPoole.msg);
-                freeString(&dPoole.msg);
-            }*/
         }
     } else {
         setTramaString(TramaCreate(0x01, "FILE_NOEXIST", "", 0), fd_bowman);
@@ -437,23 +422,16 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
 static void *thread_function_send_song(void* thread) {
     DescargaPoole *mythread = (DescargaPoole*) thread;
     
-    printF(mythread->nombreDescargaComando);
+    //printF(mythread->nombreDescargaComando);
     sendSong(mythread->nombreDescargaComando, mythread->fd_bowman);
-    //printF("KEVIN");
     return NULL;
 }
 
-void threadSendSong(char *song, ThreadPoole *thread) { //TODO si enviamos una cancion de una playlist, añadir previamente char* song: sutton/song1.mp3
-    thread->numDescargas++;
-    asprintf(&dPoole.msg,"\nNum descargas: %d.\n", (*thread).numDescargas);
-    printF(dPoole.msg);
-    freeString(&dPoole.msg);
+void threadSendSong(char *song, ThreadPoole *thread, int index) { //TODO si enviamos una cancion de una playlist, añadir previamente char* song: sutton/song1.mp3
+    thread->descargas[index].nombreDescargaComando = strdup(song);
+    thread->descargas[index].fd_bowman = thread->fd; 
 
-    (*thread).descargas = realloc((*thread).descargas, sizeof(DescargaPoole) * thread->numDescargas); 
-    (*thread).descargas[thread->numDescargas - 1].nombreDescargaComando = strdup(song);
-    (*thread).descargas[thread->numDescargas - 1].fd_bowman = thread->fd; 
-    
-    if (pthread_create(&(*thread).descargas[thread->numDescargas - 1].thread, NULL, thread_function_send_song, (void *)&(*thread).descargas[thread->numDescargas - 1]) != 0) {
+    if (pthread_create(&thread->descargas[index].thread, NULL, thread_function_send_song, (void *)&thread->descargas[index]) != 0) {
         perror("Error al crear el thread para la descarga");
         thread->numDescargas--;
     }
@@ -464,7 +442,6 @@ void sendListPlaylists(int fd_bowman) {
     int totalSongs = 0;
 
     listPlaylists(dPoole.serverName, &playlists, &totalSongs);
-    //printF(playlists);
 
     char *cantidadCanciones = convertIntToString(totalSongs);
     setTramaString(TramaCreate(0x02, "PLAYLISTS_RESPONSE", cantidadCanciones, strlen(cantidadCanciones)), fd_bowman);
@@ -472,6 +449,26 @@ void sendListPlaylists(int fd_bowman) {
 
     enviarTramas(fd_bowman, playlists, "PLAYLISTS_RESPONSE", 234);
     freeString(&playlists);
+}
+
+int contarArchivosRegulares(const char *path) {
+    int numArchivos = 0;
+    struct dirent *entry;
+    DIR *dir = opendir(path);
+
+    if (dir == NULL) {
+        perror("Error al abrir el directorio");
+        return -1; 
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_REG && strcmp(entry->d_name, ".DS_Store") != 0) { // Es un fichero y no es ".DS_Store"
+            numArchivos++;
+        }
+    }
+
+    closedir(dir);
+    return numArchivos;
 }
 
 void accedePlaylists(const char *path, ThreadPoole *thread) { //path = Pepe/sutton
@@ -483,6 +480,13 @@ void accedePlaylists(const char *path, ThreadPoole *thread) { //path = Pepe/sutt
         return;
     }
 
+    int numArchivos = contarArchivosRegulares(path);
+    if (numArchivos == -1) {
+        return;
+    }
+
+    int i = 0;
+    thread->descargas = realloc(thread->descargas, sizeof(DescargaPoole) * (thread->numDescargas + numArchivos)); 
     while ((entry = readdir(dir)) != NULL) {
         if (entry->d_type == DT_REG && strcmp(entry->d_name, ".DS_Store") != 0) { // Es un fichero y no es ".DS_Store"
             size_t fileNameLen = strlen(entry->d_name);
@@ -490,12 +494,13 @@ void accedePlaylists(const char *path, ThreadPoole *thread) { //path = Pepe/sutt
             sprintf(subPath, "%s/%s", path, entry->d_name);          
             
             char *subPathAux = strchr(subPath, '/') + 1;
-            printF(subPathAux);
-            threadSendSong(subPathAux, thread); //sutton/song1.mp3
-            //freeString(&subPath);
-            //freeString(&subPathAux);
+            
+            threadSendSong(subPathAux, thread, thread->numDescargas + i); //sutton/song1.mp3 
+            freeString(&subPath);
+            i++;
         }
     }
+    thread->numDescargas += numArchivos;
     closedir(dir);
 }
 
@@ -535,7 +540,6 @@ void conexionBowman(ThreadPoole* mythread) {
 
     while(1) {
         TramaExtended tramaExtended = readTrama(mythread->fd);
-        printF(tramaExtended.trama.header);
 
         if (strcmp(tramaExtended.trama.header, "EXIT") == 0) {    
             notifyBowmanLogout(mythread->fd);
@@ -571,18 +575,27 @@ void conexionBowman(ThreadPoole* mythread) {
             freeString(&upperInput);
             
             if (typeFile == 1) {
+                mythread->descargas = realloc(mythread->descargas, sizeof(DescargaPoole) * (mythread->numDescargas + 1)); 
                 char *aux = strdup(tramaExtended.trama.data);
-                //printF(aux);
-                threadSendSong(aux, mythread);
+
+                threadSendSong(aux, mythread, mythread->numDescargas);
                 freeString(&aux);
-                printF("DAVID");
+                mythread->numDescargas++;
             } else {
                 size_t len = strlen(dPoole.serverName) + strlen(tramaExtended.trama.data) + 2;
                 char *aux = (char *)malloc(len);
                 snprintf(aux, len, "%s/%s", dPoole.serverName, tramaExtended.trama.data);
-                printF(aux);
+        
                 sendPlaylist(aux, mythread); //Pepe/sutton
             }
+        } else if (strcmp(tramaExtended.trama.header, "CHECK_OK") == 0) {
+            printF("Song sent and downloaded successfully!\n");
+            // Mandamos el nombre de la cancion por la Pipe para que lo reciba el Monolit.
+            //pthread_mutex_lock(&dPoole.mutexStats); FASE 4
+            //write(dPoole.fdPipe[1], cancion, strlen(cancion)); FASE 4
+            //freeString(&cancion); FASE 4
+        } else if (strcmp(tramaExtended.trama.header, "CHECK_KO") == 0) {
+            printF("The download of the song was unsuccessfull, try again\n");
         } else {
             printF("Unknown command\n");
         }
@@ -597,7 +610,6 @@ static void *thread_function_bowman(void* thread) {
     conexionBowman(mythread);
     return NULL;
 }
-
 
 void connect_Bowman() {
     socklen_t bAddr = sizeof(dPoole.poole_addr);
