@@ -91,7 +91,7 @@ void sig_func() {
     pthread_join(dBowman.threadRead, NULL);
     printF("alba3");
     cleanAllTheThreadsBowman(&dBowman.descargas, dBowman.numDescargas); // limpiar los threads descargas. TODO
-    pthread_mutex_destroy(&dBowman.mutexDescargas);
+    //pthread_mutex_destroy(&dBowman.mutexDescargas);
     printF("alba4");
     exit(EXIT_FAILURE);
 }
@@ -596,6 +596,9 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
     memset(&dataFile, '\0', 244);
 
     char *path = NULL;
+    asprintf(&dBowman.msg, "ID SONG: %d\n", idSong);
+    printF(dBowman.msg);
+    freeString(&dBowman.msg);
 
     //printF(mythread->nombreDescargaComando);
     //printF("\n");
@@ -677,6 +680,7 @@ void downloadSong(DescargaBowman *mythread) {
 
     //printF("Download started!\n");
     
+    //pthread_mutex_lock(&dBowman.mutexDescargas);
     msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 6, 0);
 
     cleanPadding(msg.data, '~');
@@ -705,7 +709,8 @@ void downloadSong(DescargaBowman *mythread) {
         i++;
     }    
     freeString(&dataSong);
-    
+    //pthread_mutex_unlock(&dBowman.mutexDescargas);
+
     createMP3FileInDirectory(dBowman.clienteName, mythread, mythread->song.size, mythread->song.id);
 }
 
@@ -737,7 +742,7 @@ void requestDownloadSong(char* nombreArchivoCopia) {
         dBowman.descargas = realloc(dBowman.descargas, (dBowman.numDescargas + 1) * sizeof(DescargaBowman));
         threadDownloadSong(nombreArchivoCopia, dBowman.numDescargas);
         dBowman.numDescargas++;
-        //freeString(&nombreArchivoCopia);
+        freeString(&nombreArchivoCopia);
     } else if (strcmp(msg.header, "FILE_NOEXIST") == 0) {
     }    
 }
@@ -768,7 +773,7 @@ void requestDownloadPlaylist(char* nombreArchivoCopia) {
             /*printF(nombreArchivoCopia);
             printF("\n");*/
             threadDownloadSong(nombreArchivoCopia, dBowman.numDescargas + i);
-            //freeString(&nombreArchivoCopia);
+            freeString(&nombreArchivoCopia);
         }
         dBowman.numDescargas += numSongs;
     } else if (strcmp(msg.header, "PLAY_NOEXIST") == 0) {

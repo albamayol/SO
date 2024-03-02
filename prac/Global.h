@@ -95,7 +95,7 @@ typedef struct {
     Element pooleConnected;
     DescargaBowman *descargas;
     pthread_t threadRead;
-    pthread_mutex_t mutexDescargas;
+    //pthread_mutex_t mutexDescargas;
     int numDescargas;
     int msgQueuePetitions;
     int msgQueueDescargas;
@@ -119,6 +119,7 @@ typedef struct {
     int threads_array_size;
     int fdPipe[2];
     pthread_mutex_t mutexStats;
+    pthread_mutex_t mutexDescargas;
 } dataPoole;
 
 typedef struct {
