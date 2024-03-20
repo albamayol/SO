@@ -53,11 +53,18 @@ typedef struct {
 } Song;
 
 typedef struct {
-    pthread_t thread;	
+    //pthread_t thread;	
     Song song;
     float porcentaje; 
     char *nombreDescargaComando; //namesong / nameplaylist
+    int index; //TODO: PENSAR BIEN!
 } DescargaBowman;
+
+typedef struct {
+    char *nombre;	
+    float porcentaje; 
+    int thread_id;
+} Descarga;
 
 typedef struct {
     pthread_t thread;	
@@ -93,9 +100,8 @@ typedef struct {
     char *puerto;
     int bowmanConnected;
     Element pooleConnected;
-    DescargaBowman *descargas;
+    Descarga *descargas; //array de los ids de ls threads para matarlos luego
     pthread_t threadRead;
-    //pthread_mutex_t mutexDescargas;
     int numDescargas;
     int msgQueuePetitions;
     int msgQueueDescargas;

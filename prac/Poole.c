@@ -331,7 +331,7 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, i
 
         setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman);
         //usleep(60000); //valor de Malé 
-        usleep(1000); //valor de Ferran
+        usleep(20000); //valor de Ferran
 
         fileSize -= bytesLeidos; 
     } while(fileSize >= 244 - longitudId - 1);
@@ -374,7 +374,7 @@ int searchPlaylist(char *pathSongPlaylist) {
     return found;
 }
 
-int getRandomID() { //REVISAR PORQUE SIEMPRE NOS GENERA LOS MISMOS ID'S
+int getRandomID() { //SIEMPRE NOS GENERA LOS MISMOS ID'S
     //srand(time(NULL)); ERROR A COMENTAR EN LA MEMORIA
     return (rand() % 999) + 1; 
 }
@@ -385,13 +385,12 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
     size_t len = strlen(dPoole.serverName) + strlen(song) + 2;
     char *pathSong = malloc(strlen(dPoole.serverName) + strlen(song) + 2);
     snprintf(pathSong, len, "%s/%s", dPoole.serverName, song);
-    //printF(pathSong);
 
     if (searchSong(pathSong, &fileSize)) {
         setTramaString(TramaCreate(0x01, "FILE_EXIST", "", 0), fd_bowman); 
 
         pthread_mutex_lock(&dPoole.mutexDescargas);
-        char *md5sum = resultMd5sumComand(pathSong); //PORQUE CON LA PLAYLIST TEST SE CALCULAN BIEN LOS HASHES 
+        char *md5sum = resultMd5sumComand(pathSong); 
         pthread_mutex_unlock(&dPoole.mutexDescargas);
         printF("mdsum original: ");
         printF(md5sum);

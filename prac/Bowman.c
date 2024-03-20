@@ -715,21 +715,31 @@ void downloadSong(DescargaBowman *mythread) {
 }
 
 static void *thread_function_download_song(void* thread) {
-    DescargaBowman *mythread = (DescargaBowman*) thread;
+    DescargaBowman mythread = *(DescargaBowman*) thread;
+    //free(*thread); q es la DescargaBowman
 
     downloadSong(mythread);
-    return NULL;
+    return NULL; 
 }
 
 void threadDownloadSong(char *song, int index) {   
-    dBowman.descargas[index].nombreDescargaComando = strdup(song);
-    dBowman.descargas[index].porcentaje = 0.00; 
-    dBowman.descargas[index].song.bytesDescargados = 0; 
+    pthread thread;
+    //entonces guardar id del thread en el array
+    DescargaBowman db;
+    db.nombreDescargaComando = strdup(song);
+    db.porcentaje = 0.00; 
+    db.song.bytesDescargados = 0; 
+    db.index = index;
 
-    if (pthread_create(&dBowman.descargas[index].thread, NULL, thread_function_download_song, (void *)&dBowman.descargas[index]) != 0) {
+    dataBowman.descarga[index].nombre = strdup(song);
+    dataBowman.descarga[index].porcentaje = 0.00;
+
+    if (pthread_create(&thread, NULL, thread_function_download_song, (void *)&db) != 0) {
+        //hacer realloc del array de ids del thread dentro del thread!!!
         perror("Error al crear el thread para la descarga");
         dBowman.numDescargas--;
     } 
+    
 }
 
 void requestDownloadSong(char* nombreArchivoCopia) {
@@ -739,10 +749,10 @@ void requestDownloadSong(char* nombreArchivoCopia) {
     msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 4, 0);
 
     if (strcmp(msg.header, "FILE_EXIST") == 0) {
-        dBowman.descargas = realloc(dBowman.descargas, (dBowman.numDescargas + 1) * sizeof(DescargaBowman));
+        dBowman.descargas = realloc(dBowman.descargas, (dBowman.numDescargas + 1) * sizeof(Descarga));
         threadDownloadSong(nombreArchivoCopia, dBowman.numDescargas);
-        dBowman.numDescargas++;
-        freeString(&nombreArchivoCopia);
+        //dBowman.numDescargas++;
+        //freeString(&nombreArchivoCopia);
     } else if (strcmp(msg.header, "FILE_NOEXIST") == 0) {
     }    
 }
@@ -768,13 +778,12 @@ void requestDownloadPlaylist(char* nombreArchivoCopia) {
         printF("\n");
         freeString(&prueba);
 
-        dBowman.descargas = realloc(dBowman.descargas, numSongs * sizeof(DescargaBowman));
+        dBowman.descargas = realloc(dBowman.descargas, numSongs * sizeof(Descarga)); //realloc del array de ids de los threads
+        //dBowman.descargas = realloc(dBowman.descargas, numSongs * sizeof(DescargaBowman)); //cambiar a realloc del array de ids de los threads
         for (int i = 0; i < numSongs; i++) {
-            /*printF(nombreArchivoCopia);
-            printF("\n");*/
             threadDownloadSong(nombreArchivoCopia, dBowman.numDescargas + i);
-            freeString(&nombreArchivoCopia);
         }
+        freeString(&nombreArchivoCopia);
         dBowman.numDescargas += numSongs;
     } else if (strcmp(msg.header, "PLAY_NOEXIST") == 0) {
         printF("This playlist does not exist.\n");
@@ -916,6 +925,7 @@ int main(int argc, char ** argv) {
                                 requestDownloadSong(nombreArchivoCopia);
                             } else if (typeFile == 0) {
                                 requestDownloadPlaylist(nombreArchivoCopia);
+                                //requestDownloadPlaylist("costa_breve");
                             } else {
                                 printF("ERROR: The song file extension is not valid.");
                             }
