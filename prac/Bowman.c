@@ -596,28 +596,23 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
     memset(&dataFile, '\0', 244);
 
     char *path = NULL;
-    asprintf(&dBowman.msg, "ID SONG: %d\n", idSong);
-    printF(dBowman.msg);
-    freeString(&dBowman.msg);
 
-    //printF(mythread->nombreDescargaComando);
-    //printF("\n");
+    dBowman.descargas[mythread->index].nombreCancion = strdup(mythread->song.nombre);
     if (strcmp(mythread->song.nombre, mythread->nombreDescargaComando) == 0) {
         //cancion
         size_t len = strlen(directory) + strlen(mythread->song.nombre) + 2;
         path = malloc(len);
         snprintf(path, len, "%s/%s", directory, mythread->song.nombre); //Floyd/song.mp3
+
+        dBowman.descargas[mythread->index].nombrePlaylist = NULL; 
     } else {
         //playlist
         size_t len = strlen(directory) + strlen(mythread->nombreDescargaComando) + strlen(mythread->song.nombre) + 3;
         path = malloc(len);
         snprintf(path, len, "%s/%s/%s", directory, mythread->nombreDescargaComando, mythread->song.nombre); //Floyd/sutton/song.mp3
+
+        dBowman.descargas[mythread->index].nombrePlaylist = strdup(mythread->nombreDescargaComando); 
     }
-    //printF("KEVIN\n");
-    //printF(mythread->song.nombre);
-    printF("\n");
-    printF(path);
-    printF("\n");
 
     int fd_file = open(path, O_CREAT | O_RDWR, 0644); 
     if (fd_file == -1) {
@@ -627,9 +622,6 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
     }
 
     int file_size = size;
-    //asprintf(&dBowman.msg, "Size: %ld\n", size);
-    //printF(dBowman.msg);
-    //freeString(&dBowman.msg);
     char* idSongString = convertIntToString(idSong);
     int sizeDataTrama = 256 - 12 - strlen(idSongString) - 1;
     freeString(&idSongString);
@@ -640,26 +632,20 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
         msgrcv(dBowman.msgQueueDescargas, &msg, sizeof(Missatge) - sizeof(long), idSong, 0);
 
         getIdData(msg.data, dataFile, mythread);
-        //printF(dataFile);
-        //printF("\n");
 
-        if (write(fd_file, dataFile, min(file_size, sizeDataTrama)) == -1) { // Escribir lo leído en el archivo
+        if (write(fd_file, dataFile, min(file_size, sizeDataTrama)) == -1) { 
             perror("Error al escribir en el archivo");
             break;
         }
 
         file_size -= sizeDataTrama;
-        //asprintf(&dBowman.msg, "Size: %d\n", file_size);
-        //printF(dBowman.msg);
-        //freeString(&dBowman.msg);
-        mythread->porcentaje = ((float)mythread->song.bytesDescargados / mythread->song.size) * 100;
+
+        float porcentaje = ((float)mythread->song.bytesDescargados / mythread->song.size) * 100;
+        //mythread->porcentaje = porcentaje;  //actualizamos en descargaBowman
+        dBowman.descargas[mythread->index].porcentaje = porcentaje; //actualizamos porcentaje en index de los threads_id
     } while (file_size > 0); 
     
-    //Calculo del MD5SUM para verificar que hayamos descargado correctamente la cancion original.
     char *md5sum = resultMd5sumComand(path);
-    //printF("mdsum descarga: ");
-    //printF(md5sum);
-    //printF("\n");
     if (md5sum != NULL) {
         if (strcmp(md5sum, mythread->song.md5sum) == 0) {
             setTramaString(TramaCreate(0x05, "CHECK_OK", "", 0), dBowman.fdPoole);
@@ -680,7 +666,7 @@ void downloadSong(DescargaBowman *mythread) {
 
     //printF("Download started!\n");
     
-    //pthread_mutex_lock(&dBowman.mutexDescargas);
+   
     msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 6, 0);
 
     cleanPadding(msg.data, '~');
@@ -690,10 +676,7 @@ void downloadSong(DescargaBowman *mythread) {
         char *paramDataSong = readUntilFromIndex(dataSong, &inicio, '&', &valorFinal, '\0');
         switch (i) {
             case 1: 
-                printF("\n");
                 mythread->song.nombre = strdup(paramDataSong);
-                printF(mythread->song.nombre);
-                printF("\n");
                 break;
             case 2: 
                 mythread->song.size = atoi(paramDataSong);
@@ -709,33 +692,34 @@ void downloadSong(DescargaBowman *mythread) {
         i++;
     }    
     freeString(&dataSong);
-    //pthread_mutex_unlock(&dBowman.mutexDescargas);
 
     createMP3FileInDirectory(dBowman.clienteName, mythread, mythread->song.size, mythread->song.id);
 }
 
 static void *thread_function_download_song(void* thread) {
-    DescargaBowman mythread = *(DescargaBowman*) thread;
-    //free(*thread); q es la DescargaBowman
+    DescargaBowman *mythread = (DescargaBowman*) thread; 
+
+    dBowman.descargas[mythread->index].thread_id = pthread_self(); //OBTENEMOS EL ID DEL THREAD I LO GUARDAMOS
+    dBowman.descargas[mythread->index].porcentaje = 0.00;
 
     downloadSong(mythread);
+
+    freeString(&mythread->nombreDescargaComando);
+    freeString(&mythread->song.nombre);
+    freeString(&mythread->song.md5sum);
+
     return NULL; 
 }
 
 void threadDownloadSong(char *song, int index) {   
-    pthread thread;
-    //entonces guardar id del thread en el array
+    pthread_t thread;
     DescargaBowman db;
+
     db.nombreDescargaComando = strdup(song);
-    db.porcentaje = 0.00; 
     db.song.bytesDescargados = 0; 
     db.index = index;
 
-    dataBowman.descarga[index].nombre = strdup(song);
-    dataBowman.descarga[index].porcentaje = 0.00;
-
     if (pthread_create(&thread, NULL, thread_function_download_song, (void *)&db) != 0) {
-        //hacer realloc del array de ids del thread dentro del thread!!!
         perror("Error al crear el thread para la descarga");
         dBowman.numDescargas--;
     } 
@@ -751,14 +735,14 @@ void requestDownloadSong(char* nombreArchivoCopia) {
     if (strcmp(msg.header, "FILE_EXIST") == 0) {
         dBowman.descargas = realloc(dBowman.descargas, (dBowman.numDescargas + 1) * sizeof(Descarga));
         threadDownloadSong(nombreArchivoCopia, dBowman.numDescargas);
-        //dBowman.numDescargas++;
+        dBowman.numDescargas++;
         //freeString(&nombreArchivoCopia);
     } else if (strcmp(msg.header, "FILE_NOEXIST") == 0) {
     }    
 }
 
 void requestDownloadPlaylist(char* nombreArchivoCopia) {
-    setTramaString(TramaCreate(0x03, "DOWNLOAD_LIST", nombreArchivoCopia, strlen(nombreArchivoCopia)), dBowman.fdPoole); //playlistname / songname
+    setTramaString(TramaCreate(0x03, "DOWNLOAD_LIST", nombreArchivoCopia, strlen(nombreArchivoCopia)), dBowman.fdPoole); 
 
     //ESPERAMOS TRAMA SI PLAYLIST EXISTE O NO
     Missatge msg;
@@ -810,17 +794,17 @@ void creacionMsgQueues() {
     dBowman.msgQueueDescargas = id_queue;
 }
 
-void showDownloadStatus(DescargaBowman *descargas, int numDescargas) {
+void showDownloadStatus(Descarga *descargas, int numDescargas) {
     for (int i = 0; i < numDescargas; i++) {
-        if (descargas[i].song.nombre != NULL) {
+        if (descargas[i].nombreCancion != NULL) {
             // Descarga no eliminada
-            if (strcmp(descargas[i].song.nombre, descargas[i].nombreDescargaComando) == 0) {
+            if (descargas[i].nombrePlaylist == NULL) {
                 //Es una cancion
-                printF(descargas[i].song.nombre);
+                printF(descargas[i].nombreCancion);
                 printF("\n");
             } else {
                 // Es una cancion de una playlist
-                asprintf(&dBowman.msg, "%s - %s\n", descargas[i].nombreDescargaComando, descargas[i].song.nombre);
+                asprintf(&dBowman.msg, "%s - %s\n", descargas[i].nombrePlaylist, descargas[i].nombreCancion);
                 printF(dBowman.msg);
                 freeString(&dBowman.msg);
             }

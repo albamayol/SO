@@ -55,15 +55,16 @@ typedef struct {
 typedef struct {
     //pthread_t thread;	
     Song song;
-    float porcentaje; 
+    //float porcentaje; 
     char *nombreDescargaComando; //namesong / nameplaylist
-    int index; //TODO: PENSAR BIEN!
+    int index; //TODO: PENSAR BIEN! --> tendremos siempre el indice de donde se encuentra el thread dentro del array de threads_id's. Asignar siempre al inicio del thread
 } DescargaBowman;
 
 typedef struct {
-    char *nombre;	
-    float porcentaje; 
-    int thread_id;
+    char *nombreCancion;	    //para el check downloads
+    char *nombrePlaylist;
+    float porcentaje;   //para el check downloads
+    pthread_t thread_id;
 } Descarga;
 
 typedef struct {
@@ -146,8 +147,8 @@ char* read_until(int fd, char delimiter);
 char* read_until_string(char *string, char delimiter);
 void cleanThreadsPoole(ThreadPoole** threads, int numThreads);
 void cleanThreadPoole(ThreadPoole* thread);
-void cleanThreadsBowman(DescargaBowman **descargas, int *numDescargas);
-void cleanAllTheThreadsBowman(DescargaBowman **descargas, int numDescargas);
+void cleanThreadsBowman(Descarga **descargas, int *numDescargas);
+void cleanAllTheThreadsBowman(Descarga **descargas, int numDescargas);
 void cleanInfoPlaylists(InfoPlaylist *infoPlaylists, int size);
 char * resultMd5sumComand(char *pathName);
 void removeExtraSpaces(char *comanda);
