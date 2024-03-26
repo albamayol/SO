@@ -229,8 +229,6 @@ void sendListSongs(int fd_bowman) {
 
     listSongs(dPoole.serverName, &songs, &totalSongs);
 
-    //printF(songs);
-
     enviarTramas(fd_bowman, songs, "SONGS_RESPONSE", 239);
 
     freeString(&songs);
@@ -331,7 +329,8 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, i
 
         setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman);
         //usleep(60000); //valor de Malé 
-        usleep(20000); //valor de Ferran
+        //usleep(20000); //valor de Ferran
+        usleep(10000); //Valor testeado
 
         fileSize -= bytesLeidos; 
     } while(fileSize >= 244 - longitudId - 1);
@@ -401,14 +400,14 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
             asprintf(&dPoole.msg,"\nRANDOM ID: %d\n", randomID);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
-            //char *cancion = NULL; FASE 4
+            //char *cancion = NULL; //FASE 4
             char *data = NULL;
             if (strchr(song, '/') != NULL) { //es cancion de una playlist --> Quitamos sutton de song (sutton/song1.mp3)
                 data = createString4Params(strchr(song, '/') + 1, convertIntToString(fileSize), md5sum, convertIntToString(randomID));
-                //cancion = strdup(strchr(song, '/') + 1); FASE 4
+                //cancion = strdup(strchr(song, '/') + 1); //FASE 4
             } else { //es cancion normal
                 data = createString4Params(song, convertIntToString(fileSize), md5sum, convertIntToString(randomID));
-                //cancion = strdup(song); FASE 4
+                //cancion = strdup(song); //FASE 4
             }
     
             setTramaString(TramaCreate(0x04, "NEW_FILE", data, strlen(data)), fd_bowman);
@@ -425,8 +424,12 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
 static void *thread_function_send_song(void* thread) {
     DescargaPoole *mythread = (DescargaPoole*) thread;
     
-    //printF(mythread->nombreDescargaComando);
     sendSong(mythread->nombreDescargaComando, mythread->fd_bowman);
+
+    // si descomentamos salta bucle unknown comand 
+    //pthread_cancel(mythread->thread);
+    //pthread_join(mythread->thread, NULL);
+
     return NULL;
 }
 
@@ -597,9 +600,9 @@ void conexionBowman(ThreadPoole* mythread) {
         } else if (strcmp(tramaExtended.trama.header, "CHECK_OK") == 0) {
             printF("Song sent and downloaded successfully!\n");
             // Mandamos el nombre de la cancion por la Pipe para que lo reciba el Monolit.
-            //pthread_mutex_lock(&dPoole.mutexStats); FASE 4
-            //write(dPoole.fdPipe[1], cancion, strlen(cancion)); FASE 4
-            //freeString(&cancion); FASE 4
+            //pthread_mutex_lock(&dPoole.mutexStats); //FASE 4
+            //write(dPoole.fdPipe[1], cancion, strlen(cancion)); //FASE 4
+            //freeString(&cancion); //FASE 4
         } else if (strcmp(tramaExtended.trama.header, "CHECK_KO") == 0) {
             printF("The download of the song was unsuccessfull, try again\n");
         } else {

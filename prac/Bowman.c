@@ -83,6 +83,7 @@ void sig_func() {
     if (msgctl(dBowman.msgQueueDescargas, IPC_RMID, NULL) == -1) {
         perror("Error al eliminar la cola de mensajes");
     }
+
     printF("alba1");
     cleanInfoPlaylists(dBowman.infoPlaylists, dBowman.numInfoPlaylists);
     printF("alba2");    
@@ -90,7 +91,7 @@ void sig_func() {
     pthread_cancel(dBowman.threadRead);
     pthread_join(dBowman.threadRead, NULL);
     printF("alba3");
-    cleanAllTheThreadsBowman(&dBowman.descargas, dBowman.numDescargas); // limpiar los threads descargas. TODO
+    cleanAllTheThreadsBowman(&dBowman.descargas, dBowman.numDescargas); 
     //pthread_mutex_destroy(&dBowman.mutexDescargas);
     printF("alba4");
     exit(EXIT_FAILURE);
@@ -353,8 +354,7 @@ void requestListSongs() {
     int numTramas = atoi(msg.data);
 
     juntarTramasSongs(numTramas, &songs);
-    //printF(songs);
-    //printF("\n");
+
     numCanciones = procesarTramasSongs(&canciones, songs);
 
     printarSongs(numCanciones, &canciones);
@@ -475,11 +475,8 @@ char ***procesarTramasPlaylists(char *playlists, int **numCancionesPorLista, int
 
 int numSongsDePlaylist(InfoPlaylist* infoPlaylists, char* listName) {
     for (int i = 0; i < dBowman.numInfoPlaylists; i++) {
-        /*printF(listName);
-        printF("\n");
-        printF(infoPlaylists[i].nameplaylist);*/
         if (strcmp(infoPlaylists[i].nameplaylist, listName) == 0) {
-            return infoPlaylists[i].numSongs; //devolvemos numero de canciones que tiene esa playlist
+            return infoPlaylists[i].numSongs; // Devolvemos el numero de canciones que tiene la playlist
         }
     }
     return -1;
@@ -495,7 +492,7 @@ void printarPlaylists(int numListas, char ***listas, int *numCancionesPorLista) 
         printF(dBowman.msg);
         freeString(&dBowman.msg);
 
-        //guardamos info Playlists actuales
+        // Guardamos info Playlists actuales
         dBowman.infoPlaylists = realloc(dBowman.infoPlaylists, sizeof(InfoPlaylist) * (dBowman.numInfoPlaylists + 1));
         dBowman.infoPlaylists[dBowman.numInfoPlaylists].nameplaylist = strdup(listas[i][0]); 
         dBowman.infoPlaylists[dBowman.numInfoPlaylists].numSongs = numCancionesPorLista[i];
@@ -641,8 +638,8 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
         file_size -= sizeDataTrama;
 
         float porcentaje = ((float)mythread->song.bytesDescargados / mythread->song.size) * 100;
-        //mythread->porcentaje = porcentaje;  //actualizamos en descargaBowman
-        dBowman.descargas[mythread->index].porcentaje = porcentaje; //actualizamos porcentaje en index de los threads_id
+
+        dBowman.descargas[mythread->index].porcentaje = porcentaje;
     } while (file_size > 0); 
     
     char *md5sum = resultMd5sumComand(path);
@@ -665,8 +662,7 @@ void downloadSong(DescargaBowman *mythread) {
     Missatge msg;
 
     //printF("Download started!\n");
-    
-   
+
     msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 6, 0);
 
     cleanPadding(msg.data, '~');
@@ -704,26 +700,35 @@ static void *thread_function_download_song(void* thread) {
 
     downloadSong(mythread);
 
-    freeString(&mythread->nombreDescargaComando);
-    freeString(&mythread->song.nombre);
-    freeString(&mythread->song.md5sum);
+    // si descomentamos salta bucle unknown comand 
+    //pthread_cancel(dBowman.descargas[mythread->index].thread_id);
+    //pthread_join(dBowman.descargas[mythread->index].thread_id, NULL); // consultar
 
-    return NULL; 
+    freeString(&(mythread->nombreDescargaComando));
+    freeString(&(mythread->song.nombre));
+    freeString(&(mythread->song.md5sum));
+    free(mythread); 
+
+    return NULL; // consultar
 }
 
 void threadDownloadSong(char *song, int index) {   
     pthread_t thread;
-    DescargaBowman db;
+    DescargaBowman *db = malloc(sizeof(DescargaBowman));
 
-    db.nombreDescargaComando = strdup(song);
-    db.song.bytesDescargados = 0; 
-    db.index = index;
+    db->nombreDescargaComando = strdup(song);
+    db->song.bytesDescargados = 0; 
+    db->index = index;
 
-    if (pthread_create(&thread, NULL, thread_function_download_song, (void *)&db) != 0) {
+    if (pthread_create(&thread, NULL, thread_function_download_song, (void *)db) != 0) {
         perror("Error al crear el thread para la descarga");
         dBowman.numDescargas--;
-    } 
+    }
     
+    //freeString(&(db->nombreDescargaComando));
+    //free(db); 
+
+    //se podria poner aqui?
 }
 
 void requestDownloadSong(char* nombreArchivoCopia) {
@@ -736,7 +741,7 @@ void requestDownloadSong(char* nombreArchivoCopia) {
         dBowman.descargas = realloc(dBowman.descargas, (dBowman.numDescargas + 1) * sizeof(Descarga));
         threadDownloadSong(nombreArchivoCopia, dBowman.numDescargas);
         dBowman.numDescargas++;
-        //freeString(&nombreArchivoCopia);
+        freeString(&nombreArchivoCopia);
     } else if (strcmp(msg.header, "FILE_NOEXIST") == 0) {
     }    
 }
@@ -762,8 +767,8 @@ void requestDownloadPlaylist(char* nombreArchivoCopia) {
         printF("\n");
         freeString(&prueba);
 
-        dBowman.descargas = realloc(dBowman.descargas, numSongs * sizeof(Descarga)); //realloc del array de ids de los threads
-        //dBowman.descargas = realloc(dBowman.descargas, numSongs * sizeof(DescargaBowman)); //cambiar a realloc del array de ids de los threads
+        dBowman.descargas = realloc(dBowman.descargas, (dBowman.numDescargas + numSongs) * sizeof(Descarga));
+    
         for (int i = 0; i < numSongs; i++) {
             threadDownloadSong(nombreArchivoCopia, dBowman.numDescargas + i);
         }
@@ -794,8 +799,8 @@ void creacionMsgQueues() {
     dBowman.msgQueueDescargas = id_queue;
 }
 
-void showDownloadStatus(Descarga *descargas, int numDescargas) {
-    for (int i = 0; i < numDescargas; i++) {
+void showDownloadStatus(Descarga *descargas) {
+    for (int i = 0; i < dBowman.numDescargas; i++) {
         if (descargas[i].nombreCancion != NULL) {
             // Descarga no eliminada
             if (descargas[i].nombrePlaylist == NULL) {
@@ -886,10 +891,10 @@ int main(int argc, char ** argv) {
                     } else if (strcmp(dBowman.upperInput, "LIST PLAYLISTS") == 0) {
                         requestListPlaylists();
                     } else if (strcmp(dBowman.upperInput, "CHECK DOWNLOADS") == 0) {
-                        showDownloadStatus(dBowman.descargas, dBowman.numDescargas);
+                        showDownloadStatus(dBowman.descargas);
                     } else if (strcmp(dBowman.upperInput, "CLEAR DOWNLOADS") == 0) {
                         cleanThreadsBowman(&dBowman.descargas, &dBowman.numDescargas);
-                        showDownloadStatus(dBowman.descargas, dBowman.numDescargas);
+                        showDownloadStatus(dBowman.descargas);
                     } else if (strstr(dBowman.upperInput, "DOWNLOAD") != NULL) { 
                         int numSpaces = checkDownloadCommand(dBowman.upperInput);
                         if (numSpaces == 1) {
@@ -909,7 +914,6 @@ int main(int argc, char ** argv) {
                                 requestDownloadSong(nombreArchivoCopia);
                             } else if (typeFile == 0) {
                                 requestDownloadPlaylist(nombreArchivoCopia);
-                                //requestDownloadPlaylist("costa_breve");
                             } else {
                                 printF("ERROR: The song file extension is not valid.");
                             }

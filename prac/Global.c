@@ -76,6 +76,7 @@ void cleanAllTheThreadsBowman(Descarga **descargas, int numDescargas) {
             freeString(&(*descargas)[i].nombrePlaylist);
         }
     }
+    free(*descargas);
 }
 
 void cleanInfoPlaylists(InfoPlaylist *infoPlaylists, int size) {
@@ -223,6 +224,8 @@ char *resultMd5sumComand(char *pathName) {
     pid_t childPid = fork();
     if (childPid == -1) {
         perror("Creacion fork sin exito.");
+        close(fd[0]); 
+        close(fd[1]); 
         free(checksum);
         return NULL;
     }
@@ -235,11 +238,13 @@ char *resultMd5sumComand(char *pathName) {
 
         close(STDOUT_FILENO);
 
-        dup2(fd[1], STDOUT_FILENO);
+        dup2(fd[1], STDOUT_FILENO); 
+        
         execl("/bin/sh", "sh", "-c", command, (char *)NULL);
 
         free(command);
-        dup2(fd[1], 0);
+        close(fd[1]);
+        //dup2(fd[1], 0); // NO HACIA FALTA ESTO
     } else {
         close(fd[1]);
 
