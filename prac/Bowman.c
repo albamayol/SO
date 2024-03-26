@@ -724,6 +724,7 @@ void threadDownloadSong(char *song, int index) {
         perror("Error al crear el thread para la descarga");
         dBowman.numDescargas--;
     }
+    //fgsdfgsdfgdfg
     
     //freeString(&(db->nombreDescargaComando));
     //free(db); 

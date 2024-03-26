@@ -487,6 +487,7 @@ int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleNa
     freeString(&prueba);
     return flagFound; 
 }
+//sdfsrfsdf
 
 char* convertIntToString(int num) {
     int numDigits = snprintf(NULL, 0, "%d", num);  

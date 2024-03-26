@@ -420,6 +420,7 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
         setTramaString(TramaCreate(0x01, "FILE_NOEXIST", "", 0), fd_bowman);
     }
 }
+//dsfgsdgsdfg
 
 static void *thread_function_send_song(void* thread) {
     DescargaPoole *mythread = (DescargaPoole*) thread;

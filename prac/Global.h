@@ -73,6 +73,7 @@ typedef struct {
     int fd_bowman; 
 } DescargaPoole;
 
+//hgfhdfgh
 typedef struct {
 	pthread_t thread;	
 	char* user_name;
