@@ -600,9 +600,13 @@ void conexionBowman(ThreadPoole* mythread) {
             }
         } else if (strcmp(tramaExtended.trama.header, "CHECK_OK") == 0) {
             printF("Song sent and downloaded successfully!\n");
+            /*printF("\n");
+            printF(tramaExtended.trama.data);
+            printF("\n");*/
+
             // Mandamos el nombre de la cancion por la Pipe para que lo reciba el Monolit.
-            //pthread_mutex_lock(&dPoole.mutexStats); //FASE 4
-            //write(dPoole.fdPipe[1], cancion, strlen(cancion)); //FASE 4
+            pthread_mutex_lock(&dPoole.mutexStats); //FASE 4
+            write(dPoole.fdPipe[1], tramaExtended.trama.data, 256 - 3 - 8); //FASE 4
             //freeString(&cancion); //FASE 4
         } else if (strcmp(tramaExtended.trama.header, "CHECK_KO") == 0) {
             printF("The download of the song was unsuccessfull, try again\n");
@@ -708,8 +712,12 @@ void establishDiscoveryConnection() {
 }
 
 void funcionMonolit() {
-    char *descargaCancion = read_until(dPoole.fdPipe[0], '\0'); //Bloquante hasta obtener cancion
-    
+    char *descargaCancion = read_until(dPoole.fdPipe[0], '~');
+    size_t length = 256 - strlen(descargaCancion) - 3 - 8;
+    char *basura = malloc(length);
+    read(dPoole.fdPipe[0], basura, length);
+    freeString(&basura);
+
     size_t len = strlen(dPoole.serverName) + strlen("stats.txt") + 2; //Pepe/stats.txt\0
     char *path = malloc(len);
     snprintf(path, len, "%s/%s", dPoole.serverName, "stats.txt");
@@ -727,32 +735,45 @@ void funcionMonolit() {
     while(1) {
         char *cancion = read_until(fd_file, '\n');
         if (cancion == NULL) {
+            printF("VACIO");
             break; //EOF
         }
         int numDescargas = atoi(read_until(fd_file, '\n'));
+        asprintf(&dPoole.msg, "Num descargas: %d\n", numDescargas);
+        printF(dPoole.msg);
+        freeString(&dPoole.msg);
         if (strcmp(descargaCancion, cancion) == 0) {
             flag = 1;
             numDescargas++;
+            printF("ALBA");
 
-            lseek(fd_file, -(sizeof(char)*2), SEEK_CUR);
+            lseek(fd_file, -(sizeof(char)), SEEK_CUR);
 
             char *numD = convertIntToString(numDescargas); //"2";
+            printF("\n");
+            printF(numD);
+            printF("\n");
             write(fd_file, &numD, strlen(numD));
 
+            lseek(fd_file, 0, SEEK_SET);
+
             freeString(&numD);
+            freeString(&cancion);
+            break;
         }
         freeString(&cancion);
     }
 
+    // En caso de que la cancion no este registrada en el fichero.
     if (!flag) {
         lseek(fd_file, 0, SEEK_END);
 
-        size_t len = strlen(descargaCancion) + 3;
-        char *linea = malloc(len);
-        snprintf(linea, len, "\n%s\n%s", descargaCancion, "1");
-        write(fd_file, &linea, len);
+        write(fd_file, descargaCancion, strlen(descargaCancion));
+        write(fd_file, "\n", 1);
+        write(fd_file, "1", 1);
+        write(fd_file, "\n", 1);
 
-        freeString(&linea);
+        lseek(fd_file, 0, SEEK_SET);
     }
 
     freeString(&descargaCancion);
@@ -810,7 +831,9 @@ int main(int argc, char ** argv) {
             } else {
                 close(dPoole.fdPipe[1]); // Escritura Cerrada
                 dPoole.fdPipe[1] = -1;
-                funcionMonolit();
+                while(1) {
+                    funcionMonolit();
+                }
             }
         }
     }

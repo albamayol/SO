@@ -646,7 +646,7 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
     char *md5sum = resultMd5sumComand(path);
     if (md5sum != NULL) {
         if (strcmp(md5sum, mythread->song.md5sum) == 0) {
-            setTramaString(TramaCreate(0x05, "CHECK_OK", "", 0), dBowman.fdPoole);
+            setTramaString(TramaCreate(0x05, "CHECK_OK", dBowman.descargas[mythread->index].nombreCancion, strlen(dBowman.descargas[mythread->index].nombreCancion)), dBowman.fdPoole);
         } else {
             setTramaString(TramaCreate(0x05, "CHECK_KO", "", 0), dBowman.fdPoole);
         }
@@ -661,8 +661,6 @@ void downloadSong(DescargaBowman *mythread) {
     char valorFinal = ' ';
     int inicio = 0, i = 1;
     Missatge msg;
-
-    //printF("Download started!\n");
 
     msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 6, 0);
 
