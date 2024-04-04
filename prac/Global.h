@@ -126,7 +126,6 @@ typedef struct {
     int threads_array_size;
     int fdPipe[2];
     semaphore semStats;
-    //pthread_mutex_t mutexStats;
     pthread_mutex_t mutexDescargas;
 } dataPoole;
 

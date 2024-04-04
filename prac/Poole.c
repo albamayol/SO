@@ -81,8 +81,7 @@ void sig_func() {
         close(dPoole.fdPipe[1]);
     }
 
-    //pthread_mutex_destroy(&dPoole.mutexStats);
-    SEM_constructor (&dPoole.semStats);
+    SEM_destructor(&dPoole.semStats);
 
     notifyPooleDisconnected();
     
@@ -608,7 +607,6 @@ void conexionBowman(ThreadPoole* mythread) {
             freeString(&auxData);
 
             // Mandamos el nombre de la cancion por la Pipe para que lo reciba el Monolit.
-            //pthread_mutex_lock(&dPoole.mutexStats); //SI PONEMOS MUTEX SE QUEDA INFINITO ESPERANDO EN FUNCIONMONOLIT LEYENDO DE LA PIPE!!!!
             SEM_wait(&dPoole.semStats);
             write(dPoole.fdPipe[1], tramaExtended.trama.data, 256 - 3 - 8); 
         } else if (strcmp(tramaExtended.trama.header, "CHECK_KO") == 0) {
@@ -781,7 +779,6 @@ void funcionMonolit() {
         freeString(&descargaCancion);
         close(fd_file);
 
-        //pthread_mutex_unlock(&dPoole.mutexStats);
         SEM_signal(&dPoole.semStats);
     }
 }
