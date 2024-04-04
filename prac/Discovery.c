@@ -189,7 +189,6 @@ void startPooleListener() {
         close(dDiscovery.fdPoole);
         exit (EXIT_FAILURE);
     }
-    printf("after bind\n");
     listen (dDiscovery.fdPoole, 20);
     
     while (1) {

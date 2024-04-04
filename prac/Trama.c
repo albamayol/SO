@@ -72,15 +72,7 @@ void setTramaString(Trama trama, int fd) {
     string[offset] = trama.data[i];
     ++offset;
   }
-  /*printF("-");
-  printF(string);
-    char * a;
-  for(int k = 0; k<256; k++){
-    asprintf(&a, "%c",string[k]);
-    printF(a);
-    free(a);
-  }
-  printF("-\n");*/
+  
   write(fd, string, 256);
 
   freeTrama(&trama);
@@ -137,11 +129,6 @@ TramaExtended readTrama(int fd) {
   } 
 
   size_t sizeData = 256 - 3 - tramaExtended.trama.header_length;
-  
-  //char *aux;
-  //asprintf(&aux, "TAMAÑO:%d, header:%s\n", tramaExtended.trama.header_length, tramaExtended.trama.header);
-  //printF(aux);
-  //freeString(&aux);
 
   buffer = malloc(sizeof(char) * sizeData);
   tramaExtended.trama.data = malloc(sizeof(char) * (sizeData + 1));

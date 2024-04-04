@@ -513,8 +513,6 @@ void separaDataToElement(char* data, Element* e) {
         i++;
     }
     name[j] = '\0';
-    write(1, "\n", 1);
-    write(1, name, strlen(name));
 
     //saltamos primer '&'
     i++;
@@ -527,8 +525,6 @@ void separaDataToElement(char* data, Element* e) {
         i++;
     }
     ip[j] = '\0';
-    write(1, "\n", 1);
-    write(1, ip, strlen(ip));
     //saltamos segundo '&'
     i++;
     j = 0;
@@ -541,9 +537,6 @@ void separaDataToElement(char* data, Element* e) {
         i++;
     }
     port[j] = '\0';
-    write(1, "\n", 1);
-    write(1, port, strlen(port));
-    write(1, "\n", 1);
 
     e->name = strdup(name);
     e->ip = strdup(ip);

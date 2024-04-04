@@ -219,9 +219,6 @@ static void *thread_function_read() {
             } else if (strcmp(tramaExtended.trama.header, "NEW_FILE") == 0) {                                                                 //NEW_FILE 
                 msg.mtype = 6;
             }
-            /*asprintf(&dBowman.msg, "\nId msgQueue %d, Id mensaje: %ld, type: %d, length %hd, header: %s, data: %s\n", dBowman.msgQueuePetitions, msg.mtype, msg.type, msg.header_length, msg.header, msg.data);
-            printF(dBowman.msg);
-            freeString(&dBowman.msg);*/
 
             if (msgsnd(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 0) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
                 perror("msgsnd"); 
@@ -573,7 +570,6 @@ void getIdData(char* buffer, char* dataFile, DescargaBowman *mythread) {
     counter++; //saltamos &
 
     while ((counter < 244) && (mythread->song.bytesDescargados < mythread->song.size)) {
-        //*dataFile = (char*) realloc (*dataFile, i + 1);
         dataFile[i] = buffer[counter];
         i++;
         counter++;
@@ -700,7 +696,7 @@ static void *thread_function_download_song(void* thread) {
     downloadSong(mythread);
 
     // si descomentamos salta bucle unknown comand 
-    //pthread_cancel(dBowman.descargas[mythread->index].thread_id);
+    pthread_cancel(dBowman.descargas[mythread->index].thread_id);
     //pthread_join(dBowman.descargas[mythread->index].thread_id, NULL); // consultar
 
     freeString(&(mythread->nombreDescargaComando));
@@ -720,7 +716,10 @@ void threadDownloadSong(char *song, int index) {
     db->index = index;
 
     if (pthread_create(&thread, NULL, thread_function_download_song, (void *)db) != 0) {
-        perror("Error al crear el thread para la descarga");
+        asprintf(&dBowman.msg, "Error al descargar %s. Intentalo cuando finalizen las descargas actuales.\n", song);
+        perror(dBowman.msg);
+        freeString(&dBowman.msg);
+        dBowman.descargas = realloc(dBowman.descargas, (dBowman.numDescargas + index) * sizeof(Descarga));
         dBowman.numDescargas--;
     }
     
@@ -760,11 +759,6 @@ void requestDownloadPlaylist(char* nombreArchivoCopia) {
 
         // Por cada cancion de la playlist creamos su thread
         int numSongs = numSongsDePlaylist(dBowman.infoPlaylists, nombreArchivoCopia);
-        char *prueba;
-        asprintf(&prueba, "numero de canciones: %d", numSongs);
-        printF(prueba);
-        printF("\n");
-        freeString(&prueba);
 
         dBowman.descargas = realloc(dBowman.descargas, (dBowman.numDescargas + numSongs) * sizeof(Descarga));
     
@@ -914,7 +908,7 @@ int main(int argc, char ** argv) {
                             } else if (typeFile == 0) {
                                 requestDownloadPlaylist(nombreArchivoCopia);
                             } else {
-                                printF("ERROR: The song file extension is not valid.");
+                                printF("ERROR: The song file extension is not valid.\n");
                             }
                         } else {
                             printF("Sorry number of arguments is not correct, try again\n");

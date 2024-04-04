@@ -196,29 +196,18 @@ void enviarTramas(int fd_bowman, char *cadena, char* header, size_t numMaxChars)
     freeString(&numTramas);
 
     if (sizeData < numMaxChars) { 
-        // 256 - Type(1 Byte) - header_length(2 Bytes) - Header(14 Bytes) = 239 Bytes disponibles para list songs
-        // 256 - Type(1 Byte) - header_length(2 Bytes) - Header(19 Bytes) = 234 Bytes disponibles para list playlists
         trama = readNumChars(cadena, 0, sizeData);
-        //asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
-        //printF(dPoole.msg);
-        //freeString(&dPoole.msg);
         setTramaString(TramaCreate(0x02, header, trama, strlen(trama)), fd_bowman);
     } else {
         i = 0;
         while (sizeData > numMaxChars) {
             trama = readNumChars(cadena, i * numMaxChars, numMaxChars);
-            //asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
-            //printF(dPoole.msg);
-            //freeString(&dPoole.msg);
             setTramaString(TramaCreate(0x02, header, trama, strlen(trama)), fd_bowman); 
             sizeData -= numMaxChars; 
             i++;
             freeString(&trama);
         }
         trama = readNumChars(cadena, i * numMaxChars, sizeData);
-        //asprintf(&dPoole.msg,"\nTrama %d: %s.\n", i + 1, trama);
-        //printF(dPoole.msg);
-        //freeString(&dPoole.msg);
         setTramaString(TramaCreate(0x02, header, trama, strlen(trama)), fd_bowman);
     }
     
@@ -331,9 +320,7 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, i
         }
 
         setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman);
-        //usleep(60000); //valor de Malé 
-        //usleep(20000); //valor de Ferran
-        usleep(10000); //Valor testeado
+        usleep(10000); 
 
         fileSize -= bytesLeidos; 
     } while(fileSize >= 244 - longitudId - 1);
@@ -394,15 +381,11 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
         pthread_mutex_lock(&dPoole.mutexDescargas);
         char *md5sum = resultMd5sumComand(pathSong); 
         pthread_mutex_unlock(&dPoole.mutexDescargas);
-        printF("mdsum original: ");
-        printF(md5sum);
-        printF("\n");
+
         freeString(&pathSong);
+
         if (md5sum != NULL) {
             int randomID = getRandomID();
-            asprintf(&dPoole.msg,"\nRANDOM ID: %d\n", randomID);
-            printF(dPoole.msg);
-            freeString(&dPoole.msg);
 
             char *data = NULL;
             if (strchr(song, '/') != NULL) { //es cancion de una playlist --> Quitamos sutton de song (sutton/song1.mp3)
@@ -428,7 +411,7 @@ static void *thread_function_send_song(void* thread) {
     sendSong(mythread->nombreDescargaComando, mythread->fd_bowman);
 
     // si descomentamos salta bucle unknown comand 
-    //pthread_cancel(mythread->thread);
+    pthread_cancel(mythread->thread);
     //pthread_join(mythread->thread, NULL);
 
     return NULL;
@@ -704,7 +687,7 @@ void establishDiscoveryConnection() {
         freeTrama(&(tramaExtended.trama));
         waitingForRequests();
     } else if (strcmp(tramaExtended.trama.header,"CON_KO") == 0) {
-        //PRINT DE QUE NO SE HA PODIDO ESTABLECER LA COMUNICACION CON DISCOVERY
+        printF("Couldn't connect to Discovery server, try again\n");
     }
     
     freeTrama(&(tramaExtended.trama));
