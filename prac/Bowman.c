@@ -219,9 +219,9 @@ static void *thread_function_read() {
             } else if (strcmp(tramaExtended.trama.header, "NEW_FILE") == 0) {                                                                 //NEW_FILE 
                 msg.mtype = 6;
             }
-            asprintf(&dBowman.msg, "\nId msgQueue %d, Id mensaje: %ld, type: %d, length %hd, header: %s, data: %s\n", dBowman.msgQueuePetitions, msg.mtype, msg.type, msg.header_length, msg.header, msg.data);
+            /*asprintf(&dBowman.msg, "\nId msgQueue %d, Id mensaje: %ld, type: %d, length %hd, header: %s, data: %s\n", dBowman.msgQueuePetitions, msg.mtype, msg.type, msg.header_length, msg.header, msg.data);
             printF(dBowman.msg);
-            freeString(&dBowman.msg);
+            freeString(&dBowman.msg);*/
 
             if (msgsnd(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 0) == -1) { //IPC_NOWAIT HACE QUE SI LA QUEUE SE LLENA, NO SALTE CORE DUMPED, SINO QUE SE BLOQUEE LA QUEUE (EFECTO BLOQUEANTE)
                 perror("msgsnd"); 

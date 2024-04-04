@@ -25,6 +25,8 @@ void inicializarDataPoole() {
     dPoole.msg = NULL;
     dPoole.threads = NULL;
     dPoole.threads_array_size = 0;
+    SEM_constructor (&dPoole.semStats);
+    SEM_init (&dPoole.semStats, 1); 
 }
 
 void openDiscoverySocket() {
@@ -80,6 +82,7 @@ void sig_func() {
     }
 
     //pthread_mutex_destroy(&dPoole.mutexStats);
+    SEM_constructor (&dPoole.semStats);
 
     notifyPooleDisconnected();
     
@@ -401,14 +404,12 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
             asprintf(&dPoole.msg,"\nRANDOM ID: %d\n", randomID);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
-            //char *cancion = NULL; //FASE 4
+
             char *data = NULL;
             if (strchr(song, '/') != NULL) { //es cancion de una playlist --> Quitamos sutton de song (sutton/song1.mp3)
                 data = createString4Params(strchr(song, '/') + 1, convertIntToString(fileSize), md5sum, convertIntToString(randomID));
-                //cancion = strdup(strchr(song, '/') + 1); //FASE 4
             } else { //es cancion normal
                 data = createString4Params(song, convertIntToString(fileSize), md5sum, convertIntToString(randomID));
-                //cancion = strdup(song); //FASE 4
             }
     
             setTramaString(TramaCreate(0x04, "NEW_FILE", data, strlen(data)), fd_bowman);
@@ -599,15 +600,17 @@ void conexionBowman(ThreadPoole* mythread) {
                 sendPlaylist(aux, mythread); //Pepe/sutton
             }
         } else if (strcmp(tramaExtended.trama.header, "CHECK_OK") == 0) {
-            printF("Song sent and downloaded successfully!\n");
-            /*printF("\n");
-            printF(tramaExtended.trama.data);
-            printF("\n");*/
+            char *auxData = strdup(tramaExtended.trama.data);
+            cleanPadding(auxData, '~');
+            asprintf(&dPoole.msg, "Song %s sent and downloaded successfully!\n", auxData);
+            printF(dPoole.msg);
+            freeString(&dPoole.msg);
+            freeString(&auxData);
 
             // Mandamos el nombre de la cancion por la Pipe para que lo reciba el Monolit.
             //pthread_mutex_lock(&dPoole.mutexStats); //SI PONEMOS MUTEX SE QUEDA INFINITO ESPERANDO EN FUNCIONMONOLIT LEYENDO DE LA PIPE!!!!
-            write(dPoole.fdPipe[1], tramaExtended.trama.data, 256 - 3 - 8); //FASE 4
-            //freeString(&cancion); //FASE 4
+            SEM_wait(&dPoole.semStats);
+            write(dPoole.fdPipe[1], tramaExtended.trama.data, 256 - 3 - 8); 
         } else if (strcmp(tramaExtended.trama.header, "CHECK_KO") == 0) {
             printF("The download of the song was unsuccessfull, try again\n");
         } else {
@@ -779,6 +782,7 @@ void funcionMonolit() {
         close(fd_file);
 
         //pthread_mutex_unlock(&dPoole.mutexStats);
+        SEM_signal(&dPoole.semStats);
     }
 }
 
@@ -831,9 +835,8 @@ int main(int argc, char ** argv) {
             } else {
                 close(dPoole.fdPipe[1]); // Escritura Cerrada
                 dPoole.fdPipe[1] = -1;
-                //while(1) {
-                    funcionMonolit();
-                //}
+                
+                funcionMonolit();
             }
         }
     }
