@@ -246,6 +246,7 @@ char *resultMd5sumComand(char *pathName) {
         free(command);
         close(fd[1]);
         //dup2(fd[1], 0); // NO HACIA FALTA ESTO
+        exit(0);
     } else {
         close(fd[1]);
 
