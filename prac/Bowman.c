@@ -33,6 +33,7 @@ void inicializarDataBowman() {
     dBowman.ip = NULL;
     dBowman.puerto = NULL;
     dBowman.bowmanConnected = 0;
+    dBowman.maxDesc = 0;
     dBowman.infoPlaylists = NULL;
     dBowman.numInfoPlaylists = 0;
     dBowman.numDescargas = 0;
@@ -93,7 +94,6 @@ void sig_func() {
     pthread_join(dBowman.threadRead, NULL);
     printF("alba3");
     cleanAllTheThreadsBowman(&dBowman.descargas, dBowman.numDescargas); 
-    //pthread_mutex_destroy(&dBowman.mutexDescargas);
     printF("alba4");
     exit(EXIT_FAILURE);
 }
@@ -689,6 +689,7 @@ void downloadSong(DescargaBowman *mythread) {
 
 static void *thread_function_download_song(void* thread) {
     DescargaBowman *mythread = (DescargaBowman*) thread; 
+    dBowman.maxDesc++;
 
     dBowman.descargas[mythread->index].thread_id = pthread_self(); //OBTENEMOS EL ID DEL THREAD I LO GUARDAMOS
     dBowman.descargas[mythread->index].porcentaje = 0.00;
@@ -696,7 +697,7 @@ static void *thread_function_download_song(void* thread) {
     downloadSong(mythread);
 
     // si descomentamos salta bucle unknown comand 
-    pthread_cancel(dBowman.descargas[mythread->index].thread_id);
+    //pthread_cancel(dBowman.descargas[mythread->index].thread_id);
     //pthread_join(dBowman.descargas[mythread->index].thread_id, NULL); // consultar
 
     freeString(&(mythread->nombreDescargaComando));
@@ -704,7 +705,7 @@ static void *thread_function_download_song(void* thread) {
     freeString(&(mythread->song.md5sum));
     free(mythread); 
 
-    return NULL; // consultar
+    return NULL; 
 }
 
 void threadDownloadSong(char *song, int index) {   
@@ -716,11 +717,7 @@ void threadDownloadSong(char *song, int index) {
     db->index = index;
 
     if (pthread_create(&thread, NULL, thread_function_download_song, (void *)db) != 0) {
-        asprintf(&dBowman.msg, "Error al descargar %s. Intentalo cuando finalizen las descargas actuales.\n", song);
-        perror(dBowman.msg);
-        freeString(&dBowman.msg);
-        dBowman.descargas = realloc(dBowman.descargas, (dBowman.numDescargas + index) * sizeof(Descarga));
-        dBowman.numDescargas--;
+        perror("Error al crear el thread de descarga\n");
     }
     
     //freeString(&(db->nombreDescargaComando));
@@ -730,45 +727,56 @@ void threadDownloadSong(char *song, int index) {
 }
 
 void requestDownloadSong(char* nombreArchivoCopia) {
-    setTramaString(TramaCreate(0x03, "DOWNLOAD_SONG", nombreArchivoCopia, strlen(nombreArchivoCopia)), dBowman.fdPoole); //playlistname / songname
-    //ESPERAMOS TRAMA SI SONG EXISTE O NO
-    Missatge msg;
-    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 4, 0);
+    if (dBowman.maxDesc < 3) {
+        setTramaString(TramaCreate(0x03, "DOWNLOAD_SONG", nombreArchivoCopia, strlen(nombreArchivoCopia)), dBowman.fdPoole); //playlistname / songname
+        //ESPERAMOS TRAMA SI SONG EXISTE O NO
+        Missatge msg;
+        msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 4, 0);
 
-    if (strcmp(msg.header, "FILE_EXIST") == 0) {
-        dBowman.descargas = realloc(dBowman.descargas, (dBowman.numDescargas + 1) * sizeof(Descarga));
-        threadDownloadSong(nombreArchivoCopia, dBowman.numDescargas);
-        dBowman.numDescargas++;
-        freeString(&nombreArchivoCopia);
-    } else if (strcmp(msg.header, "FILE_NOEXIST") == 0) {
-    }    
+        if (strcmp(msg.header, "FILE_EXIST") == 0) {
+            dBowman.descargas = realloc(dBowman.descargas, (dBowman.numDescargas + 1) * sizeof(Descarga));
+            threadDownloadSong(nombreArchivoCopia, dBowman.numDescargas);
+            dBowman.numDescargas++;
+            freeString(&nombreArchivoCopia);
+        } else if (strcmp(msg.header, "FILE_NOEXIST") == 0) {
+        }    
+    } else {
+        asprintf(&dBowman.msg, "Error al descargar %s. Intentalo cuando finalizen las descargas actuales. Y realiza un 'Clear downloads'\n", nombreArchivoCopia);
+        perror(dBowman.msg);
+        freeString(&dBowman.msg);
+    }
 }
 
 void requestDownloadPlaylist(char* nombreArchivoCopia) {
-    setTramaString(TramaCreate(0x03, "DOWNLOAD_LIST", nombreArchivoCopia, strlen(nombreArchivoCopia)), dBowman.fdPoole); 
+    if (dBowman.maxDesc < 3) {
+        setTramaString(TramaCreate(0x03, "DOWNLOAD_LIST", nombreArchivoCopia, strlen(nombreArchivoCopia)), dBowman.fdPoole); 
 
-    //ESPERAMOS TRAMA SI PLAYLIST EXISTE O NO
-    Missatge msg;
-    msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 5, 0);
+        //ESPERAMOS TRAMA SI PLAYLIST EXISTE O NO
+        Missatge msg;
+        msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 5, 0);
 
-    if (strcmp(msg.header, "PLAY_EXIST") == 0) {
-        char *playlistDirectory = malloc(strlen(dBowman.clienteName) + strlen(nombreArchivoCopia) + 2); 
-        sprintf(playlistDirectory, "%s/%s", dBowman.clienteName, nombreArchivoCopia);   
-        createDirectory(playlistDirectory);
-        freeString(&playlistDirectory);
+        if (strcmp(msg.header, "PLAY_EXIST") == 0) {
+            char *playlistDirectory = malloc(strlen(dBowman.clienteName) + strlen(nombreArchivoCopia) + 2); 
+            sprintf(playlistDirectory, "%s/%s", dBowman.clienteName, nombreArchivoCopia);   
+            createDirectory(playlistDirectory);
+            freeString(&playlistDirectory);
 
-        // Por cada cancion de la playlist creamos su thread
-        int numSongs = numSongsDePlaylist(dBowman.infoPlaylists, nombreArchivoCopia);
+            int numSongs = numSongsDePlaylist(dBowman.infoPlaylists, nombreArchivoCopia);
 
-        dBowman.descargas = realloc(dBowman.descargas, (dBowman.numDescargas + numSongs) * sizeof(Descarga));
-    
-        for (int i = 0; i < numSongs; i++) {
-            threadDownloadSong(nombreArchivoCopia, dBowman.numDescargas + i);
+            dBowman.descargas = realloc(dBowman.descargas, (dBowman.numDescargas + numSongs) * sizeof(Descarga));
+        
+            for (int i = 0; i < numSongs; i++) {
+                threadDownloadSong(nombreArchivoCopia, dBowman.numDescargas + i);
+            }
+            freeString(&nombreArchivoCopia);
+            dBowman.numDescargas += numSongs;
+        } else if (strcmp(msg.header, "PLAY_NOEXIST") == 0) {
+            printF("This playlist does not exist.\n");
         }
-        freeString(&nombreArchivoCopia);
-        dBowman.numDescargas += numSongs;
-    } else if (strcmp(msg.header, "PLAY_NOEXIST") == 0) {
-        printF("This playlist does not exist.\n");
+    } else {
+        asprintf(&dBowman.msg, "Error al descargar %s. Intentalo cuando finalizen las descargas actuales. Y realiza un 'Clear downloads'\n", nombreArchivoCopia);
+        perror(dBowman.msg);
+        freeString(&dBowman.msg);
     }
 }
 
@@ -886,7 +894,7 @@ int main(int argc, char ** argv) {
                     } else if (strcmp(dBowman.upperInput, "CHECK DOWNLOADS") == 0) {
                         showDownloadStatus(dBowman.descargas);
                     } else if (strcmp(dBowman.upperInput, "CLEAR DOWNLOADS") == 0) {
-                        cleanThreadsBowman(&dBowman.descargas, &dBowman.numDescargas);
+                        cleanThreadsBowman(&dBowman.descargas, &dBowman.numDescargas, &dBowman.maxDesc);
                         showDownloadStatus(dBowman.descargas);
                     } else if (strstr(dBowman.upperInput, "DOWNLOAD") != NULL) { 
                         int numSpaces = checkDownloadCommand(dBowman.upperInput);

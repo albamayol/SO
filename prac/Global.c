@@ -87,9 +87,10 @@ void cleanInfoPlaylists(InfoPlaylist *infoPlaylists, int size) {
     free(infoPlaylists);
 }
 
-void cleanThreadsBowman(Descarga **descargas, int *numDescargas) { 
+void cleanThreadsBowman(Descarga **descargas, int *numDescargas, int *maxDesc) { 
     //DescargaBowman *descargasAux = NULL;
     int numDescargasAux = *numDescargas;
+    *maxDesc = 0;
     //int numDescargasUpdated = 0;
 
     for (int i = 0; i < numDescargasAux; i++) {

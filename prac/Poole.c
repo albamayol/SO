@@ -411,7 +411,7 @@ static void *thread_function_send_song(void* thread) {
     sendSong(mythread->nombreDescargaComando, mythread->fd_bowman);
 
     // si descomentamos salta bucle unknown comand 
-    pthread_cancel(mythread->thread);
+    //pthread_cancel(mythread->thread);
     //pthread_join(mythread->thread, NULL);
 
     return NULL;
