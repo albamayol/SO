@@ -738,6 +738,7 @@ void requestDownloadSong(char* nombreArchivoCopia) {
         msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 4, 0);
 
         if (strcmp(msg.header, "FILE_EXIST") == 0) {
+            printF("Download started!");
             dBowman.descargas = realloc(dBowman.descargas, (dBowman.numDescargas + 1) * sizeof(Descarga));
             threadDownloadSong(nombreArchivoCopia, dBowman.numDescargas);
             dBowman.numDescargas++;
@@ -760,6 +761,7 @@ void requestDownloadPlaylist(char* nombreArchivoCopia) {
         msgrcv(dBowman.msgQueuePetitions, &msg, sizeof(Missatge) - sizeof(long), 5, 0);
 
         if (strcmp(msg.header, "PLAY_EXIST") == 0) {
+            printF("Download started!\n");
             char *playlistDirectory = malloc(strlen(dBowman.clienteName) + strlen(nombreArchivoCopia) + 2); 
             sprintf(playlistDirectory, "%s/%s", dBowman.clienteName, nombreArchivoCopia);   
             createDirectory(playlistDirectory);
@@ -779,7 +781,7 @@ void requestDownloadPlaylist(char* nombreArchivoCopia) {
         }
     } else {
         asprintf(&dBowman.msg, "Error al descargar %s. Intentalo cuando finalizen las descargas actuales. Y realiza un 'Clear downloads'\n", nombreArchivoCopia);
-        perror(dBowman.msg);
+        printF(dBowman.msg);
         freeString(&dBowman.msg);
     }
 }
@@ -903,7 +905,6 @@ int main(int argc, char ** argv) {
                     } else if (strstr(dBowman.upperInput, "DOWNLOAD") != NULL) { 
                         int numSpaces = checkDownloadCommand(dBowman.upperInput);
                         if (numSpaces == 1) {
-                            printF("Download started!\n");
                             int typeFile = songOrPlaylist(dBowman.upperInput);
 
                             char *nombreArchivoCopia = NULL;

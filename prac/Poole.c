@@ -473,6 +473,12 @@ void accedePlaylists(const char *path, ThreadPoole *thread) { //path = Pepe/sutt
     int i = 0;
     
     thread->descargas = realloc(thread->descargas, sizeof(DescargaPoole) * (thread->numDescargas + numArchivos)); 
+
+    char *aux = strchr(path, '/') + 1;
+
+    asprintf(&dPoole.msg, "\nNew request - %s wants to download the playlist %s\nSending %s to %s. A total of %d will be sent.\n", thread->user_name, aux, aux, thread->user_name, numArchivos);
+    printF(dPoole.msg);
+    freeString(&dPoole.msg);
     
     while ((entry = readdir(dir)) != NULL) {
         if (entry->d_type == DT_REG && strcmp(entry->d_name, ".DS_Store") != 0) { // Es un fichero y no es ".DS_Store"
@@ -566,6 +572,11 @@ void conexionBowman(ThreadPoole* mythread) {
                 mythread->descargas = realloc(mythread->descargas, sizeof(DescargaPoole) * (mythread->numDescargas + 1)); 
                 char *aux = strdup(tramaExtended.trama.data);
 
+                asprintf(&dPoole.msg, "\nNew request - %s wants to download %s\nSending %s to %s\n", mythread->user_name, tramaExtended.trama.data, tramaExtended.trama.data, mythread->user_name);
+
+                printF(dPoole.msg);
+                freeString(&dPoole.msg);
+
                 threadSendSong(aux, mythread, mythread->numDescargas);
                 freeString(&aux);
                 mythread->numDescargas++;
@@ -579,7 +590,7 @@ void conexionBowman(ThreadPoole* mythread) {
         } else if (strcmp(tramaExtended.trama.header, "CHECK_OK") == 0) {
             char *auxData = strdup(tramaExtended.trama.data);
             cleanPadding(auxData, '~');
-            asprintf(&dPoole.msg, "Song %s sent and downloaded successfully!\n", auxData);
+            asprintf(&dPoole.msg, "\nSong %s sent and downloaded successfully!\n", auxData);
             printF(dPoole.msg);
             freeString(&dPoole.msg);
             freeString(&auxData);
