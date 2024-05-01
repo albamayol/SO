@@ -70,13 +70,16 @@ void cleanThreadPoole(ThreadPoole *thread) {
 
 void cleanAllTheThreadsBowman(Descarga **descargas, int numDescargas) {
     for (int i = 0; i < numDescargas; i++) {
+        printf("Processing index %d\n", i);
         if ((*descargas)[i].nombreCancion != NULL) {
-            pthread_cancel((*descargas)[i].thread_id);
+            printf("Thread ID: %lu\n", (*descargas)[i].thread_id);
             pthread_join((*descargas)[i].thread_id, NULL);
+            pthread_cancel((*descargas)[i].thread_id);
             freeString(&(*descargas)[i].nombreCancion);
             freeString(&(*descargas)[i].nombrePlaylist);
         }
     }
+    printf("Finished processing threads\n");
     free(*descargas);
 }
 
@@ -203,6 +206,18 @@ char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *final,
     *final = delimitadorFinal;
 
     return msg;
+}
+
+int min(size_t a, size_t b) {
+    if (a < b) {
+        return a;
+    }
+    return b;
+}
+
+int getRandomID() { //SIEMPRE NOS GENERA LOS MISMOS ID'S
+    //srand(time(NULL)); ERROR A COMENTAR EN LA MEMORIA
+    return (rand() % 999) + 1; 
 }
 
 void cleanPadding(char* string, char delimiter) {

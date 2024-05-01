@@ -168,6 +168,8 @@ void freeString(char **string);
 void freePoolesArray(Element *array, int size);
 void createDirectory(char* directory);
 char* readNumChars(char *string, int inicio, int final);
+int min(size_t a, size_t b);
+int getRandomID();
 char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *final, char delimitadorFinal);
 void createStatsFile(char* directory);
 

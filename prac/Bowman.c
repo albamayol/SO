@@ -30,6 +30,7 @@ void inicializarDataBowman() {
     dBowman.clienteNameAux = NULL;
     dBowman.clienteName = NULL;
     dBowman.pathClienteFile = NULL;
+    //dBowman.descargas = NULL;
     dBowman.ip = NULL;
     dBowman.puerto = NULL;
     dBowman.bowmanConnected = 0;
@@ -45,11 +46,20 @@ void inicializarDataBowman() {
 @Retorn: ---
 */
 void sig_func() {
+    //ESPERAMOS A QUE TERMINEN DE EJECUTARSE LOS THREADS (lo hacemos lo primero, puesto que dentro de los threads necesitan info de algunos campod de dBowman)
+    cleanAllTheThreadsBowman(&dBowman.descargas, dBowman.numDescargas); 
+    /*for (int i = 0; i < dBowman.numDescargas; ++i) {
+        if (dBowman.descargas[i].nombreCancion != NULL) {
+            pthread_join(dBowman.descargas[i].thread_id, NULL);
+        }  
+    }*/
+
     if(dBowman.bowmanConnected) {  
         if (requestLogout()) {
             printF("Thanks for using HAL 9000, see you soon, music lover!\n");
         } 
     }
+
     if(dBowman.upperInput != NULL) {
         freeString(&dBowman.upperInput);
     }
@@ -93,7 +103,7 @@ void sig_func() {
     pthread_cancel(dBowman.threadRead);
     pthread_join(dBowman.threadRead, NULL);
     printF("alba3");
-    cleanAllTheThreadsBowman(&dBowman.descargas, dBowman.numDescargas); 
+    //cleanAllTheThreadsBowman(&dBowman.descargas, dBowman.numDescargas); 
     printF("alba4");
     exit(EXIT_FAILURE);
 }
@@ -578,13 +588,6 @@ void getIdData(char* buffer, char* dataFile, DescargaBowman *mythread) {
     }
 }
 
-int min(size_t a, size_t b) {
-    if (a < b) {
-        return a;
-    }
-    return b;
-}
-
 void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t size, int idSong) {
     char dataFile[244]; 
     memset(&dataFile, '\0', 244);
@@ -720,6 +723,7 @@ void threadDownloadSong(char *song, int index) {
         perror("Error al crear el thread de descarga\n");
     }
     
+    //freeString(&song);
     //freeString(&(db->nombreDescargaComando));
     //free(db); 
 

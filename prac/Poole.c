@@ -320,7 +320,7 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, i
         }
 
         setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman);
-        usleep(10000); 
+        usleep(20000); 
 
         fileSize -= bytesLeidos; 
     } while(fileSize >= 244 - longitudId - 1);
@@ -361,11 +361,6 @@ int searchPlaylist(char *pathSongPlaylist) {
         perror("Error al encontrar la canción/playlist\n");
     }
     return found;
-}
-
-int getRandomID() { //SIEMPRE NOS GENERA LOS MISMOS ID'S
-    //srand(time(NULL)); ERROR A COMENTAR EN LA MEMORIA
-    return (rand() % 999) + 1; 
 }
 
 void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una playlist, añadir previamente char* song: sutton/song1.mp3
@@ -626,7 +621,6 @@ void connect_Bowman() {
     }
     dPoole.threads_array_size++;
 }
-
 
 void waitingForRequests() {
     dPoole.fdPooleServer = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
