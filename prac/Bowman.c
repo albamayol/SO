@@ -105,7 +105,7 @@ void sig_func() {
     printF("alba3");
     //cleanAllTheThreadsBowman(&dBowman.descargas, dBowman.numDescargas); 
     printF("alba4");
-    exit(EXIT_FAILURE);
+    exit(EXIT_SUCCESS);
 }
 
 /*
@@ -237,7 +237,7 @@ static void *thread_function_read() {
         } 
         freeTrama(&(tramaExtended.trama));
     }
-    checkPooleConnection();
+    //checkPooleConnection(); //revisar
     return NULL; 
 }
 

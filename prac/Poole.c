@@ -70,9 +70,7 @@ void notifyPooleDisconnected() {
 @Retorn: ---
 */
 void sig_func() {
-    close(dPoole.fdPooleServer);
-    close(dPoole.fdPooleClient);
-
+    printF("KEVIN"); //se ejecuta 2 veces la sign_func
     if (dPoole.fdPipe[0] != -1) {
         close(dPoole.fdPipe[0]);
     }
@@ -83,8 +81,10 @@ void sig_func() {
 
     SEM_destructor(&dPoole.semStats);
 
+    cleanThreadsPoole(&dPoole.threads, dPoole.threads_array_size); 
+
     notifyPooleDisconnected();
-    
+
     if (dPoole.serverName != NULL) {
         freeString(&dPoole.serverName);
     }
@@ -106,9 +106,11 @@ void sig_func() {
     if (dPoole.msg != NULL) {
         freeString(&dPoole.msg);
     }
-    cleanThreadsPoole(&dPoole.threads, dPoole.threads_array_size); 
 
-    exit(EXIT_FAILURE);
+    close(dPoole.fdPooleServer);
+    close(dPoole.fdPooleClient);
+
+    exit(EXIT_SUCCESS);
 }
 
 /*
@@ -816,7 +818,7 @@ int main(int argc, char ** argv) {
 
                 establishDiscoveryConnection();
 
-                sig_func();
+                //sig_func();
             } else {
                 close(dPoole.fdPipe[1]); // Escritura Cerrada
                 dPoole.fdPipe[1] = -1;

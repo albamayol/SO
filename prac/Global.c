@@ -478,9 +478,9 @@ int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleNa
     int flagFound = 0;
     Element* updatedPooleList = NULL;
     int updatedPooleListSize = 0;
-    printF("pooleNameSalida: ");
+    /*printF("pooleNameSalida: ");
     printF(pooleName);
-    printF("\n");
+    printF("\n");*/
 
     for (int i = 0; i < *poole_list_size; i++) {
         //printF((*poole_list)[i].name);
@@ -505,7 +505,6 @@ int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleNa
     freeString(&prueba);
     return flagFound; 
 }
-//sdfsrfsdf
 
 char* convertIntToString(int num) {
     int numDigits = snprintf(NULL, 0, "%d", num);  

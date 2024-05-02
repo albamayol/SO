@@ -47,12 +47,16 @@ void sig_func() {
     close(dDiscovery.fdPoole);
     close(dDiscovery.fdBowman);
 
-    exit(EXIT_FAILURE);
+    exit(EXIT_SUCCESS);
 }
 
 void conexionPoole(int fd_poole) {
     char *buffer = NULL;
     TramaExtended tramaExtended = readTrama(fd_poole);
+    //recibimos 2 veces POOLE_DISCONNECTED, ese es el problema
+    /*printF("\n");
+    printF(tramaExtended.trama.header);
+    printF("\n");*/
 
     if (strcmp(tramaExtended.trama.header, "BOWMAN_LOGOUT") == 0) {
         char* nameCleaned = NULL;
@@ -85,7 +89,7 @@ void conexionPoole(int fd_poole) {
         }
         freeString(&nameCleaned);
         freeTrama(&(tramaExtended.trama));
-    } else {
+    } else if (strcmp(tramaExtended.trama.header, "NEW_POOLE") == 0) {
         Element element;
 
         separaDataToElement(tramaExtended.trama.data, &element);
@@ -191,7 +195,7 @@ void startPooleListener() {
     }
     listen (dDiscovery.fdPoole, 20);
     
-    while (1) {
+    while(1) {
         connect_Poole();
     }
 }
