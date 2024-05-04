@@ -70,7 +70,28 @@ void notifyPooleDisconnected() {
 @Retorn: ---
 */
 void sig_func() {
-    printF("KEVIN"); //se ejecuta 2 veces la sign_func
+    //pthread_mutex_destroy(&dPoole.mutexDescargas);
+
+    //kill(dPoole.monolit, SIGKILL);
+
+    /*if (dPoole.fdPipe[0] != -1) {
+        close(dPoole.fdPipe[0]);
+    }
+
+    if (dPoole.fdPipe[1] != -1) {
+        close(dPoole.fdPipe[1]);
+    }*/
+
+    //SEM_destructor(&dPoole.semStats);
+
+    cleanThreadsPoole(&dPoole.threads, dPoole.threads_array_size); 
+
+    pthread_mutex_destroy(&dPoole.mutexDescargas);
+
+    SEM_destructor(&dPoole.semStats);
+
+    kill(dPoole.monolit, SIGKILL);
+
     if (dPoole.fdPipe[0] != -1) {
         close(dPoole.fdPipe[0]);
     }
@@ -78,10 +99,6 @@ void sig_func() {
     if (dPoole.fdPipe[1] != -1) {
         close(dPoole.fdPipe[1]);
     }
-
-    SEM_destructor(&dPoole.semStats);
-
-    cleanThreadsPoole(&dPoole.threads, dPoole.threads_array_size); 
 
     notifyPooleDisconnected();
 
@@ -807,8 +824,8 @@ int main(int argc, char ** argv) {
                 perror("Crecion Pipe sin exito");
             }
 
-            int monolit = fork();
-            if (monolit > 0) {
+            dPoole.monolit = fork();
+            if (dPoole.monolit > 0) {
                 // El proceso padre(Poole) le avisará al hijo(Monolit) de que hay una nueva descarga.
                 // Le enviará el nombre de la cancion por una pipe.
                 printInfoFile();
@@ -820,6 +837,7 @@ int main(int argc, char ** argv) {
 
                 //sig_func();
             } else {
+                signal(SIGINT, SIG_IGN);
                 close(dPoole.fdPipe[1]); // Escritura Cerrada
                 dPoole.fdPipe[1] = -1;
                 

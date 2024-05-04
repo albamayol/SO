@@ -96,15 +96,13 @@ void sig_func() {
         perror("Error al eliminar la cola de mensajes");
     }
 
-    printF("alba1");
     cleanInfoPlaylists(dBowman.infoPlaylists, dBowman.numInfoPlaylists);
-    printF("alba2");    
+
     close(dBowman.fdPoole);
+
     pthread_cancel(dBowman.threadRead);
     pthread_join(dBowman.threadRead, NULL);
-    printF("alba3");
-    //cleanAllTheThreadsBowman(&dBowman.descargas, dBowman.numDescargas); 
-    printF("alba4");
+
     exit(EXIT_SUCCESS);
 }
 
@@ -169,15 +167,13 @@ void establishDiscoveryConnection() {
 
 void checkPooleConnection() {
     dBowman.bowmanConnected = 0;
-    asprintf(&dBowman.msg, "\n¡Alert: %s disconnected because the server connection has ended!\n", dBowman.clienteName);
+    asprintf(&dBowman.msg, "\n¡Alert: %s disconnected because the server connection has ended!\nPlease press Control C to exit the program.\n", dBowman.clienteName);
     printF(dBowman.msg);
     freeString(&dBowman.msg);
-    sig_func();
 }
 
 static void *thread_function_read() {
     while(1) {
-        //TODO que finalize cuando se desconecte el cliente
         Missatge msg;
         memset(&msg, 0, sizeof(Missatge));
 
@@ -185,7 +181,8 @@ static void *thread_function_read() {
 
         if (tramaExtended.initialized) {
             freeTrama(&tramaExtended.trama);
-            break;
+            checkPooleConnection();
+            return NULL;
         }
 
         msg.type = '\0';
@@ -214,17 +211,17 @@ static void *thread_function_read() {
                 sig_func();
             }
         } else {
-            if (strcmp(tramaExtended.trama.header, "CONOK") == 0 || strcmp(tramaExtended.trama.header, "CONKO") == 0) {                                    //LOGOUT
+            if (strcmp(tramaExtended.trama.header, "CONOK") == 0 || strcmp(tramaExtended.trama.header, "CONKO") == 0) {                       //LOGOUT
                 msg.mtype = 3;
             } else if (strcmp(tramaExtended.trama.header, "SONGS_RESPONSE") == 0) {                                                           //LIST SONGS
                 msg.mtype = 1;
             } else if (strcmp(tramaExtended.trama.header, "PLAYLISTS_RESPONSE") == 0) {                                                       //LIST PLAYLISTS
                 msg.mtype = 2;
-            } else if (strcmp(tramaExtended.trama.header, "CON_OK") == 0 || strcmp(tramaExtended.trama.header, "CON_KO") == 0) {                            //CONNECT POOLE
+            } else if (strcmp(tramaExtended.trama.header, "CON_OK") == 0 || strcmp(tramaExtended.trama.header, "CON_KO") == 0) {              //CONNECT POOLE
                 msg.mtype = 7;
-            } else if (strcmp(tramaExtended.trama.header, "PLAY_EXIST") == 0 || strcmp(tramaExtended.trama.header, "PLAY_NOEXIST") == 0) {                  //CHECK PLAYLIST EXIST 
+            } else if (strcmp(tramaExtended.trama.header, "PLAY_EXIST") == 0 || strcmp(tramaExtended.trama.header, "PLAY_NOEXIST") == 0) {    //CHECK PLAYLIST EXIST 
                 msg.mtype = 5;
-            } else if (strcmp(tramaExtended.trama.header, "FILE_NOEXIST") == 0 || strcmp(tramaExtended.trama.header, "FILE_EXIST") == 0) {                  //CHECK SONG EXIST
+            } else if (strcmp(tramaExtended.trama.header, "FILE_NOEXIST") == 0 || strcmp(tramaExtended.trama.header, "FILE_EXIST") == 0) {    //CHECK SONG EXIST
                 msg.mtype = 4;
             } else if (strcmp(tramaExtended.trama.header, "NEW_FILE") == 0) {                                                                 //NEW_FILE 
                 msg.mtype = 6;
@@ -237,8 +234,7 @@ static void *thread_function_read() {
         } 
         freeTrama(&(tramaExtended.trama));
     }
-    //checkPooleConnection(); //revisar
-    return NULL; 
+    return NULL;
 }
 
 void creacionHiloLectura() {

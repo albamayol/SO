@@ -34,11 +34,13 @@ void freePoolesArray(Element *array, int size) {
 }
 
 void cleanThreadsPoole(ThreadPoole** threads, int numThreads) {
+    printF("\nYou are waiting for the completion of the sending of the songs in progress to exit the program.\n");
+
     for (int i = 0; i < numThreads; i++) {
         if ((*threads)[i].user_name != NULL) { 
             for (int j = 0; j < (*threads)[i].numDescargas; j++) {
-                pthread_cancel((*threads)[i].descargas[j].thread);
                 pthread_join((*threads)[i].descargas[j].thread, NULL);
+                pthread_cancel((*threads)[i].descargas[j].thread);
                 close((*threads)[i].descargas[j].fd_bowman); 
                 free((*threads)[i].descargas[j].nombreDescargaComando);
                 (*threads)[i].descargas[j].nombreDescargaComando = NULL;
@@ -69,17 +71,21 @@ void cleanThreadPoole(ThreadPoole *thread) {
 }
 
 void cleanAllTheThreadsBowman(Descarga **descargas, int numDescargas) {
+    if (numDescargas != 0) {
+        printF("\nYou are waiting for the completion of the downloads of the songs in progress to exit the program\n");
+    }
+
     for (int i = 0; i < numDescargas; i++) {
-        printf("Processing index %d\n", i);
+        //printf("Processing index %d\n", i);
         if ((*descargas)[i].nombreCancion != NULL) {
-            printf("Thread ID: %lu\n", (*descargas)[i].thread_id);
+            //printf("Thread ID: %lu\n", (*descargas)[i].thread_id);
             pthread_join((*descargas)[i].thread_id, NULL);
             pthread_cancel((*descargas)[i].thread_id);
             freeString(&(*descargas)[i].nombreCancion);
             freeString(&(*descargas)[i].nombrePlaylist);
         }
     }
-    printf("Finished processing threads\n");
+    //printf("Finished processing threads\n");
     free(*descargas);
 }
 
@@ -261,8 +267,8 @@ char *resultMd5sumComand(char *pathName) {
 
         free(command);
         close(fd[1]);
-        //dup2(fd[1], 0); // NO HACIA FALTA ESTO
-        exit(0);
+        
+        exit(EXIT_SUCCESS);
     } else {
         close(fd[1]);
 

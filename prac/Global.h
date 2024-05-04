@@ -126,6 +126,7 @@ typedef struct {
     int fdPipe[2];
     semaphore semStats;
     pthread_mutex_t mutexDescargas;
+    int monolit;
 } dataPoole;
 
 typedef struct {
