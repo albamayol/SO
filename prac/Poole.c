@@ -70,20 +70,6 @@ void notifyPooleDisconnected() {
 @Retorn: ---
 */
 void sig_func() {
-    //pthread_mutex_destroy(&dPoole.mutexDescargas);
-
-    //kill(dPoole.monolit, SIGKILL);
-
-    /*if (dPoole.fdPipe[0] != -1) {
-        close(dPoole.fdPipe[0]);
-    }
-
-    if (dPoole.fdPipe[1] != -1) {
-        close(dPoole.fdPipe[1]);
-    }*/
-
-    //SEM_destructor(&dPoole.semStats);
-
     cleanThreadsPoole(&dPoole.threads, dPoole.threads_array_size); 
 
     pthread_mutex_destroy(&dPoole.mutexDescargas);
@@ -339,7 +325,7 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, i
         }
 
         setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman);
-        usleep(10000); 
+        usleep(20000); 
 
         fileSize -= bytesLeidos; 
     } while(fileSize >= 244 - longitudId - 1);
@@ -382,7 +368,7 @@ int searchPlaylist(char *pathSongPlaylist) {
     return found;
 }
 
-void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una playlist, añadir previamente char* song: sutton/song1.mp3
+void sendSong(char *song, int fd_bowman) { 
     int fileSize = 0;
 
     size_t len = strlen(dPoole.serverName) + strlen(song) + 2;
@@ -402,7 +388,7 @@ void sendSong(char *song, int fd_bowman) { //si enviamos una cancion de una play
             int randomID = getRandomID();
 
             char *data = NULL;
-            if (strchr(song, '/') != NULL) { //es cancion de una playlist --> Quitamos sutton de song (sutton/song1.mp3)
+            if (strchr(song, '/') != NULL) { //es cancion de una playlist 
                 data = createString4Params(strchr(song, '/') + 1, convertIntToString(fileSize), md5sum, convertIntToString(randomID));
             } else { //es cancion normal
                 data = createString4Params(song, convertIntToString(fileSize), md5sum, convertIntToString(randomID));
@@ -424,14 +410,10 @@ static void *thread_function_send_song(void* thread) {
     
     sendSong(mythread->nombreDescargaComando, mythread->fd_bowman);
 
-    // si descomentamos salta bucle unknown comand 
-    //pthread_cancel(mythread->thread);
-    //pthread_join(mythread->thread, NULL);
-
     return NULL;
 }
 
-void threadSendSong(char *song, ThreadPoole *thread, int index) { //TODO si enviamos una cancion de una playlist, añadir previamente char* song: sutton/song1.mp3
+void threadSendSong(char *song, ThreadPoole *thread, int index) { 
     thread->descargas[index].nombreDescargaComando = strdup(song);
     thread->descargas[index].fd_bowman = thread->fd; 
 
@@ -475,7 +457,7 @@ int contarArchivosRegulares(const char *path) {
     return numArchivos;
 }
 
-void accedePlaylists(const char *path, ThreadPoole *thread) { //path = Pepe/sutton
+void accedePlaylists(const char *path, ThreadPoole *thread) { 
     struct dirent *entry;
     DIR *dir = opendir(path);
 
@@ -507,7 +489,7 @@ void accedePlaylists(const char *path, ThreadPoole *thread) { //path = Pepe/sutt
             
             char *subPathAux = strchr(subPath, '/') + 1;
             
-            threadSendSong(subPathAux, thread, thread->numDescargas + i); //sutton/song1.mp3 
+            threadSendSong(subPathAux, thread, thread->numDescargas + i);  
             freeString(&subPath);
             i++;
         }
@@ -517,7 +499,7 @@ void accedePlaylists(const char *path, ThreadPoole *thread) { //path = Pepe/sutt
     closedir(dir);
 }
 
-void sendPlaylist(char *pathPlaylist, ThreadPoole *thread) { //Pepe/sutton
+void sendPlaylist(char *pathPlaylist, ThreadPoole *thread) { 
     if (searchPlaylist(pathPlaylist)) {
         setTramaString(TramaCreate(0x01, "PLAY_EXIST", "", 0), thread->fd); 
         accedePlaylists(pathPlaylist, thread); 
@@ -527,9 +509,15 @@ void sendPlaylist(char *pathPlaylist, ThreadPoole *thread) { //Pepe/sutton
 }
 
 void conexionBowman(ThreadPoole* mythread) {
+    char *aux;
+
     TramaExtended tramaExtended = readTrama(mythread->fd);
     mythread->descargas = NULL;
-    mythread->user_name = strdup(read_until_string(tramaExtended.trama.data, '~'));
+
+    aux = read_until_string(tramaExtended.trama.data, '~');
+    mythread->user_name = strdup(aux);
+    freeString(&aux);
+    
     mythread->numDescargas = 0;
 
     asprintf(&dPoole.msg,"\nNew user connected: %s.\n", mythread->user_name);
@@ -562,6 +550,7 @@ void conexionBowman(ThreadPoole* mythread) {
             freeString(&dPoole.msg);
 
             freeTrama(&(tramaExtended.trama));
+            freeString(&mythread->user_name);
             cleanThreadPoole(mythread); 
         } else if (strcmp(tramaExtended.trama.header, "LIST_SONGS") == 0) {
             asprintf(&dPoole.msg,"\nNew request - %s requires the list of songs.\nSending song list to %s\n", mythread->user_name, mythread->user_name);
@@ -589,10 +578,9 @@ void conexionBowman(ThreadPoole* mythread) {
             
             if (typeFile == 1) {
                 mythread->descargas = realloc(mythread->descargas, sizeof(DescargaPoole) * (mythread->numDescargas + 1)); 
-                char *aux = strdup(tramaExtended.trama.data);
+                aux = strdup(tramaExtended.trama.data);
 
                 asprintf(&dPoole.msg, "\nNew request - %s wants to download %s\nSending %s to %s\n", mythread->user_name, tramaExtended.trama.data, tramaExtended.trama.data, mythread->user_name);
-
                 printF(dPoole.msg);
                 freeString(&dPoole.msg);
 
@@ -604,7 +592,8 @@ void conexionBowman(ThreadPoole* mythread) {
                 char *aux = (char *)malloc(len);
                 snprintf(aux, len, "%s/%s", dPoole.serverName, tramaExtended.trama.data);
         
-                sendPlaylist(aux, mythread); //Pepe/sutton
+                sendPlaylist(aux, mythread); 
+                freeString(&aux);
             }
         } else if (strcmp(tramaExtended.trama.header, "CHECK_OK") == 0) {
             char *auxData = strdup(tramaExtended.trama.data);
@@ -753,9 +742,9 @@ void funcionMonolit() {
                 
                 int numDescargas = atoi(read_until(fd_file, '\n'));
                 numDescargas++;
-                char *numD = convertIntToString(numDescargas); //"2";
+                char *numD = convertIntToString(numDescargas);
                 
-                int offsetBack = -(strlen(numD) + 1); //+1 por el \n --> si 1 --> offsetB = -2; si 10 --> offsetB = -3
+                int offsetBack = -(strlen(numD) + 1); 
                 
                 lseek(fd_file, ((offsetBack)*sizeof(char)), SEEK_CUR);
                 
@@ -826,16 +815,12 @@ int main(int argc, char ** argv) {
 
             dPoole.monolit = fork();
             if (dPoole.monolit > 0) {
-                // El proceso padre(Poole) le avisará al hijo(Monolit) de que hay una nueva descarga.
-                // Le enviará el nombre de la cancion por una pipe.
                 printInfoFile();
                 close(fd);
                 close(dPoole.fdPipe[0]); //Lectura Cerrada
                 dPoole.fdPipe[0] = -1;
 
                 establishDiscoveryConnection();
-
-                //sig_func();
             } else {
                 signal(SIGINT, SIG_IGN);
                 close(dPoole.fdPipe[1]); // Escritura Cerrada

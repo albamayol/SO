@@ -76,16 +76,12 @@ void cleanAllTheThreadsBowman(Descarga **descargas, int numDescargas) {
     }
 
     for (int i = 0; i < numDescargas; i++) {
-        //printf("Processing index %d\n", i);
         if ((*descargas)[i].nombreCancion != NULL) {
-            //printf("Thread ID: %lu\n", (*descargas)[i].thread_id);
-            //pthread_cancel((*descargas)[i].thread_id);
             pthread_join((*descargas)[i].thread_id, NULL);
             freeString(&(*descargas)[i].nombreCancion);
             freeString(&(*descargas)[i].nombrePlaylist);
         }
     }
-    //printf("Finished processing threads\n");
     free(*descargas);
 }
 
@@ -97,10 +93,8 @@ void cleanInfoPlaylists(InfoPlaylist *infoPlaylists, int size) {
 }
 
 void cleanThreadsBowman(Descarga **descargas, int *numDescargas, int *maxDesc) { 
-    //DescargaBowman *descargasAux = NULL;
     int numDescargasAux = *numDescargas;
     *maxDesc = 0;
-    //int numDescargasUpdated = 0;
 
     for (int i = 0; i < numDescargasAux; i++) {
         if ((*descargas)[i].porcentaje == 100) {
@@ -108,25 +102,8 @@ void cleanThreadsBowman(Descarga **descargas, int *numDescargas, int *maxDesc) {
             pthread_join((*descargas)[i].thread_id, NULL);
             freeString(&(*descargas)[i].nombreCancion);
             freeString(&(*descargas)[i].nombrePlaylist);
-        } /*else {
-            descargasAux = realloc(descargasAux, sizeof(DescargaBowman) * (numDescargasUpdated + 1));
-            descargasAux[numDescargasUpdated].thread = (*descargas)[i].thread;
-            descargasAux[numDescargasUpdated].porcentaje = (*descargas)[i].porcentaje;
-            descargasAux[numDescargasUpdated].nombreDescargaComando = strdup((*descargas)[i].nombreDescargaComando);
-            descargasAux[numDescargasUpdated].song.md5sum = strdup((*descargas)[i].song.md5sum);
-            descargasAux[numDescargasUpdated].song.nombre = strdup((*descargas)[i].song.nombre);
-            descargasAux[numDescargasUpdated].song.pathSong = strdup((*descargas)[i].song.pathSong);
-            descargasAux[numDescargasUpdated].song.id = (*descargas)[i].song.id;
-            descargasAux[numDescargasUpdated].song.size = (*descargas)[i].song.size;
-            descargasAux[numDescargasUpdated].song.bytesDescargados = (*descargas)[i].song.bytesDescargados;
-            numDescargasUpdated++;
-            // 2, 5*/
-        //}
+        } 
     }
-    /*cleanAllTheThreadsBowman(descargas, *numDescargas);
-
-    *descargas = descargasAux;
-    *numDescargas = numDescargasUpdated;*/
 }
 
 char* read_until(int fd, char delimiter) {
@@ -221,8 +198,7 @@ int min(size_t a, size_t b) {
     return b;
 }
 
-int getRandomID() { //SIEMPRE NOS GENERA LOS MISMOS ID'S
-    //srand(time(NULL)); ERROR A COMENTAR EN LA MEMORIA
+int getRandomID() { 
     return (rand() % 999) + 1; 
 }
 
@@ -426,16 +402,12 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
     int j = 0;
 
     int minConnections = INT_MAX;
-    char *buffer = NULL;
+    //char *buffer = NULL;
     
     if (poole_list_size != 0) {
         for (int i = 0; i < poole_list_size; i++) {
-            write(1, poole_list[i].name, strlen(poole_list[i].name));
-            write(1, poole_list[i].ip, strlen(poole_list[i].ip));
-            
-            asprintf(&buffer, "\npuerto: %d conexiones: %d\n",poole_list[i].port, poole_list[i].num_connections);
-            printF(buffer);
-            freeString(&buffer);
+            //write(1, poole_list[i].name, strlen(poole_list[i].name));
+            //write(1, poole_list[i].ip, strlen(poole_list[i].ip));
 
             if (poole_list[i].num_connections <= minConnections) {
                 e.name = strdup(poole_list[i].name);
@@ -443,13 +415,13 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
                 e.port = poole_list[i].port;
                 e.num_connections = poole_list[i].num_connections;
                 minConnections = poole_list[i].num_connections;
-                write(1, e.name, strlen(e.name));
-                write(1, e.ip, strlen(e.ip));
+                //write(1, e.name, strlen(e.name));
+                //write(1, e.ip, strlen(e.ip));
                 j = i;
             
-                asprintf(&buffer, "\npuerto: %d conexiones: %d minConnections: %d\n",e.port, e.num_connections, minConnections);
+                /*asprintf(&buffer, "\npuerto: %d conexiones: %d minConnections: %d\n",e.port, e.num_connections, minConnections);
                 printF(buffer);
-                freeString(&buffer);
+                freeString(&buffer);*/
             }
         }
         poole_list[j].num_connections++;
@@ -484,12 +456,8 @@ int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleNa
     int flagFound = 0;
     Element* updatedPooleList = NULL;
     int updatedPooleListSize = 0;
-    /*printF("pooleNameSalida: ");
-    printF(pooleName);
-    printF("\n");*/
 
     for (int i = 0; i < *poole_list_size; i++) {
-        //printF((*poole_list)[i].name);
         if (strcmp((*poole_list)[i].name, pooleName) != 0) {
             updatedPooleList = realloc(updatedPooleList, sizeof(Element) * (updatedPooleListSize + 1));
             updatedPooleList[updatedPooleListSize].name = strdup((*poole_list)[i].name);
@@ -504,11 +472,7 @@ int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleNa
     freePoolesArray(*poole_list, *poole_list_size);
     *poole_list_size = updatedPooleListSize;
     *poole_list = updatedPooleList;
-    char *prueba = NULL;
-    asprintf(&prueba, "FLAG FOUND: %d", flagFound);
-    printF(prueba);
-    printF("\n");
-    freeString(&prueba);
+    
     return flagFound; 
 }
 

@@ -53,17 +53,11 @@ void sig_func() {
 void conexionPoole(int fd_poole) {
     char *buffer = NULL;
     TramaExtended tramaExtended = readTrama(fd_poole);
-    //recibimos 2 veces POOLE_DISCONNECTED, ese es el problema
-    /*printF("\n");
-    printF(tramaExtended.trama.header);
-    printF("\n");*/
 
     if (strcmp(tramaExtended.trama.header, "BOWMAN_LOGOUT") == 0) {
         char* nameCleaned = NULL;
         nameCleaned = read_until_string(tramaExtended.trama.data, '~');
-        printF("namePooleToDecreaseConnections: ");
-        printF(nameCleaned);
-        printF("\n");
+
         if (decreaseNumConnections(dDiscovery.poole_list, dDiscovery.poole_list_size, nameCleaned)) {
             setTramaString(TramaCreate(0x06, "CONOK", "", 0), fd_poole);   
         } else {
@@ -72,7 +66,6 @@ void conexionPoole(int fd_poole) {
         freeString(&nameCleaned);
         freeTrama(&(tramaExtended.trama));
     } else if (strcmp(tramaExtended.trama.header, "POOLE_DISCONNECT") == 0) {
-        printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
         char* nameCleaned = NULL;
         nameCleaned = read_until_string(tramaExtended.trama.data, '~');
         pthread_mutex_lock(&dDiscovery.mutexList); 
@@ -81,12 +74,10 @@ void conexionPoole(int fd_poole) {
 
         if (erasePooleResult) {
             setTramaString(TramaCreate(0x06, "CONOK", "", 0), fd_poole);   
-            asprintf(&buffer, "sizeArrayPoolesWhenPooleDisconnects: %d \n", dDiscovery.poole_list_size);
-            printF(buffer);
-            freeString(&buffer);
         } else {
             setTramaString(TramaCreate(0x06, "CONKO", "", 0), fd_poole);
         }
+        printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
         freeString(&nameCleaned);
         freeTrama(&(tramaExtended.trama));
     } else if (strcmp(tramaExtended.trama.header, "NEW_POOLE") == 0) {
@@ -109,9 +100,9 @@ void conexionPoole(int fd_poole) {
         dDiscovery.poole_list_size++;
         pthread_mutex_unlock(&dDiscovery.mutexList);
 
-        asprintf(&buffer, "sizeArrayPoolesUpdated: %d \n", dDiscovery.poole_list_size);
+        /*asprintf(&buffer, "sizeArrayPoolesUpdated: %d \n", dDiscovery.poole_list_size);
         printF(buffer);
-        freeString(&buffer);
+        freeString(&buffer);*/
 
         freeElement(&element);
 

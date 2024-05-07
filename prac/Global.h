@@ -54,14 +54,14 @@ typedef struct {
 
 typedef struct {
     Song song; 
-    char *nombreDescargaComando; //namesong / nameplaylist
-    int index; //TODO: PENSAR BIEN! --> tendremos siempre el indice de donde se encuentra el thread dentro del array de threads_id's. Asignar siempre al inicio del thread
+    char *nombreDescargaComando; 
+    int index; 
 } DescargaBowman;
 
 typedef struct {
-    char *nombreCancion;	    //para el check downloads
+    char *nombreCancion;	    
     char *nombrePlaylist;
-    float porcentaje;   //para el check downloads
+    float porcentaje;   
     pthread_t thread_id;
 } Descarga;
 
@@ -100,7 +100,7 @@ typedef struct {
     int bowmanConnected;
     int maxDesc;
     Element pooleConnected;
-    Descarga *descargas; //array de los ids de ls threads para matarlos luego
+    Descarga *descargas; //array de los ids de threads
     pthread_t threadRead;
     int numDescargas;
     int msgQueuePetitions;
