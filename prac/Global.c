@@ -79,8 +79,8 @@ void cleanAllTheThreadsBowman(Descarga **descargas, int numDescargas) {
         //printf("Processing index %d\n", i);
         if ((*descargas)[i].nombreCancion != NULL) {
             //printf("Thread ID: %lu\n", (*descargas)[i].thread_id);
+            //pthread_cancel((*descargas)[i].thread_id);
             pthread_join((*descargas)[i].thread_id, NULL);
-            pthread_cancel((*descargas)[i].thread_id);
             freeString(&(*descargas)[i].nombreCancion);
             freeString(&(*descargas)[i].nombrePlaylist);
         }

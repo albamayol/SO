@@ -339,7 +339,7 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, i
         }
 
         setTramaString(TramaCreate(0x04, "FILE_DATA", data, bytesLeidos + longitudId + 1), fd_bowman);
-        usleep(20000); 
+        usleep(10000); 
 
         fileSize -= bytesLeidos; 
     } while(fileSize >= 244 - longitudId - 1);

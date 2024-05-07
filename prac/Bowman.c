@@ -861,6 +861,8 @@ int main(int argc, char ** argv) {
             dBowman.ip = read_until(fd, '\n');
             dBowman.puerto = read_until(fd, '\n');
 
+            close(fd);
+
             asprintf(&dBowman.msg, "\n%s user initialized\n", dBowman.clienteName);
             printF(dBowman.msg);
             freeString(&dBowman.msg);
@@ -929,9 +931,6 @@ int main(int argc, char ** argv) {
                 freeString(&dBowman.input);
                 freeString(&dBowman.upperInput);
             }
-            close(fd);
-            dBowman.msg = NULL;
-            sig_func();
         }
     }
     return 0;
