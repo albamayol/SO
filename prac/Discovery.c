@@ -146,7 +146,6 @@ void connect_Poole() {
     socklen_t pAddr = sizeof(dDiscovery.poole_addr);
     int fd_poole = accept(dDiscovery.fdPoole, (struct sockaddr *)&dDiscovery.poole_addr, &pAddr); 
     if (fd_poole < 0) { 
-        //setTramaString(TramaCreate(0x01, "CON_KO", ""), fd_poole);    //TODO REVISAR DONDE VA ESTA TRAMA CON_KO!!!
         perror("Error al aceptar la conexión de Poole");
         close(fd_poole);
         return;
