@@ -2,6 +2,7 @@
 Autores:
     Alba Mayol Lozano -->alba.mayol
     Kevin Eljarrat Ohayon --> kevin.eljarrat
+    LaSalle - Sistemes Operatius
 */
 
 #include "Trama.h"
@@ -9,7 +10,7 @@ Autores:
 dataDiscovery dDiscovery;
 
 /*
-@Finalitat: Inicializar las variables a NULL.
+@Finalitat: Inicialitza les variables a NULL o al valor inicial desitjat.
 @Paràmetres: ---
 @Retorn: ---
 */
@@ -23,7 +24,7 @@ void inicializarDataDiscovery() {
 }
 
 /*
-@Finalitat: Manejar la recepción de la signal (SIGINT) y liberar los recursos utilizados hasta el momento.
+@Finalitat: Gestiona la recepció de la signal (SIGINT) i allibera els recursos utilizats fins el moment
 @Paràmetres: ---
 @Retorn: ---
 */
@@ -50,6 +51,11 @@ void sig_func() {
     exit(EXIT_SUCCESS);
 }
 
+/*
+@Finalitat: Gestiona les connexions de Poole's, ja sigui per avisar de desonnexions (del propi Poole o d'algun dels seus Bowman's) i es guarda la informació del nou Poole a un array
+@Paràmetres: int fd_poole: file descriptor del Poole connectat
+@Retorn: ---
+*/
 void conexionPoole(int fd_poole) {
     char *buffer = NULL;
     TramaExtended tramaExtended = readTrama(fd_poole);
@@ -100,10 +106,6 @@ void conexionPoole(int fd_poole) {
         dDiscovery.poole_list_size++;
         pthread_mutex_unlock(&dDiscovery.mutexList);
 
-        /*asprintf(&buffer, "sizeArrayPoolesUpdated: %d \n", dDiscovery.poole_list_size);
-        printF(buffer);
-        freeString(&buffer);*/
-
         freeElement(&element);
 
         printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
@@ -114,7 +116,11 @@ void conexionPoole(int fd_poole) {
     close(fd_poole);
 }
 
-
+/*
+@Finalitat: Gestiona la connexió d'un Bowman, es busca el Poole amb el min de connexions i se li retorna la seva informació
+@Paràmetres: int fd_bowman: file descriptor del Bowman connectat
+@Retorn: ---
+*/
 void conexionBowman(int fd_bowman) {
     TramaExtended tramaExtended = readTrama(fd_bowman);
     freeTrama(&(tramaExtended.trama));
@@ -142,19 +148,27 @@ void conexionBowman(int fd_bowman) {
     close(fd_bowman);
 }
 
+/*
+@Finalitat: Accepta connexions amb Poole's
+@Paràmetres: ----
+@Retorn: ---
+*/
 void connect_Poole() {
     socklen_t pAddr = sizeof(dDiscovery.poole_addr);
     int fd_poole = accept(dDiscovery.fdPoole, (struct sockaddr *)&dDiscovery.poole_addr, &pAddr); 
     if (fd_poole < 0) { 
-        //setTramaString(TramaCreate(0x01, "CON_KO", ""), fd_poole);    //TODO REVISAR DONDE VA ESTA TRAMA CON_KO!!!
         perror("Error al aceptar la conexión de Poole");
         close(fd_poole);
         return;
     }
-
     conexionPoole(fd_poole);
 }
 
+/*
+@Finalitat: Accepta connexions amb Bowman's
+@Paràmetres: ----
+@Retorn: ---
+*/
 void connect_Bowman() {
     socklen_t bAddr = sizeof(dDiscovery.bowman_addr);
     int fd_bowman = accept(dDiscovery.fdBowman, (struct sockaddr *)&dDiscovery.bowman_addr, &bAddr);
@@ -166,6 +180,11 @@ void connect_Bowman() {
     conexionBowman(fd_bowman);
 }
 
+/*
+@Finalitat: Obre socket i espera noves connexions amb Poole's
+@Paràmetres: ----
+@Retorn: ---
+*/
 void startPooleListener() {
 
     dDiscovery.fdPoole = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);   
@@ -191,6 +210,11 @@ void startPooleListener() {
     }
 }
 
+/*
+@Finalitat: Obre socket i espera noves connexions amb Bowman's
+@Paràmetres: ----
+@Retorn: ---
+*/
 void startBowmanListener() {
     dDiscovery.fdBowman = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dDiscovery.fdBowman < 0) {
@@ -215,15 +239,20 @@ void startBowmanListener() {
     }
 }
 
+/*
+@Finalitat: Funció de thread per a les connexions de Bowman's
+@Paràmetres: ----
+@Retorn: ---
+*/
 static void *initial_thread_function_bowman() { 
     startBowmanListener();
     return NULL;
 }
 
 /*
-@Finalitat: Implementar el main del programa.
-@Paràmetres: ---
-@Retorn: int: Devuelve 0 en caso de que el programa haya finalizado exitosamente.
+@Finalitat: Implementar el main del programa, dona pas a la creació dels dos sockets (un per les connexions de Poole's i l'altra per a les de Bowman's)
+@Paràmetres: int argc: número d'arguments de programa, char** argv: array amb els arguments del programa
+@Retorn: int: 0 en cas que el programa hagi finalitzat exitosament.
 */
 int main(int argc, char ** argv) {
     

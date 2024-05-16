@@ -1,5 +1,5 @@
 /*
-Autores:
+Autors:
     Alba Mayol Lozano -->alba.mayol
     Kevin Eljarrat Ohayon --> kevin.eljarrat
     LaSalle - Sistemes Operatius
@@ -11,7 +11,7 @@ dataPoole dPoole;
 
 void sig_func();
 /*
-@Finalitat: Inicializar las variables a NULL.
+@Finalitat: Inicialitzar les variables a NULL o al valor inicial desitjat.
 @Paràmetres: ---
 @Retorn: ---
 */
@@ -29,6 +29,11 @@ void inicializarDataPoole() {
     SEM_init (&dPoole.semStats, 1); 
 }
 
+/*
+@Finalitat: Obre socket amb Discovery
+@Paràmetres: ---
+@Retorn: ---
+*/
 void openDiscoverySocket() {
     dPoole.fdPooleClient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dPoole.fdPooleClient < 0) {
@@ -49,6 +54,11 @@ void openDiscoverySocket() {
     }
 }
 
+/*
+@Finalitat: Notifica a Discovery que Poole mateix vol desconnectar-se i gestiona la resposta de Discovery.
+@Paràmetres: ---
+@Retorn: ---
+*/
 void notifyPooleDisconnected() {
     openDiscoverySocket();
     setTramaString(TramaCreate(0x06, "POOLE_DISCONNECT", dPoole.serverName, strlen(dPoole.serverName)), dPoole.fdPooleClient);
@@ -65,7 +75,7 @@ void notifyPooleDisconnected() {
 }
 
 /*
-@Finalitat: Manejar la recepción de la signal (SIGINT) y liberar los recursos utilizados hasta el momento.
+@Finalitat: Gestiona la recepció de la signal (SIGINT) i allibera els recursos utilizats fins aleshores.
 @Paràmetres: ---
 @Retorn: ---
 */
@@ -117,7 +127,7 @@ void sig_func() {
 }
 
 /*
-@Finalitat: Printa la información leída de configPoole
+@Finalitat: Printa la informació llegida del configPoole
 @Paràmetres: ---
 @Retorn: ---
 */
@@ -127,6 +137,11 @@ void printInfoFile() {
     freeString(&dPoole.msg);
 }
 
+/*
+@Finalitat: Notifica a Discovery de un dels seus Bowman's ha realitzat la seva desconnexió i gestiona la resposta de Discovery.
+@Paràmetres: int fd_bowman: file descriptor del Bowman a qui se li enviarà la notificació de que Discovery i Poole han gestionat bé la seva desconnexió.
+@Retorn: ---
+*/
 void notifyBowmanLogout(int fd_bowman) {
     openDiscoverySocket();
     setTramaString(TramaCreate(0x06, "BOWMAN_LOGOUT", dPoole.serverName, strlen(dPoole.serverName)), dPoole.fdPooleClient);
@@ -142,6 +157,11 @@ void notifyBowmanLogout(int fd_bowman) {
     close(dPoole.fdPooleClient);
 }
 
+/*
+@Finalitat: crea una llista de totes les cançons (fitxers .mp3) dins del directori donat i retorna els seus noms concatenats en una sola cadena.
+@Paràmetres: const char *path: path del directori de les cançons; char **fileNames: cadena dels noms de les cançons concatenades;int *totalSongs: número total de cançons trobades.
+@Retorn: ---
+*/
 void listSongs(const char *path, char **fileNames, int *totalSongs) {
     struct dirent *entry;
     DIR *dir = opendir(path);
@@ -183,6 +203,11 @@ void listSongs(const char *path, char **fileNames, int *totalSongs) {
     closedir(dir);
 }
 
+/*
+@Finalitat: Envia les trames de les llistes tant de cançons com de playlists
+@Paràmetres: int fd_bowman: file descriptor del Bowman a qui se li enviaran les trames; char *cadena: dades pel camp data de la trama; char *header: header de la trama; size_t numMaxChars: nombre màxim de caràcters que pot contenir la trama.
+@Retorn: ---
+*/
 void enviarTramas(int fd_bowman, char *cadena, char* header, size_t numMaxChars) {
     int i = 0;
     char *trama = NULL;
@@ -219,6 +244,11 @@ void enviarTramas(int fd_bowman, char *cadena, char* header, size_t numMaxChars)
     freeString(&trama);
 }
 
+/*
+@Finalitat: Envia trama de la llista de cançons
+@Paràmetres: int fd_bowman: file descriptor del Bowman a qui se li enviarà la cançó
+@Retorn: ---
+*/
 void sendListSongs(int fd_bowman) {
     char *songs = NULL; 
 
@@ -231,6 +261,11 @@ void sendListSongs(int fd_bowman) {
     freeString(&songs);
 }
 
+/*
+@Finalitat: Llista les playlists dins d'un directori donat i retorna els seus noms concatenats en una sola cadena.
+@Paràmetres: const char *path: string amb el path del directori; char **fileNames: punter a una cadena on es retornaran els noms de les playlists concatenades; int *totalSongs: punter a un enter on es retornarà el nombre total de cançons.
+@Retorn: ---
+*/
 void listPlaylists(const char *path, char **fileNames, int *totalSongs) {
     struct dirent *entry;
     DIR *dir = opendir(path);
@@ -291,6 +326,11 @@ void listPlaylists(const char *path, char **fileNames, int *totalSongs) {
     closedir(dir);
 }
 
+/*
+@Finalitat: Envia els bytes de la cançó
+@Paràmetres: int fd_bowman: file descriptor del Bowman a qui se li enviarà la cançó, char* directoryPath: string amb el path de la cançó; char* song: nom de la cançó; char* id: identificador de la cançó; int fileSize: mida del fitxer
+@Retorn: ---
+*/
 void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, int fileSize) {
     int bytesLeidos = 0;
     size_t len = strlen(directoryPath) + strlen(song) + 2;
@@ -342,6 +382,11 @@ void enviarDatosSong(int fd_bowman, char *directoryPath, char *song, char *id, i
     close(fd_file);
 }
 
+/*
+@Finalitat: Cerca si una cançó existeix
+@Paràmetres: char* pathSongPlaylist: string amb el path a la cançó a buscar
+@Retorn: int: 0 si no s'ha trobat, 1 si s'ha trobat
+*/
 int searchSong(char *pathSongPlaylist, int *fileSize) {
     struct stat st;
     int found = 0;
@@ -356,6 +401,11 @@ int searchSong(char *pathSongPlaylist, int *fileSize) {
     return found;
 }
 
+/*
+@Finalitat: Cerca si una playlist existeix
+@Paràmetres: char* pathSongPlaylist: string amb el path a la playlist a buscar
+@Retorn: int: 0 si no s'ha trobat, 1 si s'ha trobat
+*/
 int searchPlaylist(char *pathSongPlaylist) {
     struct stat st;
     int found = 0;
@@ -368,6 +418,11 @@ int searchPlaylist(char *pathSongPlaylist) {
     return found;
 }
 
+/*
+@Finalitat: Busca si la cançó existeix, calcula el seu md5sum, envia trama inicial NEW_FILE i dona pas a l'enviament de les dades de la cançó
+@Paràmetres: char* song: string amb el path de la cançó; int fd_bowman: file descriptor del Bowman a qui se li enviarà la cançó
+@Retorn: ---
+*/
 void sendSong(char *song, int fd_bowman) { 
     int fileSize = 0;
 
@@ -405,6 +460,11 @@ void sendSong(char *song, int fd_bowman) {
     }
 }
 
+/*
+@Finalitat: Funció de thread de l'enviament/descarrega de cançons
+@Paràmetres: void* thread: estructura amb informació necessaria pel thread
+@Retorn: ---
+*/
 static void *thread_function_send_song(void* thread) {
     DescargaPoole *mythread = (DescargaPoole*) thread;
     
@@ -413,6 +473,11 @@ static void *thread_function_send_song(void* thread) {
     return NULL;
 }
 
+/*
+@Finalitat: crea thread i allotja memòria per a cada cançó que s'ha demanat descarregar (sigui d'una playlist o no)
+@Paràmetres: char* song: nom de la cançó; ThreadPoole* thread: estructura amb informació necessaria pel thread, int index: index de la posició d'aquella descarrega dins l'array de descarregues de Poole
+@Retorn: ---
+*/
 void threadSendSong(char *song, ThreadPoole *thread, int index) { 
     thread->descargas[index].nombreDescargaComando = strdup(song);
     thread->descargas[index].fd_bowman = thread->fd; 
@@ -423,6 +488,11 @@ void threadSendSong(char *song, ThreadPoole *thread, int index) {
     }
 }
 
+/*
+@Finalitat: Envia la llista de les playlists que Poole conté
+@Paràmetres: int fd_bowman: file descriptor per on enviarà les trames
+@Retorn: ---
+*/
 void sendListPlaylists(int fd_bowman) {
     char *playlists = NULL;
     int totalSongs = 0;
@@ -437,6 +507,11 @@ void sendListPlaylists(int fd_bowman) {
     freeString(&playlists);
 }
 
+/*
+@Finalitat: retorna el número d'arxius regulars d'un directori especificat
+@Paràmetres: const char* path: string amb el path a la playlist demanada
+@Retorn: int: número d'arxius 
+*/
 int contarArchivosRegulares(const char *path) {
     int numArchivos = 0;
     struct dirent *entry;
@@ -457,6 +532,11 @@ int contarArchivosRegulares(const char *path) {
     return numArchivos;
 }
 
+/*
+@Finalitat: Accedeix al path i es mou cançó a cançó
+@Paràmetres: const char* path: string amb el path a la playlist demanada; ThreadPoole* thread: estructura amb informació necessaria pel thread
+@Retorn: ---
+*/
 void accedePlaylists(const char *path, ThreadPoole *thread) { 
     struct dirent *entry;
     DIR *dir = opendir(path);
@@ -499,6 +579,11 @@ void accedePlaylists(const char *path, ThreadPoole *thread) {
     closedir(dir);
 }
 
+/*
+@Finalitat: Envia trames si playlist demanada existeix o no
+@Paràmetres: char* pathPlaylist: string amb el path a la playlist demanada; ThreadPoole* thread: estructura amb informació necessaria pel thread
+@Retorn: ---
+*/
 void sendPlaylist(char *pathPlaylist, ThreadPoole *thread) { 
     if (searchPlaylist(pathPlaylist)) {
         setTramaString(TramaCreate(0x01, "PLAY_EXIST", "", 0), thread->fd); 
@@ -508,6 +593,11 @@ void sendPlaylist(char *pathPlaylist, ThreadPoole *thread) {
     }
 }
 
+/*
+@Finalitat: Gestionar la nova connexió d'un Bowman i implementar la lògica principal de peticions que li arriben de Bowman
+@Paràmetres: ThreadPoole* mythread: estructura amb informació necessaria pel thread
+@Retorn: ---
+*/
 void conexionBowman(ThreadPoole* mythread) {
     char *aux;
 
@@ -617,12 +707,22 @@ void conexionBowman(ThreadPoole* mythread) {
     freeString(&mythread->user_name);
 }
 
+/*
+@Finalitat: Implementació de la funció de thread de cada Bowman
+@Paràmetres: void* thread: estructura amb informació pel thread
+@Retorn: void*
+*/
 static void *thread_function_bowman(void* thread) {
     ThreadPoole *mythread = (ThreadPoole*) thread;
     conexionBowman(mythread);
     return NULL;
 }
 
+/*
+@Finalitat: Protocol d'acceptació de conexions de Bowman 
+@Paràmetres: ---
+@Retorn: ---
+*/
 void connect_Bowman() {
     socklen_t bAddr = sizeof(dPoole.poole_addr);
     int fd_bowman = accept(dPoole.fdPooleServer, (struct sockaddr *)&dPoole.poole_addr, &bAddr);
@@ -641,6 +741,11 @@ void connect_Bowman() {
     dPoole.threads_array_size++;
 }
 
+/*
+@Finalitat: Obrir socket per a conexions de Bowmans
+@Paràmetres: ---
+@Retorn: ---
+*/
 void waitingForRequests() {
     dPoole.fdPooleServer = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dPoole.fdPooleServer < 0) {
@@ -667,6 +772,11 @@ void waitingForRequests() {
     }    
 }
 
+/*
+@Finalitat: Obrir socket amb Discovery i enviar/rebre les trames pertinents
+@Paràmetres: ---
+@Retorn: ---
+*/
 void establishDiscoveryConnection() {
     dPoole.fdPooleClient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dPoole.fdPooleClient < 0) {
@@ -708,6 +818,11 @@ void establishDiscoveryConnection() {
     close(dPoole.fdPooleClient);
 }
 
+/*
+@Finalitat: Escriure al fitxer stats.txt
+@Paràmetres: ---
+@Retorn: ---
+*/
 void funcionMonolit() {
     while(1) {
         char *descargaCancion = read_until(dPoole.fdPipe[0], '~');

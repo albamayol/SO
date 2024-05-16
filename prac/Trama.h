@@ -1,3 +1,10 @@
+/*
+Autores:
+    Alba Mayol Lozano -->alba.mayol
+    Kevin Eljarrat Ohayon --> kevin.eljarrat
+    LaSalle - Sistemes Operatius
+*/
+
 #ifndef _TRAMA_H_
 #define _TRAMA_H_
 

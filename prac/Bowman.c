@@ -19,7 +19,7 @@ typedef struct {
 
 int requestLogout();
 /*
-@Finalitat: Inicializar las variables a NULL.
+@Finalitat: Inicialitzar les variables a NULL o al valor inicial desitjat.
 @Paràmetres: ---
 @Retorn: ---
 */
@@ -40,7 +40,7 @@ void inicializarDataBowman() {
 }
 
 /*
-@Finalitat: Manejar la recepción de la signal (SIGINT) y liberar los recursos utilizados hasta el momento.
+@Finalitat: Gestiona la recepció de la signal (SIGINT) i allibera els recursos utilitzats fins el moment
 @Paràmetres: ---
 @Retorn: ---
 */
@@ -101,7 +101,7 @@ void sig_func() {
 }
 
 /*
-@Finalitat: Printa la información leída de configBowman
+@Finalitat: Printa la informació llegida de configBowman
 @Paràmetres: ---
 @Retorn: ---
 */
@@ -112,6 +112,11 @@ void printInfoFileBowman() {
     freeString(&dBowman.msg);
 }
 
+/*
+@Finalitat: Gestionar la connexió amb Discovery, obre socket i espera la trama amb la informació del Poole
+@Paràmetres: ---
+@Retorn: ---
+*/
 void establishDiscoveryConnection() {
     dBowman.fdDiscovery = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dBowman.fdDiscovery < 0) {
@@ -159,6 +164,11 @@ void establishDiscoveryConnection() {
     close(dBowman.fdDiscovery);
 }
 
+/*
+@Finalitat: Mira si el Poole al que està connectat Bowman segueix o no "en peu" i avisa a Bowman de desconnectar-se també
+@Paràmetres: ---
+@Retorn: ---
+*/
 void checkPooleConnection() {
     dBowman.bowmanConnected = 0;
     asprintf(&dBowman.msg, "\n¡Alert: %s disconnected because the server connection has ended!\nPlease press Control C to exit the program.\n", dBowman.clienteName);
@@ -166,6 +176,11 @@ void checkPooleConnection() {
     freeString(&dBowman.msg);
 }
 
+/*
+@Finalitat: Funció de thread del fil de lectura, que rep trames, les neteja, les clasifica segons el tipus de trama i les envia a una cua de missatges o una altra
+@Paràmetres: ---
+@Retorn: ---
+*/
 static void *thread_function_read() {
     while(1) {
         Missatge msg;
@@ -231,12 +246,22 @@ static void *thread_function_read() {
     return NULL;
 }
 
+/*
+@Finalitat: Crea el fil de lectura principal de trames
+@Paràmetres: ---
+@Retorn: ---
+*/
 void creacionHiloLectura() {
     if (pthread_create(&dBowman.threadRead, NULL, thread_function_read, NULL) != 0) {
         perror("Error al crear el thread de lectura\n");
     }
 }
 
+/*
+@Finalitat: Gestionar la nova connexió amb el Poole i dona pas a la creació d'un fil principal de lectura de trames
+@Paràmetres: ---
+@Retorn: ---
+*/
 void establishPooleConnection() {
     dBowman.fdPoole = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (dBowman.fdPoole < 0) {
@@ -278,6 +303,11 @@ void establishPooleConnection() {
     }
 }
 
+/*
+@Finalitat: Junta les trames de cançons rebudes en un string.
+@Paràmetres: int numTramas: número de trames a rebre; char **songs: cadena on es concatenaran les dades de les trames.
+@Retorn: ---
+*/
 void juntarTramasSongs(int numTramas, char **songs) {
     int i = 0;
     size_t totalSize = 0; 
@@ -301,6 +331,11 @@ void juntarTramasSongs(int numTramas, char **songs) {
     }
 }
 
+/*
+@Finalitat: Processa les trames de cançons per separar-les en una llista.
+@Paràmetres: char ***canciones: array de strings on es guarden les cançons; char *songs: string amb les cançons concatenades.
+@Retorn: El número de cançons processades.
+*/
 int procesarTramasSongs(char ***canciones, char *songs) {
     int numCanciones = 0, inicio = 0;
 
@@ -319,6 +354,11 @@ int procesarTramasSongs(char ***canciones, char *songs) {
     return numCanciones;
 }
 
+/*
+@Finalitat: Printa les cançons per pantalla.
+@Paràmetres: int numCanciones: número de cançons; char ***canciones: llista de strings amb les cançons a imprimir.
+@Retorn: ---
+*/
 void printarSongs(int numCanciones, char ***canciones) {
     asprintf(&dBowman.msg, "\nThere are %d songs available for download:", numCanciones);
     printF(dBowman.msg);
@@ -338,6 +378,11 @@ void printarSongs(int numCanciones, char ***canciones) {
     }
 }
 
+/*
+@Finalitat: Gestiona la petició d'una llista de les cançons de Poole, envia la petició i processa la resposta.
+@Paràmetres: ---
+@Retorn: ---
+*/
 void requestListSongs() {
     int numCanciones = 0;
     char *songs = NULL, **canciones = NULL;
@@ -360,6 +405,11 @@ void requestListSongs() {
     freeString(&songs);
 }
 
+/*
+@Finalitat: Junta les trames rebudes de Poole envers la llista de playlists de Poole
+@Paràmetres: int numTramas: número de trames a rebre
+@Retorn: char*: 
+*/
 char *juntarTramasPlaylists(int numTramas) {
     int i = 0;
     char *playlists = NULL;
@@ -394,6 +444,11 @@ char *juntarTramasPlaylists(int numTramas) {
     return playlists;
 }
 
+/*
+@Finalitat: Processa les trames de cançons i les guarda a una llista de strings.
+@Paràmetres: char ***canciones: array de strings on es guardaran les cançons processades; char *songs: string amb les cançons concatenades.
+@Retorn: Nombre de cançons processades.
+*/
 char ***procesarTramasPlaylists(char *playlists, int **numCancionesPorLista, int numCanciones, int *numListas) {
     int i = 0, totalCanciones = 0, inicioPlaylist = 0, inicioSong = 0;
     char valorFinal = ' ', ***listas = NULL, *playlist = NULL, *song = NULL;
@@ -465,6 +520,11 @@ char ***procesarTramasPlaylists(char *playlists, int **numCancionesPorLista, int
     return listas;
 }
 
+/*
+@Finalitat: Calcula el número de cançons que té una playlist en específic
+@Paràmetres: InfoPlaylist* infoPlaylists: array de les playlists; char* listName: nom de la playlist
+@Retorn: int: número de cançons d'una playlist
+*/
 int numSongsDePlaylist(InfoPlaylist* infoPlaylists, char* listName) {
     for (int i = 0; i < dBowman.numInfoPlaylists; i++) {
         if (strcmp(infoPlaylists[i].nameplaylist, listName) == 0) {
@@ -474,6 +534,11 @@ int numSongsDePlaylist(InfoPlaylist* infoPlaylists, char* listName) {
     return -1;
 }
 
+/*
+@Finalitat: Printa la llista de playlists de Poole
+@Paràmetres: int numListas: número de playlists que té Poole; char*** listas: llista de les playlists on cada playlist conté una llista de les seves cançons; int* numCancionesPorLista: número de cançons que té cada playlist
+@Retorn: ---
+*/
 void printarPlaylists(int numListas, char ***listas, int *numCancionesPorLista) {
     asprintf(&dBowman.msg, "\nThere are %d lists available for download:", numListas);
     printF(dBowman.msg);
@@ -507,6 +572,11 @@ void printarPlaylists(int numListas, char ***listas, int *numCancionesPorLista) 
     free(numCancionesPorLista);
 }
 
+/*
+@Finalitat: Gestiona la petició i recepció de llistar les playlists de Poole
+@Paràmetres: ---
+@Retorn: ---
+*/
 void requestListPlaylists() {
     char *playlists = NULL, ***listas = NULL; 
     int numListas = 0;
@@ -535,6 +605,11 @@ void requestListPlaylists() {
     free(playlists);
 }
 
+/*
+@Finalitat: Gestiona la desconnexió del propi Bowman amb Poole, envia una trama avisant-lo
+@Paràmetres: ---
+@Retorn: ---
+*/
 int requestLogout() {  
     setTramaString(TramaCreate(0x06, "EXIT", dBowman.clienteName, strlen(dBowman.clienteName)), dBowman.fdPoole);
 
@@ -554,6 +629,11 @@ int requestLogout() {
     return 2;
 }
 
+/*
+@Finalitat: Separa el identificador i els bytes del camp data de la trama de descarrega d'una cançó
+@Paràmetres: char* buffer: camp data de la trama; char* dataFile: contindrà els bytes del camp data (netejats sense el id i el &); DescargaBowman* mythread: estructura amb les dades necessaries per a la descarrega
+@Retorn: ---
+*/
 void getIdData(char* buffer, char* dataFile, DescargaBowman *mythread) { 
     int counter = 0, i = 0; 
 
@@ -572,6 +652,11 @@ void getIdData(char* buffer, char* dataFile, DescargaBowman *mythread) {
     }
 }
 
+/*
+@Finalitat: Crea el fitxer .mp3 al path concret i escriu els bytes que li envia Poole per a aquella cançó.
+@Paràmetres: char* directory: path al directori on es crearà el .mp3; DescargaBowman* mythread: estructura amb les dades necessaries per a la descarrega; size_t size: mida de la cançó; int id_song: identificador de la cançó
+@Retorn: ---
+*/
 void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t size, int idSong) {
     char dataFile[244]; 
     memset(&dataFile, '\0', 244);
@@ -640,6 +725,11 @@ void createMP3FileInDirectory(char* directory, DescargaBowman *mythread, size_t 
     freeString(&path);
 }
 
+/*
+@Finalitat: Guarda la informació rebuda de la trama inicial enviada pel Poole i dona pas a la descarrega dels bytes d'aquella cançó
+@Paràmetres: DescargaBowman* mythread: estructura amb les dades necessaries per a la descarrega
+@Retorn: ---
+*/
 void downloadSong(DescargaBowman *mythread) {
     char valorFinal = ' ';
     int inicio = 0, i = 1;
@@ -674,6 +764,11 @@ void downloadSong(DescargaBowman *mythread) {
     createMP3FileInDirectory(dBowman.clienteName, mythread, mythread->song.size, mythread->song.id);
 }
 
+/*
+@Finalitat: Funció de thread per a la descarrega d'una cançó
+@Paràmetres: void* thread: estructura de la descarrega amb la informació necessària
+@Retorn: ---
+*/
 static void *thread_function_download_song(void* thread) {
     DescargaBowman *mythread = (DescargaBowman*) thread; 
     dBowman.maxDesc++;
@@ -691,6 +786,11 @@ static void *thread_function_download_song(void* thread) {
     return NULL; 
 }
 
+/*
+@Finalitat: Crea nova posició a l'array de descarregues de Bowman i un nou thread per a una cançó
+@Paràmetres: char* song: nom de la cançó que es descarregarà; int index: index de la descarrega dins l'array de descarregues de Bowman
+@Retorn: ---
+*/
 void threadDownloadSong(char *song, int index) {   
     pthread_t thread;
     DescargaBowman *db = malloc(sizeof(DescargaBowman));
@@ -704,6 +804,11 @@ void threadDownloadSong(char *song, int index) {
     }
 }
 
+/*
+@Finalitat: Gestiona la petició de descarrega d'una cançó, comprova si és possible la seva descarrega i genera un nou thread per a la cançó
+@Paràmetres: char* nombreArchivoCopia: nom de la cançó que es vol descarregar
+@Retorn: ---
+*/
 void requestDownloadSong(char* nombreArchivoCopia) {
     if (dBowman.maxDesc < 3) {
         setTramaString(TramaCreate(0x03, "DOWNLOAD_SONG", nombreArchivoCopia, strlen(nombreArchivoCopia)), dBowman.fdPoole); //playlistname / songname
@@ -726,6 +831,11 @@ void requestDownloadSong(char* nombreArchivoCopia) {
     }
 }
 
+/*
+@Finalitat: Gestiona la petició de descarrega d'una playlist, comprova si és possible la seva descarrega i genera un nou thread per a cada cançó
+@Paràmetres: char* nombreArchivoCopia: nom de la playlist que es vol descarregar
+@Retorn: ---
+*/
 void requestDownloadPlaylist(char* nombreArchivoCopia) {
     if (dBowman.maxDesc < 3) {
         setTramaString(TramaCreate(0x03, "DOWNLOAD_LIST", nombreArchivoCopia, strlen(nombreArchivoCopia)), dBowman.fdPoole); 
@@ -760,6 +870,11 @@ void requestDownloadPlaylist(char* nombreArchivoCopia) {
     }
 }
 
+/*
+@Finalitat: Crea 2 cues de missatges per a la gestió de les trames
+@Paràmetres: ---
+@Retorn: ---
+*/
 void creacionMsgQueues() {
     key_t key1 = ftok("Bowman.c", 0xCA);
 
@@ -780,6 +895,11 @@ void creacionMsgQueues() {
     dBowman.msgQueueDescargas = id_queue;
 }
 
+/*
+@Finalitat: Mostra el percentatge actual de les descarregues en curs
+@Paràmetres: Descarga* descargas: array de les descarregues de Bowman
+@Retorn: ---
+*/
 void showDownloadStatus(Descarga *descargas) {
     for (int i = 0; i < dBowman.numDescargas; i++) {
         if (descargas[i].nombreCancion != NULL) {
@@ -812,9 +932,9 @@ void showDownloadStatus(Descarga *descargas) {
 }
 
 /*
-@Finalitat: Implementar el main del programa.
-@Paràmetres: ---
-@Retorn: int: Devuelve 0 en caso de que el programa haya finalizado exitosamente.
+@Finalitat: Implementar el main del procès Bowman, gestiona les peticions de l'usuari desde la línia de comandes.
+@Paràmetres: int argc: número d'arguments, char** argv array amb els arguments del programa.
+@Retorn: int: 0 en cas de que el programa hagi finalitzat exitosament.
 */
 int main(int argc, char ** argv) {
     inicializarDataBowman();

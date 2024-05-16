@@ -2,6 +2,7 @@
 Autores:
     Alba Mayol Lozano -->alba.mayol
     Kevin Eljarrat Ohayon --> kevin.eljarrat
+    LaSalle - Sistemes Operatius
 */
 
 #ifndef _GLOBAL_H_

@@ -1,5 +1,17 @@
+/*
+Autores:
+    Alba Mayol Lozano -->alba.mayol
+    Kevin Eljarrat Ohayon --> kevin.eljarrat
+    LaSalle - Sistemes Operatius
+*/
+
 #include "Trama.h"
 
+/*
+@Finalitat: Alliberar la memòra dels camps d'una trama donada
+@Paràmetres: Trama* trama: trama a alliberar
+@Retorn: ---
+*/
 void freeTrama(Trama *trama) {
     if (trama->data != NULL) {
         free(trama->data);
@@ -12,11 +24,21 @@ void freeTrama(Trama *trama) {
     }
 }
 
+/*
+@Finalitat: Convertir un short a un string
+@Paràmetres: short valor: valor del short; char* cadena: string amb el valor del short convertit;
+@Retorn: ---
+*/
 void shortToChars(short valor, char *cadena) {
   cadena[1] = (char)(valor & 0xFF);        // Obtener el byte de menor peso
   cadena[0] = (char)((valor >> 8) & 0xFF); // Obtener el byte de mayor peso
 }
 
+/*
+@Finalitat: Crea una string juntant 3 paràmetres donats intercal·lats per '&'
+@Paràmetres: char* param1: primer paràmetre; char* param2: segon paràmetre; char* param3: tercer paràmetre
+@Retorn: char*: string generada
+*/
 char* createString3Params(char* param1, char* param2, char* param3) { 
   char *aux = NULL;
   size_t length = strlen(param1) + strlen(param2) + strlen(param3) + 2 + 1; 
@@ -30,6 +52,11 @@ char* createString3Params(char* param1, char* param2, char* param3) {
   return aux;
 }
 
+/*
+@Finalitat: Crea una string juntant 4 paràmetres donats intercal·lats per '&'
+@Paràmetres: char* param1: primer paràmetre; char* param2: segon paràmetre; char* param3: tercer paràmetre; char *param4: quart paràmetre
+@Retorn: char*: string generada
+*/
 char* createString4Params(char* param1, char* param2, char* param3, char *param4) { 
   char *aux = NULL;
   size_t length = strlen(param1) + strlen(param2) + strlen(param3) + strlen(param4) + 3 + 1; 
@@ -45,6 +72,11 @@ char* createString4Params(char* param1, char* param2, char* param3, char *param4
   return aux;
 }
 
+/*
+@Finalitat: Converteix una trama a string i ho envia per un file descriptor donat
+@Paràmetres: Trama trama: trama a enviar; int fd: file descriptor per on enviar
+@Retorn: ---
+*/
 void setTramaString(Trama trama, int fd) {
   char string[256] = {0}; 
 
@@ -78,6 +110,11 @@ void setTramaString(Trama trama, int fd) {
   freeTrama(&trama);
 }
 
+/*
+@Finalitat: crea una trama donat uns parèmetres donats
+@Paràmetres: char type: type de la trama; char* header: header de la trama; char* data: data de la trama; size_t size: mida del header
+@Retorn: Trama: trama creada
+*/
 Trama TramaCreate (char type, char *header, char *data, size_t size) {
   Trama trama;
 
@@ -100,6 +137,11 @@ Trama TramaCreate (char type, char *header, char *data, size_t size) {
   return trama;
 }
 
+/*
+@Finalitat: Inicialitza els camps d'una trama donada
+@Paràmetres: TramaExtended *tramaExtended: trama a inicialitzar
+@Retorn: ---
+*/
 void inicializarTrama(TramaExtended *tramaExtended) {
   tramaExtended->trama.type = ' ';
   tramaExtended->trama.header_length = 0;
@@ -108,6 +150,11 @@ void inicializarTrama(TramaExtended *tramaExtended) {
   tramaExtended->initialized = 0;
 }
 
+/*
+@Finalitat: Llegeix i converteix a trama la info rebuda per un file descriptor donat
+@Paràmetres: int fd: file descriptor d'on llegir
+@Retorn: TramaExtended: trama rebuda
+*/
 TramaExtended readTrama(int fd) {
   TramaExtended tramaExtended;
   char *buffer = NULL;

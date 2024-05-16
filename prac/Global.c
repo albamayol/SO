@@ -7,6 +7,11 @@ Autores:
 
 #include "Global.h"
 
+/*
+@Finalitat: Alliberar la memòra d'un Element de la llista de Poole's de Discovery
+@Paràmetres: Element* e: Element a alliberar
+@Retorn: ---
+*/
 void freeElement(Element* e) {
     if (e->name != NULL) {
         free(e->name);
@@ -19,6 +24,11 @@ void freeElement(Element* e) {
     }
 }
 
+/*
+@Finalitat: Alliberar la memòria d'un string dinàmic
+@Paràmetres: char** string: string a alliberar
+@Retorn: ---
+*/
 void freeString(char **string) {
     if (*string != NULL) {
         free(*string);
@@ -26,6 +36,11 @@ void freeString(char **string) {
     }
 }
 
+/*
+@Finalitat: Allibera cada Element de l'array de Poole's de Discovery al igual que el propi array també
+@Paràmetres: Element* array: array de Poole's de Discovery
+@Retorn: ---
+*/
 void freePoolesArray(Element *array, int size) {
     for (int i = 0; i < size; ++i) {
         freeElement(&array[i]);
@@ -33,6 +48,11 @@ void freePoolesArray(Element *array, int size) {
     free(array);
 }
 
+/*
+@Finalitat: cancelar i matar els threads de Poole que ja hagin acabat les descarregues
+@Paràmetres: ThreadPoole** thread: array de descarrgues de Poole; int numThreads: mida de l'array de threads de Poole (connexions de Bowman)
+@Retorn: ---
+*/
 void cleanThreadsPoole(ThreadPoole** threads, int numThreads) {
     printF("\nYou are waiting for the completion of the sending of the songs in progress to exit the program.\n");
 
@@ -55,6 +75,11 @@ void cleanThreadsPoole(ThreadPoole** threads, int numThreads) {
     free(*threads);
 }
 
+/*
+@Finalitat: cancelar i matar els threads de Poole que ja hagin acabat les descarregues al igual que el thread de connexió amb aquell Bowman
+@Paràmetres: ThreadPoole* thread: array de descarrgues de Poole
+@Retorn: ---
+*/
 void cleanThreadPoole(ThreadPoole *thread) { 
     for (int j = 0; j < (*thread).numDescargas; j++) {
         pthread_cancel((*thread).descargas[j].thread);
@@ -70,6 +95,11 @@ void cleanThreadPoole(ThreadPoole *thread) {
     
 }
 
+/*
+@Finalitat: cancelar i matar tots els threads de Bowman 
+@Paràmetres: Descarga** descargas: array de descarrgues de Bowman; int* numDescargas: mida de l'array de descarregues;
+@Retorn: ---
+*/
 void cleanAllTheThreadsBowman(Descarga **descargas, int numDescargas) {
     if (numDescargas != 0) {
         printF("\nYou are waiting for the completion of the downloads of the songs in progress to exit the program\n");
@@ -85,6 +115,11 @@ void cleanAllTheThreadsBowman(Descarga **descargas, int numDescargas) {
     free(*descargas);
 }
 
+/*
+@Finalitat: Neteja i allibera l'array de playlists que rep Bowman segons la llista de playlists del seu Poole
+@Paràmetres: InfoPlaylist* infoPlaylists: array de playlists de Bowman; int size: mida de l'array de playlists
+@Retorn: ---
+*/
 void cleanInfoPlaylists(InfoPlaylist *infoPlaylists, int size) {
     for (int i = 0; i < size; ++i) {
         freeString(&(infoPlaylists[i].nameplaylist));
@@ -92,6 +127,11 @@ void cleanInfoPlaylists(InfoPlaylist *infoPlaylists, int size) {
     free(infoPlaylists);
 }
 
+/*
+@Finalitat: cancelar i matar els threads de Bowman que ja hagin acabat les descarregues
+@Paràmetres: Descarga** descargas: array de descarrgues de Bowman; int* numDescargas: mida de l'array de descarregues; int* maxDesc: punter al número máxim de descarregues possibles
+@Retorn: ---
+*/
 void cleanThreadsBowman(Descarga **descargas, int *numDescargas, int *maxDesc) { 
     int numDescargasAux = *numDescargas;
     *maxDesc = 0;
@@ -106,6 +146,11 @@ void cleanThreadsBowman(Descarga **descargas, int *numDescargas, int *maxDesc) {
     }
 }
 
+/*
+@Finalitat: Retorna un string generada de la lectura d'un file descriptor, es llegeix fins un delimitador donat
+@Paràmetres: int fd: file desccriptor d'on llegir; char delimiter: caràcter delimitador
+@Retorn: char*: string llegida
+*/
 char* read_until(int fd, char delimiter) {
     char *msg = NULL;
     char current;
@@ -129,6 +174,11 @@ char* read_until(int fd, char delimiter) {
 }
 
 
+/*
+@Finalitat: Retorna un string generada de la lectura d'una string principal, que s'ha llegit fins un delimitador donat
+@Paràmetres: char* string: string a llegir; char delimiter: caràcter delimitador
+@Retorn: char*: string llegida
+*/
 char* read_until_string(char *string, char delimiter) {
     int i = 0;
     char *msg = NULL;
@@ -148,7 +198,11 @@ char* read_until_string(char *string, char delimiter) {
     return msg;
 }
 
-
+/*
+@Finalitat: Retorna un string generada de la lectura d'una string principal, que s'ha llegit des d'un index inicial donat fins un altra de final
+@Paràmetres: char* string: string a llegir; int inicio: index inicial; int final: index final
+@Retorn: char*: string llegida
+*/
 char* readNumChars(char *string, int inicio, int final) {
     char *msg = (char *)malloc(final + 1); 
     if (msg == NULL) {
@@ -164,6 +218,11 @@ char* readNumChars(char *string, int inicio, int final) {
     return msg;
 }
 
+/*
+@Finalitat: Llegeix d'una string desde un index inicial fins a un delimitador final, i retorna la cadena trobada entre ambdòs limitadors
+@Paràmetres: char* string: string a llegir; int *inicio: Punter a l'índex inicial; char delimiter: caràcter que indica fins on llegir; char *final: caràcter on es guardarà el delimitador final trobat; char delimitadorFinal: caràcter que indica el final absolut
+@Retorn: char*: cadena llegida
+*/
 char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *final, char delimitadorFinal) {
     char *msg = NULL;
     int i = 0;
@@ -191,6 +250,11 @@ char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *final,
     return msg;
 }
 
+/*
+@Finalitat: Retorna el més petit de 2 valors donats
+@Paràmetres: size_t a: primer valor; size_t b: segon valor
+@Retorn: int: valor més petit
+*/
 int min(size_t a, size_t b) {
     if (a < b) {
         return a;
@@ -198,10 +262,20 @@ int min(size_t a, size_t b) {
     return b;
 }
 
+/*
+@Finalitat: Genera un número aleatori
+@Paràmetres: ---
+@Retorn: int: número aleatori
+*/
 int getRandomID() { 
     return (rand() % 999) + 1; 
 }
 
+/*
+@Finalitat: Neteja el padding donat d'una trama
+@Paràmetres: char* string: string a netejar, char delimiter: valor del padding a netejar
+@Retorn: ---
+*/
 void cleanPadding(char* string, char delimiter) {
     for (size_t i = 0; i < strlen(string); i++) {
         if (string[i] == delimiter) {
@@ -210,6 +284,11 @@ void cleanPadding(char* string, char delimiter) {
     }
 }
 
+/*
+@Finalitat: Calcular el md5sum d'un fitxer segons un path donat
+@Paràmetres: char* pathName: path al fitxer
+@Retorn: char* :string amb el md5sum
+*/
 char *resultMd5sumComand(char *pathName) {
     int fd[2];
     char *checksum = malloc(sizeof(char) * 33);
@@ -258,8 +337,8 @@ char *resultMd5sumComand(char *pathName) {
 }
 
 /*
-@Finalitat: Eliminar espacios en blanco adicionales
-@Paràmetres: char*: str, comanda recibida
+@Finalitat: Eliminar espais en blanc adicionals
+@Paràmetres: char* str: comanda rebuda
 @Retorn: ---
 */
 void removeExtraSpaces(char *comanda) { 
@@ -281,9 +360,9 @@ void removeExtraSpaces(char *comanda) {
 }
 
 /*
-@Finalitat: Convertir una string a todo mayusculas.
-@Paràmetres: char*: str, comando a modificar.
-@Retorn: char* con el comando introducido por el usuario pasado a mayusculas.
+@Finalitat: Convertir una string a tot majúscules.
+@Paràmetres: char* str: comanda a modificar.
+@Retorn: char*: comanda introduïda per l'usuari pasada a majúscules.
 */
 char * to_upper(char * str) {
 	size_t length = strlen(str) + 1;
@@ -298,9 +377,9 @@ char * to_upper(char * str) {
 }
 
 /*
-@Finalitat: Devuelve el número de espacios que hay en una string, en este caso le pasamos una comanda
-@Paràmetres: char*: str, string a contar.
-@Retorn: int --> número de espacios de la string
+@Finalitat: Retorna el número d'espais que hi ha en una string, en aquest cas li passem una comanda
+@Paràmetres: char* str: string a comptar.
+@Retorn: int --> número d'espais de la string
 */
 int checkDownloadCommand(char * input) {
     size_t length = strlen(input) + 1;
@@ -316,9 +395,9 @@ int checkDownloadCommand(char * input) {
 }
 
 /*
-@Finalitat: Limpiar los posibles & que pueda contener la string.
-@Paràmetres: char*: clienteNameAux, string con el nombre del cliente leido del configBowman.txt.
-@Retorn: char* con el nombre del usuario limpio de &.
+@Finalitat: Netejar els possibles '&' que pugui contenir la string.
+@Paràmetres: char*: clienteNameAux, string amb el nom del client llegit del configBowman.txt.
+@Retorn: char*: string amb el nom de l'usuari sense '&'.
 */
 char * verifyClientName(char * clienteNameAux) {
     char *clienteName = (char *) malloc (sizeof(char));
@@ -337,8 +416,8 @@ char * verifyClientName(char * clienteNameAux) {
 }
 
 /*
-@Finalitat: Comprobar las posibles casuisticas con el comando DOWNLOAD
-@Paràmetres: char*: downloadPtr, puntero al primer caracter, es decir a la 'D'
+@Finalitat: Comprovar les possibles casuistiques amb la comanda DOWNLOAD
+@Paràmetres: char*: downloadPtr, punter al primer caràcter, es a dir, a la 'D'
 @Retorn: ---
 */
 void checkDownload(char *downloadPtr) {
@@ -355,6 +434,11 @@ void checkDownload(char *downloadPtr) {
     }
 }
 
+/*
+@Finalitat: detectar si segons un nom, aquest es tracta d'una cançó o d'una playlist
+@Paràmetres: char* string: nom a identificar
+@Retorn: int: 0 si es una playlist, 1 si es un .mp3, 0 si es un altra tipus de fitxer
+*/
 int songOrPlaylist(char *string) {
     size_t length = strlen(string);
     int indicePunto = length - 4; 
@@ -371,6 +455,11 @@ int songOrPlaylist(char *string) {
     }
 }
 
+/*
+@Finalitat: crea un directori segons un nom donat
+@Paràmetres: char* directory: nom del directori a crear
+@Retorn: ---
+*/
 void createDirectory(char* directory) {
     struct stat st = {0};
 
@@ -381,6 +470,11 @@ void createDirectory(char* directory) {
     }
 }
 
+/*
+@Finalitat: crea el fitxer stats.txt al directori de Poole corresponent
+@Paràmetres: char* directory: path al directori on crear el fitxer
+@Retorn: ---
+*/
 void createStatsFile(char* directory) {
     size_t len = strlen(directory) + strlen("stats.txt") + 2; 
     char *path = malloc(len);
@@ -394,6 +488,11 @@ void createStatsFile(char* directory) {
     close(fd_file);
 }
 
+/*
+@Finalitat: Busca el Poole amb el mínim de connexions dins els que hi ha a l'array de Poole's de Discovery
+@Paràmetres: Element* poole_list: array de Poole's de Discovery; int* poole_list_size: mida de l'array de Poole's
+@Retorn: Element: El Poole amb el mínim de connexions
+*/
 Element pooleMinConnections(Element *poole_list, int poole_list_size) {
     Element e;
     e.name = NULL, e.ip = NULL;
@@ -402,26 +501,16 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
     int j = 0;
 
     int minConnections = INT_MAX;
-    //char *buffer = NULL;
-    
+
     if (poole_list_size != 0) {
         for (int i = 0; i < poole_list_size; i++) {
-            //write(1, poole_list[i].name, strlen(poole_list[i].name));
-            //write(1, poole_list[i].ip, strlen(poole_list[i].ip));
-
             if (poole_list[i].num_connections <= minConnections) {
                 e.name = strdup(poole_list[i].name);
                 e.ip = strdup(poole_list[i].ip);
                 e.port = poole_list[i].port;
                 e.num_connections = poole_list[i].num_connections;
                 minConnections = poole_list[i].num_connections;
-                //write(1, e.name, strlen(e.name));
-                //write(1, e.ip, strlen(e.ip));
                 j = i;
-            
-                /*asprintf(&buffer, "\npuerto: %d conexiones: %d minConnections: %d\n",e.port, e.num_connections, minConnections);
-                printF(buffer);
-                freeString(&buffer);*/
             }
         }
         poole_list[j].num_connections++;
@@ -430,6 +519,11 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
     return e;
 }
 
+/*
+@Finalitat: Printa la llista de Poole's de Discovery, amb la informació rellevant de cada Poole
+@Paràmetres: Element* poole_list: array de Poole's de Discovery; int* poole_list_size: mida de l'array de Poole's
+@Retorn: ---
+*/
 void printListPooles(Element *poole_list, int poole_list_size) {
     char* buffer = NULL;
     if (poole_list_size != 0) {
@@ -441,6 +535,11 @@ void printListPooles(Element *poole_list, int poole_list_size) {
     } 
 }
 
+/*
+@Finalitat: Decrementa en 1 el número de connexions de Bowman's d'un Poole en concret dins la llista de Poole's de Discovery
+@Paràmetres: Element *poole_list: llista de Poole's; int poole_list_size: mida de la llista de Poole's; char* pooleName: nom del Poole
+@Retorn: int: 0 si no s'ha trobat el Poole, 1 si s'ha trobat i decrementat el num_connexions del Poole
+*/
 int decreaseNumConnections(Element *poole_list, int poole_list_size, char* pooleName) {
     for (int i = 0; i < poole_list_size; i++) {
         printF(poole_list[i].name);
@@ -452,6 +551,11 @@ int decreaseNumConnections(Element *poole_list, int poole_list_size, char* poole
     return 0; 
 }
 
+/*
+@Finalitat: Elimina un Poole de l'array de Poole de Discovery
+@Paràmetres: Element** poole_list: array de Poole's de Discovery; int* poole_list_size: mida de l'array de Poole's; char* pooleName: nom del Poole a esborrar
+@Retorn: int: 0 si no s'ha trobat aquell Poole, 1 si s'ha trobat i esborrat aquell Poole
+*/
 int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleName) {
     int flagFound = 0;
     Element* updatedPooleList = NULL;
@@ -476,6 +580,11 @@ int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleNa
     return flagFound; 
 }
 
+/*
+@Finalitat: Implementació d'un ITOA
+@Paràmetres: int num: número a convertir
+@Retorn: char*: string del número convertit
+*/
 char* convertIntToString(int num) {
     int numDigits = snprintf(NULL, 0, "%d", num);  
     char* string = (char*)malloc(sizeof(char)*(numDigits + 1)); 
@@ -484,6 +593,11 @@ char* convertIntToString(int num) {
     return string;
 }
 
+/*
+@Finalitat: Separa el camp data en les diferents informacions del nou Poole conectat a Discovery
+@Paràmetres: char* data: camp data, Element* e: estructura de dades de Poole
+@Retorn: ---
+*/
 void separaDataToElement(char* data, Element* e) {
     int i = 0, j = 0;
     char *name = NULL, *ip = NULL, *port = NULL; 
