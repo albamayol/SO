@@ -501,7 +501,6 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
     int j = 0;
 
     int minConnections = INT_MAX;
-
     if (poole_list_size != 0) {
         for (int i = 0; i < poole_list_size; i++) {
             if (poole_list[i].num_connections <= minConnections) {
@@ -527,8 +526,9 @@ Element pooleMinConnections(Element *poole_list, int poole_list_size) {
 void printListPooles(Element *poole_list, int poole_list_size) {
     char* buffer = NULL;
     if (poole_list_size != 0) {
+        printf("\nLISTA ACTUAL DE POOLES:\n");
         for (int i = 0; i < poole_list_size; i++) {
-            asprintf(&buffer, "\nLISTA ACTUAL DE POOLES:\nnombre: %s\nip: %s\npuerto: %d\nconexiones: %d\n",poole_list[i].name, poole_list[i].ip, poole_list[i].port, poole_list[i].num_connections);
+            asprintf(&buffer, "\nnombre: %s\nip: %s\npuerto: %d\nconexiones: %d\n",poole_list[i].name, poole_list[i].ip, poole_list[i].port, poole_list[i].num_connections);
             printF(buffer);
             freeString(&buffer);
         }
