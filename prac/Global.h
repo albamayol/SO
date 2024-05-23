@@ -145,36 +145,47 @@ typedef struct {
     pthread_mutex_t mutexList;
     int poole_list_size;
 } dataDiscovery;
-
+//strings
 char* read_until(int fd, char delimiter);
 char* read_until_string(char *string, char delimiter);
-void cleanThreadsPoole(ThreadPoole** threads, int numThreads);
-void cleanThreadPoole(ThreadPoole* thread);
-void cleanThreadsBowman(Descarga **descargas, int *numDescargas, int *maxDesc);
-void cleanAllTheThreadsBowman(Descarga **descargas, int numDescargas);
-void cleanInfoPlaylists(InfoPlaylist *infoPlaylists, int size);
-char * resultMd5sumComand(char *pathName);
-void removeExtraSpaces(char *comanda);
 void cleanPadding(char* string, char delimiter);
+void removeExtraSpaces(char *comanda);
 char * to_upper(char * str);
+char* convertIntToString(int num);
+void freeString(char **string);
+char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *final, char delimitadorFinal);
+
+//comands
 int checkDownloadCommand(char * input);
-char * verifyClientName(char * clienteNameAux);
+char * resultMd5sumComand(char *pathName);
 void checkDownload(char *downloadPtr);
+
+//files
+char * verifyClientName(char * clienteNameAux);
+void createStatsFile(char* directory);
+void createDirectory(char* directory);
+
+//logica
+int min(size_t a, size_t b);
+int getRandomID();
+
+
+//acabar de reestructurar aixo
 int songOrPlaylist(char *string);
 void separaDataToElement(char* data, Element* e);
 Element pooleMinConnections(Element *poole_list, int poole_list_size);
 void printListPooles(Element *poole_list, int poole_list_size);
 int decreaseNumConnections(Element *poole_list, int poole_list_size, char* pooleName);
 int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleName);
-char* convertIntToString(int num);
 void freeElement(Element* e);
-void freeString(char **string);
 void freePoolesArray(Element *array, int size);
-void createDirectory(char* directory);
 char* readNumChars(char *string, int inicio, int final);
-int min(size_t a, size_t b);
-int getRandomID();
-char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *final, char delimitadorFinal);
-void createStatsFile(char* directory);
+
+//moure structs freeMemory --> despres treureu
+void cleanThreadsPoole(ThreadPoole** threads, int numThreads);
+void cleanThreadPoole(ThreadPoole* thread);
+void cleanThreadsBowman(Descarga **descargas, int *numDescargas, int *maxDesc);
+void cleanAllTheThreadsBowman(Descarga **descargas, int numDescargas);
+void cleanInfoPlaylists(InfoPlaylist *infoPlaylists, int size);
 
 #endif
