@@ -14,19 +14,13 @@ Data última modificació: 16/5/24
 
 #include <unistd.h>
 #include <fcntl.h>
-#include <string.h>
-#include <strings.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <time.h>
 #include <errno.h>
-#include <ctype.h>
 #include <signal.h>
 #include <stdint.h>
 #include <sys/wait.h> 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/stat.h>
 #include <netinet/in.h>
 #include <pthread.h>
 #include <arpa/inet.h>
@@ -37,6 +31,11 @@ Data última modificació: 16/5/24
 #include <math.h>
 #include <sys/ipc.h>
 #include "semaphore_v2.h"
+#include "Strings.h"
+#include "Commands.h"
+#include "CleanMem.h"
+#include "FilesCreation.h"
+
 
 #define printF(x) write(1, x, strlen(x))
 
@@ -60,32 +59,6 @@ typedef struct {
     char *nombreDescargaComando; 
     int index; 
 } DescargaBowman;
-
-typedef struct {
-    char *nombreCancion;	    
-    char *nombrePlaylist;
-    float porcentaje;   
-    pthread_t thread_id;
-} Descarga;
-
-typedef struct {
-    pthread_t thread;	
-    char *nombreDescargaComando;
-    int fd_bowman; 
-} DescargaPoole;
-
-typedef struct {
-	pthread_t thread;	
-	char* user_name;
-    int fd;
-    DescargaPoole *descargas;
-    int numDescargas; // Num total de descargas por parte de un Bowman
-} ThreadPoole;
-
-typedef struct {
-    char* nameplaylist;
-    int numSongs; 
-} InfoPlaylist;
 
 typedef struct {
     int fdDiscovery;
@@ -145,33 +118,12 @@ typedef struct {
     pthread_mutex_t mutexList;
     int poole_list_size;
 } dataDiscovery;
-//strings
-char* read_until(int fd, char delimiter);
-char* read_until_string(char *string, char delimiter);
-void cleanPadding(char* string, char delimiter);
-void removeExtraSpaces(char *comanda);
-char * to_upper(char * str);
-char* convertIntToString(int num);
-void freeString(char **string);
-char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *final, char delimitadorFinal);
 
-//comands
-int checkDownloadCommand(char * input);
-char * resultMd5sumComand(char *pathName);
-void checkDownload(char *downloadPtr);
-
-//files
-char * verifyClientName(char * clienteNameAux);
-void createStatsFile(char* directory);
-void createDirectory(char* directory);
-
-//logica
+//
 int min(size_t a, size_t b);
 int getRandomID();
 
 
-//acabar de reestructurar aixo
-int songOrPlaylist(char *string);
 void separaDataToElement(char* data, Element* e);
 Element pooleMinConnections(Element *poole_list, int poole_list_size);
 void printListPooles(Element *poole_list, int poole_list_size);
@@ -179,13 +131,5 @@ int decreaseNumConnections(Element *poole_list, int poole_list_size, char* poole
 int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleName);
 void freeElement(Element* e);
 void freePoolesArray(Element *array, int size);
-char* readNumChars(char *string, int inicio, int final);
-
-//moure structs freeMemory --> despres treureu
-void cleanThreadsPoole(ThreadPoole** threads, int numThreads);
-void cleanThreadPoole(ThreadPoole* thread);
-void cleanThreadsBowman(Descarga **descargas, int *numDescargas, int *maxDesc);
-void cleanAllTheThreadsBowman(Descarga **descargas, int numDescargas);
-void cleanInfoPlaylists(InfoPlaylist *infoPlaylists, int size);
 
 #endif
