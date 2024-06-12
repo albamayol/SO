@@ -29,6 +29,6 @@ void freeString(char **string);
 char* convertIntToString(int num);
 char* readNumChars(char *string, int inicio, int final);
 char* readUntilFromIndex(char *string, int *inicio, char delimiter, char *final, char delimitadorFinal);
-
-
+int procesarTramasSongs(char ***canciones, char *songs);
+char ***procesarTramasPlaylists(char *playlists, int **numCancionesPorLista, int numCanciones, int *numListas);
 #endif

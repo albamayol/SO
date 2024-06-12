@@ -210,3 +210,100 @@ void freeString(char **string) {
         *string = NULL;
     }
 }
+
+/*
+@Finalitat: Processa les trames de cançons per separar-les en una llista.
+@Paràmetres: char ***canciones: array de strings on es guarden les cançons; char *songs: string amb les cançons concatenades.
+@Retorn: El número de cançons processades.
+*/
+int procesarTramasSongs(char ***canciones, char *songs) {
+    int numCanciones = 0, inicio = 0;
+    char final = ' ', *song = NULL;
+
+    do {
+        song = readUntilFromIndex(songs, &inicio, '&', &final, '\0');
+
+        *canciones = realloc(*canciones, (numCanciones + 1) * sizeof(char *));
+        if (*canciones == NULL) {
+            break;
+        }
+        (*canciones)[numCanciones] = song;
+        numCanciones++;
+    } while (final != '\0');
+    return numCanciones;
+}
+
+/*
+@Finalitat: Processa les trames de cançons i les guarda a una llista de strings.
+@Paràmetres: char ***canciones: array de strings on es guardaran les cançons processades; char *songs: string amb les cançons concatenades.
+@Retorn: Nombre de cançons processades.
+*/
+char ***procesarTramasPlaylists(char *playlists, int **numCancionesPorLista, int numCanciones, int *numListas) {
+    int i = 0, totalCanciones = 0, inicioPlaylist = 0, inicioSong = 0;
+    char valorFinal = ' ', ***listas = NULL, *playlist = NULL, *song = NULL;
+    do {
+        playlist = readUntilFromIndex(playlists, &inicioPlaylist, '#', &valorFinal, '\0');
+
+        size_t len = strlen(playlist);
+        playlist = realloc(playlist, len + 2);
+        if (playlist == NULL) {
+            break;
+        }
+        playlist[len] = '#';
+        playlist[len + 1] = '\0';
+
+        inicioSong = 0;
+        i = 0;
+        valorFinal = ' ';
+        do {    
+            song = readUntilFromIndex(playlist, &inicioSong, '&', &valorFinal, '#');
+            if (i == 0) {
+                // Primero, reservamos memoria para almacenar una nueva lista
+                listas = realloc(listas, ((*numListas) + 1) * sizeof(char **));
+                if (listas == NULL) {
+                    break;
+                }
+
+                listas[*numListas] = malloc(sizeof(char *));
+                if (listas[*numListas] == NULL) {
+                    break;
+                }
+                
+                listas[*numListas][i] = strdup(song); 
+                if (listas[*numListas][i] == NULL) {
+                    free(listas[*numListas]);
+                    break;
+                }
+            } else {
+                listas[*numListas] = realloc(listas[*numListas], (i + 1) * sizeof(char *));
+                if (listas[*numListas] == NULL) {
+                    break;
+                }
+
+                listas[*numListas][i] = strdup(song);
+                if (listas[*numListas][i] == NULL) {
+                    for (int k = 0; k < i; k++) {
+                        free(listas[*numListas][k]);
+                    }
+                    free(listas[*numListas]);
+                    break;
+                }
+
+                (*numCancionesPorLista)[*numListas]++; 
+            }
+            i++;
+            freeString(&song);
+        } while (valorFinal != '#');
+        totalCanciones += (*numCancionesPorLista)[*numListas];
+        (*numListas)++;
+
+        (*numCancionesPorLista) = realloc((*numCancionesPorLista), (*numListas + 1) * sizeof(int));
+        (*numCancionesPorLista)[(*numListas)] = 0;
+        if (*numCancionesPorLista == NULL) {
+            break;
+        }
+        freeString(&playlist);
+    } while (totalCanciones < numCanciones);
+
+    return listas;
+}

@@ -26,8 +26,6 @@ void freeElement(Element* e) {
     }
 }
 
-
-
 /*
 @Finalitat: Allibera cada Element de l'array de Poole's de Discovery al igual que el propi array també
 @Paràmetres: Element* array: array de Poole's de Discovery
@@ -40,28 +38,6 @@ void freePoolesArray(Element *array, int size) {
     free(array);
 }
 
-
-
-/*
-@Finalitat: Retorna el més petit de 2 valors donats
-@Paràmetres: size_t a: primer valor; size_t b: segon valor
-@Retorn: int: valor més petit
-*/
-int min(size_t a, size_t b) {
-    if (a < b) {
-        return a;
-    }
-    return b;
-}
-
-/*
-@Finalitat: Genera un número aleatori
-@Paràmetres: ---
-@Retorn: int: número aleatori
-*/
-int getRandomID() { 
-    return (rand() % 999) + 1; 
-}
 
 /*
 @Finalitat: Busca el Poole amb el mínim de connexions dins els que hi ha a l'array de Poole's de Discovery

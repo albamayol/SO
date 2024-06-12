@@ -9,7 +9,14 @@ Data última modificació: 16/5/24
 
 #include "Trama.h"
 
-dataDiscovery dDiscovery;
+int fdPoole;
+int fdBowman;
+struct sockaddr_in poole_addr;
+struct sockaddr_in bowman_addr;
+
+Element *poole_list;
+pthread_mutex_t mutexList;
+int poole_list_size;
 
 /*
 @Finalitat: Inicialitza les variables a NULL o al valor inicial desitjat.
@@ -17,12 +24,13 @@ dataDiscovery dDiscovery;
 @Retorn: ---
 */
 void inicializarDataDiscovery() {
-    dDiscovery.ipPoole = NULL;
-	dDiscovery.portPoole = NULL;
-    dDiscovery.ipBowman = NULL; 
-    dDiscovery.portBowman = NULL;
-    dDiscovery.poole_list = NULL;
-    dDiscovery.poole_list_size = 0;
+    initScreen();
+    ipPoole = NULL;
+	portPoole = NULL;
+    ipBowman = NULL; 
+    portBowman = NULL;
+    poole_list = NULL;
+    poole_list_size = 0;
 }
 
 /*
@@ -31,25 +39,24 @@ void inicializarDataDiscovery() {
 @Retorn: ---
 */
 void sig_func() {
-    pthread_mutex_destroy(&dDiscovery.mutexList);
-    if (dDiscovery.ipPoole != NULL) {
-        freeString(&dDiscovery.ipPoole);
+    pthread_mutex_destroy(&mutexList);
+    if (ipPoole != NULL) {
+        freeString(&ipPoole);
     }
-    if (dDiscovery.portPoole != NULL) {
-        freeString(&dDiscovery.portPoole);
+    if (portPoole != NULL) {
+        freeString(&portPoole);
     }
-    if (dDiscovery.ipBowman != NULL) {
-        freeString(&dDiscovery.ipBowman);
+    if (ipBowman != NULL) {
+        freeString(&ipBowman);
     }
-    if (dDiscovery.portBowman != NULL) {
-        freeString(&dDiscovery.portBowman);
+    if (portBowman != NULL) {
+        freeString(&portBowman);
     }
-    
-    freePoolesArray(dDiscovery.poole_list, dDiscovery.poole_list_size);
+    freePoolesArray(poole_list, poole_list_size);
 
-    close(dDiscovery.fdPoole);
-    close(dDiscovery.fdBowman);
-
+    close(fdPoole);
+    close(fdBowman);
+    destroyMutexScreen();
     exit(EXIT_SUCCESS);
 }
 
@@ -66,7 +73,7 @@ void conexionPoole(int fd_poole) {
         char* nameCleaned = NULL;
         nameCleaned = read_until_string(tramaExtended.trama.data, '~');
 
-        if (decreaseNumConnections(dDiscovery.poole_list, dDiscovery.poole_list_size, nameCleaned)) {
+        if (decreaseNumConnections(poole_list, poole_list_size, nameCleaned)) {
             setTramaString(TramaCreate(0x06, "CONOK", "", 0), fd_poole);   
         } else {
             setTramaString(TramaCreate(0x06, "CONKO", "", 0), fd_poole);
@@ -76,16 +83,16 @@ void conexionPoole(int fd_poole) {
     } else if (strcmp(tramaExtended.trama.header, "POOLE_DISCONNECT") == 0) {
         char* nameCleaned = NULL;
         nameCleaned = read_until_string(tramaExtended.trama.data, '~');
-        pthread_mutex_lock(&dDiscovery.mutexList); 
-        int erasePooleResult = erasePooleFromList(&dDiscovery.poole_list, &dDiscovery.poole_list_size, nameCleaned);
-        pthread_mutex_unlock(&dDiscovery.mutexList);   
+        pthread_mutex_lock(&mutexList); 
+        int erasePooleResult = erasePooleFromList(&poole_list, &poole_list_size, nameCleaned);
+        pthread_mutex_unlock(&mutexList);   
 
         if (erasePooleResult) {
             setTramaString(TramaCreate(0x06, "CONOK", "", 0), fd_poole);   
         } else {
             setTramaString(TramaCreate(0x06, "CONKO", "", 0), fd_poole);
         }
-        printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
+        printListPooles(poole_list, poole_list_size);
         freeString(&nameCleaned);
         freeTrama(&(tramaExtended.trama));
     } else if (strcmp(tramaExtended.trama.header, "NEW_POOLE") == 0) {
@@ -94,23 +101,23 @@ void conexionPoole(int fd_poole) {
         separaDataToElement(tramaExtended.trama.data, &element);
         freeTrama(&(tramaExtended.trama));
 
-        asprintf(&buffer, "sizeArrayPooles: %d \n", dDiscovery.poole_list_size);
+        asprintf(&buffer, "sizeArrayPooles: %d \n", poole_list_size);
         printF(buffer);
         freeString(&buffer);
 
-        pthread_mutex_lock(&dDiscovery.mutexList);
-        dDiscovery.poole_list = (Element *)realloc(dDiscovery.poole_list, (dDiscovery.poole_list_size + 1) * sizeof(Element));
+        pthread_mutex_lock(&mutexList);
+        poole_list = (Element *)realloc(poole_list, (poole_list_size + 1) * sizeof(Element));
         
-        dDiscovery.poole_list[dDiscovery.poole_list_size].name = strdup(element.name);
-        dDiscovery.poole_list[dDiscovery.poole_list_size].ip = strdup(element.ip);
-        dDiscovery.poole_list[dDiscovery.poole_list_size].port = element.port;
-        dDiscovery.poole_list[dDiscovery.poole_list_size].num_connections = element.num_connections;
-        dDiscovery.poole_list_size++;
-        pthread_mutex_unlock(&dDiscovery.mutexList);
+        poole_list[poole_list_size].name = strdup(element.name);
+        poole_list[poole_list_size].ip = strdup(element.ip);
+        poole_list[poole_list_size].port = element.port;
+        poole_list[poole_list_size].num_connections = element.num_connections;
+        poole_list_size++;
+        pthread_mutex_unlock(&mutexList);
 
         freeElement(&element);
 
-        printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
+        printListPooles(poole_list, poole_list_size);
 
         setTramaString(TramaCreate(0x01, "CON_OK", "", 0), fd_poole);    
     }
@@ -127,9 +134,9 @@ void conexionBowman(int fd_bowman) {
     TramaExtended tramaExtended = readTrama(fd_bowman);
     freeTrama(&(tramaExtended.trama));
 
-    pthread_mutex_lock(&dDiscovery.mutexList);
-    Element e = pooleMinConnections(dDiscovery.poole_list, dDiscovery.poole_list_size); 
-    pthread_mutex_unlock(&dDiscovery.mutexList);
+    pthread_mutex_lock(&mutexList);
+    Element e = pooleMinConnections(poole_list, poole_list_size); 
+    pthread_mutex_unlock(&mutexList);
 
     if (e.num_connections == -1) {
         setTramaString(TramaCreate(0x01, "CON_KO", "", 0), fd_bowman);
@@ -144,7 +151,7 @@ void conexionBowman(int fd_bowman) {
         
         setTramaString(TramaCreate(0x01, "CON_OK", aux, strlen(aux)), fd_bowman);
         freeString(&aux);
-        printListPooles(dDiscovery.poole_list, dDiscovery.poole_list_size);
+        printListPooles(poole_list, poole_list_size);
     }
 
     close(fd_bowman);
@@ -156,8 +163,8 @@ void conexionBowman(int fd_bowman) {
 @Retorn: ---
 */
 void connect_Poole() {
-    socklen_t pAddr = sizeof(dDiscovery.poole_addr);
-    int fd_poole = accept(dDiscovery.fdPoole, (struct sockaddr *)&dDiscovery.poole_addr, &pAddr); 
+    socklen_t pAddr = sizeof(poole_addr);
+    int fd_poole = accept(fdPoole, (struct sockaddr *)&poole_addr, &pAddr); 
     if (fd_poole < 0) { 
         perror("Error al aceptar la conexión de Poole");
         close(fd_poole);
@@ -172,8 +179,8 @@ void connect_Poole() {
 @Retorn: ---
 */
 void connect_Bowman() {
-    socklen_t bAddr = sizeof(dDiscovery.bowman_addr);
-    int fd_bowman = accept(dDiscovery.fdBowman, (struct sockaddr *)&dDiscovery.bowman_addr, &bAddr);
+    socklen_t bAddr = sizeof(bowman_addr);
+    int fd_bowman = accept(fdBowman, (struct sockaddr *)&bowman_addr, &bAddr);
     if (fd_bowman < 0) {
         perror("Error al aceptar la conexión de Bowman");
         close(fd_bowman);
@@ -189,23 +196,23 @@ void connect_Bowman() {
 */
 void startPooleListener() {
 
-    dDiscovery.fdPoole = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);   
-    if (dDiscovery.fdPoole < 0) {
+    fdPoole = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);   
+    if (fdPoole < 0) {
         perror ("Error al crear el socket de Poole");
         exit (EXIT_FAILURE);
     } 
 
-    bzero (&dDiscovery.poole_addr, sizeof (dDiscovery.poole_addr));
-    dDiscovery.poole_addr.sin_family = AF_INET;
-    dDiscovery.poole_addr.sin_port = htons (atoi(dDiscovery.portPoole));
-    dDiscovery.poole_addr.sin_addr.s_addr = inet_addr(dDiscovery.ipPoole);
+    bzero (&poole_addr, sizeof (poole_addr));
+    poole_addr.sin_family = AF_INET;
+    poole_addr.sin_port = htons (atoi(portPoole));
+    poole_addr.sin_addr.s_addr = inet_addr(ipPoole);
 
-    if (bind (dDiscovery.fdPoole, (void *) &dDiscovery.poole_addr, sizeof (dDiscovery.poole_addr)) < 0) {
+    if (bind (fdPoole, (void *) &poole_addr, sizeof (poole_addr)) < 0) {
         perror ("Error al enlazar el socket de Poole");
-        close(dDiscovery.fdPoole);
+        close(fdPoole);
         exit (EXIT_FAILURE);
     }
-    listen (dDiscovery.fdPoole, 20);
+    listen (fdPoole, 20);
     
     while(1) {
         connect_Poole();
@@ -218,23 +225,23 @@ void startPooleListener() {
 @Retorn: ---
 */
 void startBowmanListener() {
-    dDiscovery.fdBowman = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if (dDiscovery.fdBowman < 0) {
+    fdBowman = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (fdBowman < 0) {
         perror ("Error al crear el socket de Bowman");
         sig_func();
     }
 
-    bzero (&dDiscovery.bowman_addr, sizeof (dDiscovery.bowman_addr));
-    dDiscovery.bowman_addr.sin_family = AF_INET;
-    dDiscovery.bowman_addr.sin_port = htons (atoi(dDiscovery.portBowman));
-    dDiscovery.bowman_addr.sin_addr.s_addr = inet_addr(dDiscovery.ipBowman);
+    bzero (&bowman_addr, sizeof (bowman_addr));
+    bowman_addr.sin_family = AF_INET;
+    bowman_addr.sin_port = htons (atoi(portBowman));
+    bowman_addr.sin_addr.s_addr = inet_addr(ipBowman);
 
-    if (bind (dDiscovery.fdBowman, (void *) &dDiscovery.bowman_addr, sizeof (dDiscovery.bowman_addr)) < 0) {
+    if (bind (fdBowman, (void *) &bowman_addr, sizeof (bowman_addr)) < 0) {
         perror ("Error al enlazar el socket de Bowman");
-        close(dDiscovery.fdBowman);
+        close(fdBowman);
         sig_func();
     }
-    listen (dDiscovery.fdBowman, 20);
+    listen (fdBowman, 20);
 
     while(1) {
         connect_Bowman();
@@ -271,10 +278,10 @@ int main(int argc, char ** argv) {
             printF("ERROR. Could not open user's file\n");
             exit(EXIT_FAILURE);
         } else {
-            dDiscovery.ipPoole = read_until(fd, '\n');
-            dDiscovery.portPoole = read_until(fd, '\n');
-            dDiscovery.ipBowman = read_until(fd, '\n');
-            dDiscovery.portBowman = read_until(fd, '\n');
+            ipPoole = read_until(fd, '\n');
+            portPoole = read_until(fd, '\n');
+            ipBowman = read_until(fd, '\n');
+            portBowman = read_until(fd, '\n');
 
             close(fd);
             

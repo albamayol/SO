@@ -28,16 +28,15 @@ Data última modificació: 16/5/24
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/msg.h>
-#include <math.h>
 #include <sys/ipc.h>
 #include "semaphore_v2.h"
 #include "Strings.h"
 #include "Commands.h"
-#include "CleanMem.h"
 #include "FilesCreation.h"
+#include "Logica.h"
+#include "Screen.h"
 
 
-#define printF(x) write(1, x, strlen(x))
 
 typedef struct {
 	char* name;	
@@ -46,90 +45,12 @@ typedef struct {
 	int num_connections;
 } Element;
 
-typedef struct {
-    int id;
-    char *md5sum;
-    char *nombre;
-    size_t size;
-    size_t bytesDescargados;
-} Song;
-
-typedef struct {
-    Song song; 
-    char *nombreDescargaComando; 
-    int index; 
-} DescargaBowman;
-
-typedef struct {
-    int fdDiscovery;
-    int fdPoole;
-    struct sockaddr_in discovery_addr;
-    struct sockaddr_in poole_addr;
-    char *msg;
-    char *input;
-    char *upperInput;
-    char *clienteNameAux;
-    char *clienteName;
-    char *pathClienteFile;
-    char *ip;
-    char *puerto;
-    int bowmanConnected;
-    int maxDesc;
-    Element pooleConnected;
-    Descarga *descargas; //array de los ids de threads
-    pthread_t threadRead;
-    int numDescargas;
-    int msgQueuePetitions;
-    int msgQueueDescargas;
-    InfoPlaylist* infoPlaylists;
-    int numInfoPlaylists;
-} dataBowman;
-
-typedef struct {
-    int fdPooleServer;
-    int fdPooleClient;
-    struct sockaddr_in discovery_addr;
-    struct sockaddr_in poole_addr;
-    char *serverName;
-	char *pathServerFile;
-    char *ipDiscovery; 
-    char *puertoDiscovery;
-    char *ipServer; 
-    char *puertoServer;
-    char *msg;
-    ThreadPoole *threads;
-    int threads_array_size;
-    int fdPipe[2];
-    semaphore semStats;
-    pthread_mutex_t mutexDescargas;
-    int monolit;
-} dataPoole;
-
-typedef struct {
-    int fdPoole;
-    int fdBowman;
-    struct sockaddr_in poole_addr;
-    struct sockaddr_in bowman_addr;
-    char *ipPoole;
-    char *ipBowman; 
-    char *portPoole;
-    char *portBowman;
-    Element *poole_list;
-    pthread_mutex_t mutexList;
-    int poole_list_size;
-} dataDiscovery;
-
-//
-int min(size_t a, size_t b);
-int getRandomID();
-
-
-void separaDataToElement(char* data, Element* e);
+void freeElement(Element* e);
+void freePoolesArray(Element *array, int size);
 Element pooleMinConnections(Element *poole_list, int poole_list_size);
 void printListPooles(Element *poole_list, int poole_list_size);
 int decreaseNumConnections(Element *poole_list, int poole_list_size, char* pooleName);
 int erasePooleFromList(Element** poole_list, int* poole_list_size, char* pooleName);
-void freeElement(Element* e);
-void freePoolesArray(Element *array, int size);
+void separaDataToElement(char* data, Element* e) ;
 
 #endif

@@ -37,7 +37,8 @@ void createStatsFile(char* directory) {
     int fd_file = open(path, O_CREAT | O_EXCL, 0644);
     if (fd_file == -1) {
         perror("Error al crear el archivo");
-        freeString(&path);
+        free(path);
+        path = NULL;
     }
     close(fd_file);
 }
